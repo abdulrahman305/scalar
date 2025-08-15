@@ -40,6 +40,21 @@ class SearchHotKey(Enum):
     Z = "z"
 
 
+class Theme(Enum):
+    ALTERNATE = "alternate"
+    DEFAULT = "default"
+    MOON = "moon"
+    PURPLE = "purple"
+    SOLARIZED = "solarized"
+    BLUE_PLANET = "bluePlanet"
+    SATURN = "saturn"
+    KEPLER = "kepler"
+    MARS = "mars"
+    DEEP_SPACE = "deepSpace"
+    LASERWAVE = "laserwave"
+    NONE = "none"
+
+
 scalar_theme = """
 /* basic theme */
 .light-mode {
@@ -70,31 +85,31 @@ scalar_theme = """
 }
 /* Document Sidebar */
 .light-mode .t-doc__sidebar {
-  --sidebar-background-1: var(--scalar-background-1);
-  --sidebar-item-hover-color: currentColor;
-  --sidebar-item-hover-background: var(--scalar-background-2);
-  --sidebar-item-active-background: var(--scalar-background-accent);
-  --sidebar-border-color: var(--scalar-border-color);
-  --sidebar-color-1: var(--scalar-color-1);
-  --sidebar-color-2: var(--scalar-color-2);
-  --sidebar-color-active: var(--scalar-color-accent);
-  --sidebar-search-background: transparent;
-  --sidebar-search-border-color: var(--scalar-border-color);
-  --sidebar-search--color: var(--scalar-color-3);
+  --scalar-sidebar-background-1: var(--scalar-background-1);
+  --scalar-sidebar-item-hover-color: currentColor;
+  --scalar-sidebar-item-hover-background: var(--scalar-background-2);
+  --scalar-sidebar-item-active-background: var(--scalar-background-accent);
+  --scalar-sidebar-border-color: var(--scalar-border-color);
+  --scalar-sidebar-color-1: var(--scalar-color-1);
+  --scalar-sidebar-color-2: var(--scalar-color-2);
+  --scalar-sidebar-color-active: var(--scalar-color-accent);
+  --scalar-sidebar-search-background: transparent;
+  --scalar-sidebar-search-border-color: var(--scalar-border-color);
+  --scalar-sidebar-search--color: var(--scalar-color-3);
 }
 
 .dark-mode .sidebar {
-  --sidebar-background-1: var(--scalar-background-1);
-  --sidebar-item-hover-color: currentColor;
-  --sidebar-item-hover-background: var(--scalar-background-2);
-  --sidebar-item-active-background: var(--scalar-background-accent);
-  --sidebar-border-color: var(--scalar-border-color);
-  --sidebar-color-1: var(--scalar-color-1);
-  --sidebar-color-2: var(--scalar-color-2);
-  --sidebar-color-active: var(--scalar-color-accent);
-  --sidebar-search-background: transparent;
-  --sidebar-search-border-color: var(--scalar-border-color);
-  --sidebar-search--color: var(--scalar-color-3);
+  --scalar-sidebar-background-1: var(--scalar-background-1);
+  --scalar-sidebar-item-hover-color: currentColor;
+  --scalar-sidebar-item-hover-background: var(--scalar-background-2);
+  --scalar-sidebar-item-active-background: var(--scalar-background-accent);
+  --scalar-sidebar-border-color: var(--scalar-border-color);
+  --scalar-sidebar-color-1: var(--scalar-color-1);
+  --scalar-sidebar-color-2: var(--scalar-color-2);
+  --scalar-sidebar-color-active: var(--scalar-color-accent);
+  --scalar-sidebar-search-background: transparent;
+  --scalar-sidebar-search-border-color: var(--scalar-border-color);
+  --scalar-sidebar-search--color: var(--scalar-color-3);
 }
 
 /* advanced */
@@ -183,14 +198,6 @@ def get_scalar_api_reference(
             """
         ),
     ] = "https://fastapi.tiangolo.com/img/favicon.png",
-    scalar_theme: Annotated[
-        str,
-        Doc(
-            """
-            Custom CSS theme for Scalar.
-            """
-        ),
-    ] = scalar_theme,
     layout: Annotated[
         Layout,
         Doc(
@@ -274,6 +281,24 @@ def get_scalar_api_reference(
             """
         ),
     ] = False,
+    authentication: Annotated[
+        dict,
+        Doc(
+            """
+            A dictionary of additional authentication information.
+            Default is {} which means no authentication information is provided.
+            """
+        ),
+    ] = {},
+    hide_client_button: Annotated[
+        bool,
+        Doc(
+            """
+            Whether to show the client button from the reference sidebar and modal
+            Default is False which means the client button is shown.
+            """
+        ),
+    ] = False,
     integration: Annotated[
         str | None,
         Doc(
@@ -283,52 +308,91 @@ def get_scalar_api_reference(
             """
         ),
     ] = 'fastapi',
+    theme: Annotated[
+        Theme,
+        Doc(
+            """
+            The theme to use for Scalar.
+            Default is "default".
+            """
+        ),
+    ] = Theme.DEFAULT,
 ) -> HTMLResponse:
+    # Build configuration object with only non-default values
+    config = {
+        "url": openapi_url,
+    }
+
+    # Only add options that differ from defaults
+    if scalar_proxy_url:
+        config["proxyUrl"] = scalar_proxy_url
+
+    if layout != Layout.MODERN:
+        config["layout"] = layout.value
+
+    if not show_sidebar:  # Default is True
+        config["showSidebar"] = show_sidebar
+
+    if hide_download_button:  # Default is False
+        config["hideDownloadButton"] = hide_download_button
+
+    if hide_models:  # Default is False
+        config["hideModels"] = hide_models
+
+    if not dark_mode:  # Default is True
+        config["darkMode"] = dark_mode
+
+    if search_hot_key != SearchHotKey.K:  # Default is K
+        config["searchHotKey"] = search_hot_key.value
+
+    if hidden_clients:  # Default is []
+        config["hiddenClients"] = hidden_clients
+
+    if servers:  # Default is []
+        config["servers"] = servers
+
+    if default_open_all_tags:  # Default is False
+        config["defaultOpenAllTags"] = default_open_all_tags
+
+    if authentication:  # Default is {}
+        config["authentication"] = authentication
+
+    if hide_client_button:  # Default is False
+        config["hideClientButton"] = hide_client_button
+
+    if integration:
+        config["_integration"] = integration
+
+    if theme != Theme.DEFAULT:  # Default is DEFAULT
+        config["theme"] = theme.value
+
     html = f"""
-    <!DOCTYPE html>
-    <html>
+<!doctype html>
+<html>
     <head>
-    <title>{title}</title>
-    <!-- needed for adaptive design -->
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="shortcut icon" href="{scalar_favicon_url}">
-    <style>
-      body {{
-        margin: 0;
-        padding: 0;
-      }}
-    </style>
-    <style>
-    {scalar_theme}
-    </style>
+        <title>{title}</title>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="shortcut icon" href="{scalar_favicon_url}">
+        <style>
+            body {{
+                margin: 0;
+                padding: 0;
+            }}
+
+            {scalar_theme if theme.value == Theme.DEFAULT.value else ""}
+        </style>
     </head>
     <body>
-    <noscript>
-        Scalar requires Javascript to function. Please enable it to browse the documentation.
-    </noscript>
-    <script
-      id="api-reference"
-      data-url="{openapi_url}"
-      data-proxy-url="{scalar_proxy_url}"></script>
-    <script>
-      var configuration = {{
-        layout: "{layout.value}",
-        showSidebar: {json.dumps(show_sidebar)},
-        hideDownloadButton: {json.dumps(hide_download_button)},
-        hideModels: {json.dumps(hide_models)},
-        darkMode: {json.dumps(dark_mode)},
-        searchHotKey: "{search_hot_key.value}",
-        hiddenClients: {json.dumps(hidden_clients)},
-        servers: {json.dumps(servers)},
-        defaultOpenAllTags: {json.dumps(default_open_all_tags)},
-        _integration: {json.dumps(integration)},
-      }}
+        <div id="app"></div>
 
-      document.getElementById('api-reference').dataset.configuration =
-        JSON.stringify(configuration)
-    </script>
-    <script src="{scalar_js_url}"></script>
+        <!-- Load the Script -->
+        <script src="{scalar_js_url}"></script>
+
+        <!-- Initialize the Scalar API Reference -->
+        <script>
+            Scalar.createApiReference("#app", {json.dumps(config)})
+        </script>
     </body>
     </html>
     """

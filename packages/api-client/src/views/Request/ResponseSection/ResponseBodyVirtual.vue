@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import ViewLayoutCollapse from '@/components/ViewLayout/ViewLayoutCollapse.vue'
-import { useResponseBody } from '@/hooks/useResponseBody'
 import { ScalarVirtualText } from '@scalar/components'
 import { formatJsonOrYamlString } from '@scalar/oas-utils/helpers'
-import { computed } from 'vue'
+import { computed, toRef } from 'vue'
+
+import ViewLayoutCollapse from '@/components/ViewLayout/ViewLayoutCollapse.vue'
+import { useResponseBody } from '@/hooks/useResponseBody'
 
 import ResponseBodyDownload from './ResponseBodyDownload.vue'
 
@@ -16,13 +17,13 @@ const props = defineProps<{
 const textContent = computed(() => formatJsonOrYamlString(props.content))
 
 const { mimeType, attachmentFilename, dataUrl } = useResponseBody({
-  data: props.data,
-  headers: props.headers,
+  data: toRef(props, 'data'),
+  headers: toRef(props, 'headers'),
 })
 </script>
 
 <template>
-  <ViewLayoutCollapse class="!max-h-100% overflow-x-auto response-body-virtual">
+  <ViewLayoutCollapse class="!max-h-100% response-body-virtual overflow-x-auto">
     <template #title>Body</template>
     <template
       v-if="dataUrl"
@@ -32,12 +33,11 @@ const { mimeType, attachmentFilename, dataUrl } = useResponseBody({
         :href="dataUrl"
         :type="mimeType.essence" />
     </template>
-    <div
-      class="py-1.5 px-2.5 font-code text-xxs border-1/2 rounded-t border-b-0">
-      This response body is massive! Syntax highlighting won’t work here.
+    <div class="font-code text-xxs rounded-t border border-b-0 px-2.5 py-1.5">
+      This response body is massive! Syntax highlighting won't work here.
     </div>
     <ScalarVirtualText
-      containerClass="custom-scroll scalar-code-block border-1/2 rounded-b flex flex-1"
+      containerClass="custom-scroll scalar-code-block border rounded-b flex flex-1 max-h-screen"
       contentClass="language-plaintext whitespace-pre font-code text-base"
       :lineHeight="20"
       :text="textContent" />

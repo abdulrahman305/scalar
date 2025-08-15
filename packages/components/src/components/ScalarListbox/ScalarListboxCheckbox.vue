@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ScalarIcon } from '../ScalarIcon'
-import type { OptionStyle } from './types'
+import { ScalarIconCheck } from '@scalar/icons'
 
 defineProps<{
   selected?: boolean
-  style?: OptionStyle
+  multiselect?: boolean
 }>()
 </script>
 <template>
@@ -12,13 +11,11 @@ defineProps<{
     class="flex size-4 items-center justify-center p-0.75"
     :class="[
       selected ? 'bg-c-accent text-b-1' : 'text-transparent shadow-border',
-      style === 'checkbox' ? 'rounded' : 'rounded-full',
+      multiselect ? 'rounded' : 'rounded-full',
     ]">
-    <!-- Icon needs help to be optically centered (╥﹏╥) -->
-    <ScalarIcon
+    <ScalarIconCheck
       v-if="selected"
-      class="relative top-[0.5px] size-3"
-      icon="Checkmark"
-      thickness="3" />
+      class="size-3"
+      weight="bold" />
   </div>
 </template>

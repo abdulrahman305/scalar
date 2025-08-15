@@ -1,10 +1,11 @@
 import type { StoreContext } from '@/store/store-context'
 import {
+  type Collection,
   type SecurityScheme,
   type SecuritySchemePayload,
   securitySchemeSchema,
 } from '@scalar/oas-utils/entities/spec'
-import { LS_KEYS } from '@scalar/oas-utils/helpers'
+import { LS_KEYS } from '@scalar/helpers/object/local-storage'
 import { mutationFactory } from '@scalar/object-utils/mutator-record'
 import { reactive } from 'vue'
 
@@ -35,7 +36,7 @@ export function extendedSecurityDataFactory({
   const addSecurityScheme = (
     payload: SecuritySchemePayload,
     /** Schemes will always live at the collection level */
-    collectionUid: string,
+    collectionUid: Collection['uid'],
   ) => {
     const scheme = securitySchemeSchema.parse(payload)
     securitySchemeMutators.add(scheme)
@@ -52,7 +53,7 @@ export function extendedSecurityDataFactory({
   }
 
   /** Delete a security scheme and remove the key from its corresponding parent */
-  const deleteSecurityScheme = (schemeUid: string) => {
+  const deleteSecurityScheme = (schemeUid: SecurityScheme['uid']) => {
     Object.values(collections).forEach((c) => {
       // Remove the scheme from any collections that reference it (should only be 1 collection)
       if (c.securitySchemes.includes(schemeUid)) {
@@ -70,13 +71,11 @@ export function extendedSecurityDataFactory({
         requestMutators.edit(
           r.uid,
           'security',
-          requests[r.uid]?.security?.filter(
-            (s) => !Object.keys(s).includes(schemeUid),
-          ),
+          requests[r.uid]?.security?.filter((s) => !Object.keys(s).includes(schemeUid)),
         )
       }
       // Remove from any requests that have it selected
-      if (r.selectedSecuritySchemeUids.flat().includes(schemeUid))
+      if (r.selectedSecuritySchemeUids.flat().includes(schemeUid)) {
         requestMutators.edit(
           r.uid,
           'selectedSecuritySchemeUids',
@@ -87,6 +86,7 @@ export function extendedSecurityDataFactory({
             return uid !== schemeUid
           }),
         )
+      }
     })
 
     securitySchemeMutators.delete(schemeUid)

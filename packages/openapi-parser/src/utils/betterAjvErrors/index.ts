@@ -1,4 +1,4 @@
-import prettify from './helpers.ts'
+import prettify from './helpers'
 
 type BetterAjvErrorsOptions = {
   indent?: number
@@ -17,12 +17,7 @@ type AjvError = {
   data: any
 }
 
-export function betterAjvErrors(
-  schema: any,
-  data: any,
-  errors: AjvError[],
-  options: BetterAjvErrorsOptions = {},
-) {
+export function betterAjvErrors(schema: any, data: any, errors: AjvError[], options: BetterAjvErrorsOptions = {}) {
   const { indent = null, json = null } = options
 
   const jsonRaw = json || JSON.stringify(data, null, indent)

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { useCodeMirror } from '@/hooks/useCodeMirror'
 import { ref } from 'vue'
+
+import { useCodeMirror } from '@/hooks/useCodeMirror'
 
 const codeMirrorRef = ref<HTMLDivElement | null>(null)
 
@@ -10,7 +11,7 @@ const lint = ref<boolean>(true)
 const disableTabIndent = ref<boolean>(false)
 const forceFoldGutter = ref<boolean>(false)
 
-const { codeMirror, setCodeMirrorContent } = useCodeMirror({
+useCodeMirror({
   codeMirrorRef,
   content: JSON.stringify(
     {

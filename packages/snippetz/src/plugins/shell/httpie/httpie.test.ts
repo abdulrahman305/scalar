@@ -8,7 +8,7 @@ describe('shellHttpie', () => {
       url: 'https://example.com',
     })
 
-    expect(result).toBe(`http GET https://example.com`)
+    expect(result).toBe('http GET https://example.com')
   })
 
   it('returns a POST request', () => {
@@ -17,7 +17,7 @@ describe('shellHttpie', () => {
       method: 'post',
     })
 
-    expect(result).toBe(`http POST https://example.com`)
+    expect(result).toBe('http POST https://example.com')
   })
 
   it('has headers', () => {
@@ -34,7 +34,7 @@ describe('shellHttpie', () => {
   Content-Type:application/json`)
   })
 
-  it.skip('handles multipart form data with files', () => {
+  it('handles multipart form data with files', () => {
     const result = shellHttpie.generate({
       url: 'https://example.com',
       method: 'POST',
@@ -53,9 +53,9 @@ describe('shellHttpie', () => {
       },
     })
 
-    expect(result).toBe(`http POST https://example.com \\
+    expect(result).toBe(`http --multipart POST https://example.com \\
   file@test.txt \\
-  field=value`)
+  field='value'`)
   })
 
   it.skip('handles url-encoded form data with special characters', () => {
@@ -96,9 +96,7 @@ describe('shellHttpie', () => {
       url: 'https://example.com/path with spaces/[brackets]',
     })
 
-    expect(result).toBe(
-      `http GET 'https://example.com/path%20with%20spaces/[brackets]'`,
-    )
+    expect(result).toBe(`http GET 'https://example.com/path%20with%20spaces/[brackets]'`)
   })
 
   it('handles multiple headers with same name', () => {
@@ -129,8 +127,6 @@ describe('shellHttpie', () => {
       url: 'https://example.com/api?param1=value1&param2=special value&param3=123',
     })
 
-    expect(result).toBe(
-      `http GET 'https://example.com/api?param1=value1&param2=special%20value&param3=123'`,
-    )
+    expect(result).toBe(`http GET 'https://example.com/api?param1=value1&param2=special%20value&param3=123'`)
   })
 })

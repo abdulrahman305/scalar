@@ -1,5 +1,758 @@
 # @scalar/api-client-react
 
+## 1.3.28
+
+### Patch Changes
+
+- Updated dependencies [b235392]
+- Updated dependencies [58b9321]
+- Updated dependencies [68e4631]
+- Updated dependencies [376739d]
+  - @scalar/api-client@2.5.23
+  - @scalar/types@0.2.11
+
+## 1.3.27
+
+### Patch Changes
+
+- @scalar/api-client@2.5.22
+
+## 1.3.26
+
+### Patch Changes
+
+- Updated dependencies [c02c1c8]
+- Updated dependencies [b551707]
+- Updated dependencies [dd00357]
+  - @scalar/api-client@2.5.21
+
+## 1.3.25
+
+### Patch Changes
+
+- Updated dependencies [ccf875a]
+- Updated dependencies [fbef7e1]
+- Updated dependencies [94d6d0c]
+- Updated dependencies [8c731b9]
+- Updated dependencies [8c731b9]
+- Updated dependencies [c0d6793]
+- Updated dependencies [77e700b]
+- Updated dependencies [af22451]
+  - @scalar/api-client@2.5.20
+  - @scalar/types@0.2.11
+
+## 1.3.24
+
+### Patch Changes
+
+- Updated dependencies [60c7bef]
+- Updated dependencies [e895f86]
+- Updated dependencies [fb62e1b]
+- Updated dependencies [cac47ea]
+- Updated dependencies [cac47ea]
+  - @scalar/api-client@2.5.19
+  - @scalar/types@0.2.10
+
+## 1.3.23
+
+### Patch Changes
+
+- Updated dependencies [591562f]
+  - @scalar/api-client@2.5.18
+  - @scalar/types@0.2.9
+
+## 1.3.22
+
+### Patch Changes
+
+- @scalar/api-client@2.5.17
+
+## 1.3.21
+
+### Patch Changes
+
+- Updated dependencies [c10e191]
+- Updated dependencies [244edda]
+- Updated dependencies [244edda]
+- Updated dependencies [9e81b17]
+  - @scalar/api-client@2.5.16
+  - @scalar/types@0.2.8
+
+## 1.3.20
+
+### Patch Changes
+
+- Updated dependencies [a696604]
+- Updated dependencies [b2862d9]
+- Updated dependencies [ad2e3e6]
+- Updated dependencies [b2862d9]
+- Updated dependencies [74fdc0e]
+- Updated dependencies [3fdc2f2]
+- Updated dependencies [972602f]
+  - @scalar/api-client@2.5.15
+  - @scalar/types@0.2.7
+
+## 1.3.19
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+- Updated dependencies [2d7f995]
+  - @scalar/api-client@2.5.14
+  - @scalar/types@0.2.6
+
+## 1.3.18
+
+### Patch Changes
+
+- Updated dependencies [533469b]
+- Updated dependencies [4f47b3c]
+  - @scalar/api-client@2.5.13
+  - @scalar/types@0.2.5
+
+## 1.3.17
+
+### Patch Changes
+
+- Updated dependencies [1468280]
+  - @scalar/types@0.2.4
+  - @scalar/api-client@2.5.12
+
+## 1.3.16
+
+### Patch Changes
+
+- @scalar/api-client@2.5.11
+
+## 1.3.15
+
+### Patch Changes
+
+- Updated dependencies [699df60]
+  - @scalar/api-client@2.5.10
+
+## 1.3.14
+
+### Patch Changes
+
+- @scalar/api-client@2.5.9
+
+## 1.3.13
+
+### Patch Changes
+
+- @scalar/api-client@2.5.8
+
+## 1.3.12
+
+### Patch Changes
+
+- Updated dependencies [a5d010c]
+- Updated dependencies [b12cd8e]
+  - @scalar/api-client@2.5.7
+
+## 1.3.11
+
+### Patch Changes
+
+- 4156f1d: Expand workspace store integration
+- Updated dependencies [282129b]
+- Updated dependencies [a5b399d]
+- Updated dependencies [221e35f]
+- Updated dependencies [4156f1d]
+- Updated dependencies [711b435]
+  - @scalar/api-client@2.5.6
+  - @scalar/types@0.2.3
+
+## 1.3.10
+
+### Patch Changes
+
+- @scalar/api-client@2.5.5
+
+## 1.3.9
+
+### Patch Changes
+
+- @scalar/api-client@2.5.4
+
+## 1.3.8
+
+### Patch Changes
+
+- Updated dependencies [79975dd]
+- Updated dependencies [8165b3b]
+  - @scalar/api-client@2.5.3
+  - @scalar/types@0.2.2
+
+## 1.3.7
+
+### Patch Changes
+
+- Updated dependencies [c06aa6a]
+- Updated dependencies [3ad9393]
+- Updated dependencies [b461b62]
+- Updated dependencies [a47fa60]
+  - @scalar/api-client@2.5.2
+
+## 1.3.6
+
+### Patch Changes
+
+- @scalar/api-client@2.5.1
+
+## 1.3.5
+
+### Patch Changes
+
+- Updated dependencies [1e87feb]
+- Updated dependencies [0113b84]
+- Updated dependencies [cad6277]
+- Updated dependencies [ffa93fa]
+  - @scalar/api-client@2.5.0
+  - @scalar/types@0.2.1
+
+## 1.3.4
+
+### Patch Changes
+
+- Updated dependencies [151ef09]
+  - @scalar/api-client@2.4.4
+
+## 1.3.3
+
+### Patch Changes
+
+- Updated dependencies [fbcce50]
+  - @scalar/api-client@2.4.3
+
+## 1.3.2
+
+### Patch Changes
+
+- Updated dependencies [2efdf8e]
+  - @scalar/api-client@2.4.2
+
+## 1.3.1
+
+### Patch Changes
+
+- Updated dependencies [4440949]
+  - @scalar/types@0.2.1
+  - @scalar/api-client@2.4.1
+
+## 1.3.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- Updated dependencies [26476ed]
+- Updated dependencies [30bab1d]
+- Updated dependencies [5613e40]
+- Updated dependencies [483ca93]
+- Updated dependencies [fe696ab]
+- Updated dependencies [20cf550]
+  - @scalar/api-client@2.4.0
+  - @scalar/types@0.2.0
+
+## 1.2.34
+
+### Patch Changes
+
+- Updated dependencies [6b4a3c3]
+- Updated dependencies [be8a6ec]
+- Updated dependencies [cd0722d]
+  - @scalar/api-client@2.3.34
+  - @scalar/types@0.1.16
+
+## 1.2.33
+
+### Patch Changes
+
+- Updated dependencies [f711ab5]
+- Updated dependencies [ec30edd]
+- Updated dependencies [e7f61ce]
+- Updated dependencies [52dd8a1]
+- Updated dependencies [0222ad4]
+- Updated dependencies [cb9428c]
+- Updated dependencies [67aa0f4]
+- Updated dependencies [ac16fca]
+- Updated dependencies [1966c5a]
+- Updated dependencies [ac16fca]
+  - @scalar/api-client@2.3.33
+  - @scalar/types@0.1.15
+
+## 1.2.32
+
+### Patch Changes
+
+- Updated dependencies [e42dfc0]
+- Updated dependencies [4483ac4]
+- Updated dependencies [4483ac4]
+  - @scalar/api-client@2.3.32
+
+## 1.2.31
+
+### Patch Changes
+
+- Updated dependencies [8c7bad8]
+  - @scalar/api-client@2.3.31
+  - @scalar/types@0.1.14
+
+## 1.2.30
+
+### Patch Changes
+
+- Updated dependencies [e8457cb]
+  - @scalar/types@0.1.13
+  - @scalar/api-client@2.3.30
+
+## 1.2.29
+
+### Patch Changes
+
+- Updated dependencies [a4e5a2e]
+- Updated dependencies [701093e]
+  - @scalar/api-client@2.3.29
+
+## 1.2.28
+
+### Patch Changes
+
+- Updated dependencies [5d24800]
+  - @scalar/api-client@2.3.28
+
+## 1.2.27
+
+### Patch Changes
+
+- Updated dependencies [1e9f510]
+- Updated dependencies [1e9f510]
+- Updated dependencies [335da88]
+- Updated dependencies [b240f4a]
+- Updated dependencies [62c4ce3]
+- Updated dependencies [3cf1457]
+- Updated dependencies [1e9f510]
+- Updated dependencies [950772d]
+- Updated dependencies [f2b8732]
+- Updated dependencies [b3f599f]
+  - @scalar/api-client@2.3.27
+  - @scalar/types@0.1.12
+
+## 1.2.26
+
+### Patch Changes
+
+- Updated dependencies [eb4854d]
+  - @scalar/types@0.1.11
+  - @scalar/api-client@2.3.26
+
+## 1.2.25
+
+### Patch Changes
+
+- Updated dependencies [0ff02e3]
+- Updated dependencies [98fa8a0]
+- Updated dependencies [2109da5]
+- Updated dependencies [0ff02e3]
+  - @scalar/api-client@2.3.25
+  - @scalar/types@0.1.10
+
+## 1.2.24
+
+### Patch Changes
+
+- Updated dependencies [17e7d02]
+- Updated dependencies [3cb857d]
+- Updated dependencies [3cb857d]
+  - @scalar/types@0.1.9
+  - @scalar/api-client@2.3.24
+
+## 1.2.23
+
+### Patch Changes
+
+- Updated dependencies [363276e]
+- Updated dependencies [85163e7]
+- Updated dependencies [301cf13]
+- Updated dependencies [85163e7]
+  - @scalar/api-client@2.3.23
+
+## 1.2.22
+
+### Patch Changes
+
+- Updated dependencies [e489824]
+  - @scalar/api-client@2.3.22
+
+## 1.2.21
+
+### Patch Changes
+
+- Updated dependencies [c5047ee]
+  - @scalar/api-client@2.3.21
+
+## 1.2.20
+
+### Patch Changes
+
+- Updated dependencies [e3ed7a2]
+- Updated dependencies [71d06d8]
+- Updated dependencies [e30339c]
+- Updated dependencies [feaa314]
+- Updated dependencies [03198df]
+- Updated dependencies [ba8e37e]
+- Updated dependencies [f4e1402]
+- Updated dependencies [e30339c]
+- Updated dependencies [4abe4f8]
+  - @scalar/api-client@2.3.20
+  - @scalar/types@0.1.8
+
+## 1.2.19
+
+### Patch Changes
+
+- Updated dependencies [44413b1]
+  - @scalar/api-client@2.3.19
+
+## 1.2.18
+
+### Patch Changes
+
+- Updated dependencies [5b19c90]
+- Updated dependencies [9def02e]
+- Updated dependencies [3745d77]
+  - @scalar/api-client@2.3.18
+  - @scalar/types@0.1.7
+
+## 1.2.17
+
+### Patch Changes
+
+- @scalar/api-client@2.3.17
+
+## 1.2.16
+
+### Patch Changes
+
+- Updated dependencies [27f1c16]
+- Updated dependencies [27f1c16]
+- Updated dependencies [d970ff5]
+  - @scalar/api-client@2.3.16
+
+## 1.2.15
+
+### Patch Changes
+
+- Updated dependencies [ce91adc]
+- Updated dependencies [61e094b]
+- Updated dependencies [e7fb3eb]
+  - @scalar/api-client@2.3.15
+
+## 1.2.14
+
+### Patch Changes
+
+- Updated dependencies [abff210]
+  - @scalar/api-client@2.3.14
+
+## 1.2.13
+
+### Patch Changes
+
+- Updated dependencies [bf961b1]
+- Updated dependencies [a176b7e]
+  - @scalar/api-client@2.3.13
+
+## 1.2.12
+
+### Patch Changes
+
+- Updated dependencies [73be3c0]
+- Updated dependencies [75667fe]
+- Updated dependencies [a571d36]
+- Updated dependencies [a097ea1]
+- Updated dependencies [3783345]
+  - @scalar/api-client@2.3.12
+  - @scalar/types@0.1.6
+
+## 1.2.11
+
+### Patch Changes
+
+- Updated dependencies [adc6ee4]
+- Updated dependencies [e09dab3]
+- Updated dependencies [b0a5481]
+- Updated dependencies [04e27a1]
+  - @scalar/api-client@2.3.11
+  - @scalar/types@0.1.5
+
+## 1.2.10
+
+### Patch Changes
+
+- Updated dependencies [0de80ae]
+  - @scalar/api-client@2.3.10
+
+## 1.2.9
+
+### Patch Changes
+
+- Updated dependencies [8efedf3]
+- Updated dependencies [ab6b166]
+- Updated dependencies [82a4ba8]
+- Updated dependencies [57feba6]
+  - @scalar/types@0.1.4
+  - @scalar/api-client@2.3.9
+
+## 1.2.8
+
+### Patch Changes
+
+- Updated dependencies [543a16c]
+- Updated dependencies [002a50e]
+- Updated dependencies [57e96a0]
+  - @scalar/types@0.1.3
+  - @scalar/api-client@2.3.8
+
+## 1.2.7
+
+### Patch Changes
+
+- Updated dependencies [46b40ca]
+  - @scalar/api-client@2.3.7
+
+## 1.2.6
+
+### Patch Changes
+
+- 0f13162: chore: enable more Biome flags, apply linter fixes
+- Updated dependencies [7a8965c]
+- Updated dependencies [0f13162]
+- Updated dependencies [49dffff]
+- Updated dependencies [49dffff]
+  - @scalar/types@0.1.2
+  - @scalar/api-client@2.3.6
+
+## 1.2.5
+
+### Patch Changes
+
+- Updated dependencies [0fb83f2]
+  - @scalar/api-client@2.3.5
+
+## 1.2.4
+
+### Patch Changes
+
+- Updated dependencies [ed2b1fb]
+- Updated dependencies [ebc29d5]
+- Updated dependencies [58acdc6]
+  - @scalar/api-client@2.3.4
+
+## 1.2.3
+
+### Patch Changes
+
+- Updated dependencies [cd75eeb]
+- Updated dependencies [39c0f47]
+- Updated dependencies [4093692]
+  - @scalar/api-client@2.3.3
+  - @scalar/types@0.1.1
+
+## 1.2.2
+
+### Patch Changes
+
+- Updated dependencies [1437882]
+- Updated dependencies [060ada9]
+- Updated dependencies [cf58fba]
+  - @scalar/api-client@2.3.2
+
+## 1.2.1
+
+### Patch Changes
+
+- Updated dependencies [7bc87ef]
+  - @scalar/api-client@2.3.1
+
+## 1.2.0
+
+### Minor Changes
+
+- 5f9a8a2: feat!: remove the spec prefix, make content and url top-level attributes
+
+### Patch Changes
+
+- Updated dependencies [5be9418]
+- Updated dependencies [5f9a8a2]
+  - @scalar/api-client@2.3.0
+  - @scalar/types@0.1.0
+
+## 1.1.43
+
+### Patch Changes
+
+- Updated dependencies [00a429f]
+- Updated dependencies [fc6a45e]
+- Updated dependencies [a0da28e]
+  - @scalar/api-client@2.2.63
+  - @scalar/types@0.0.41
+
+## 1.1.42
+
+### Patch Changes
+
+- @scalar/api-client@2.2.62
+
+## 1.1.41
+
+### Patch Changes
+
+- Updated dependencies [4d03e0f]
+- Updated dependencies [2bbbf01]
+  - @scalar/api-client@2.2.61
+  - @scalar/types@0.0.40
+
+## 1.1.40
+
+### Patch Changes
+
+- Updated dependencies [df4dee8]
+- Updated dependencies [23bac9d]
+  - @scalar/api-client@2.2.60
+
+## 1.1.39
+
+### Patch Changes
+
+- Updated dependencies [bab7990]
+- Updated dependencies [2c621d4]
+- Updated dependencies [168e609]
+  - @scalar/types@0.0.39
+  - @scalar/api-client@2.2.59
+
+## 1.1.38
+
+### Patch Changes
+
+- Updated dependencies [4682a6f]
+- Updated dependencies [7f1a40e]
+  - @scalar/api-client@2.2.58
+  - @scalar/types@0.0.38
+
+## 1.1.37
+
+### Patch Changes
+
+- Updated dependencies [89d8b75]
+- Updated dependencies [8c0e147]
+- Updated dependencies [8a04b8d]
+- Updated dependencies [b93b22f]
+- Updated dependencies [73513d3]
+- Updated dependencies [51b7c5c]
+- Updated dependencies [8a04b8d]
+  - @scalar/api-client@2.2.57
+  - @scalar/types@0.0.37
+
+## 1.1.36
+
+### Patch Changes
+
+- Updated dependencies [a5dc41f]
+  - @scalar/api-client@2.2.56
+
+## 1.1.35
+
+### Patch Changes
+
+- ea19156: fix: routing to the api client modal
+- Updated dependencies [d078633]
+- Updated dependencies [0d4520f]
+- Updated dependencies [98323b8]
+- Updated dependencies [eb3bb7f]
+- Updated dependencies [ea19156]
+  - @scalar/api-client@2.2.55
+
+## 1.1.34
+
+### Patch Changes
+
+- Updated dependencies [fdd50b2]
+  - @scalar/api-client@2.2.54
+
+## 1.1.33
+
+### Patch Changes
+
+- @scalar/api-client@2.2.53
+
+## 1.1.32
+
+### Patch Changes
+
+- ed5dd8c: fix: react packages to work with react 18 and 19
+- c10bbf5: chore: code style
+- Updated dependencies [7833331]
+- Updated dependencies [f61e986]
+- Updated dependencies [8173889]
+- Updated dependencies [8d9a2c0]
+- Updated dependencies [8d9a2c0]
+- Updated dependencies [2be8986]
+- Updated dependencies [7017639]
+- Updated dependencies [143d2a9]
+- Updated dependencies [e52ecd2]
+- Updated dependencies [c10bbf5]
+- Updated dependencies [eed78eb]
+- Updated dependencies [875ee2c]
+- Updated dependencies [4a0e6b7]
+- Updated dependencies [5a46f1c]
+- Updated dependencies [a89510b]
+- Updated dependencies [48f24c9]
+  - @scalar/api-client@2.2.52
+
+## 1.1.31
+
+### Patch Changes
+
+- Updated dependencies [58a8efd]
+  - @scalar/api-client@2.2.51
+
+## 1.1.30
+
+### Patch Changes
+
+- e350f23: chore: code style
+- Updated dependencies [e350f23]
+- Updated dependencies [e47a698]
+- Updated dependencies [debcb82]
+- Updated dependencies [debcb82]
+- Updated dependencies [738d21c]
+- Updated dependencies [459ad57]
+  - @scalar/api-client@2.2.50
+
+## 1.1.29
+
+### Patch Changes
+
+- Updated dependencies [c62884d]
+  - @scalar/api-client@2.2.49
+
+## 1.1.28
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+- Updated dependencies [453ed40]
+- Updated dependencies [54fdfcb]
+- Updated dependencies [8671902]
+- Updated dependencies [7ce8d4c]
+- Updated dependencies [4dedb68]
+  - @scalar/api-client@2.2.48
+
 ## 1.1.27
 
 ### Patch Changes

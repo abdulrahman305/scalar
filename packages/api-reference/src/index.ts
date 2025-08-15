@@ -1,16 +1,18 @@
-export { default as ApiReference } from './components/ApiReference.vue'
-export { default as ApiReferenceLayout } from './components/ApiReferenceLayout.vue'
-export { default as ModernLayout } from './components/Layouts/ModernLayout.vue'
-export * from './features/Search'
-export { default as GettingStarted } from './components/GettingStarted.vue'
-export { createScalarReferences } from './esm'
-export { useReactiveSpec } from './hooks/useReactiveSpec'
+export { default as ApiReference } from '@/components/ApiReference.vue'
+export { default as ApiReferenceLayout } from '@/components/ApiReferenceLayout.vue'
+export { default as ApiReferenceWorkspace } from '@/v2/ApiReferenceWorkspace.vue'
+export { SearchButton, SearchModal } from '@/features/Search'
+// TODO: This component shouldn't live in @scalar/api-reference. If it needs to live in scalar/scalar, it should be in @scalar/api-reference-editor
+export { default as GettingStarted } from '@/components/GettingStarted.vue'
 
-export * from './components/Sidebar'
-export * from './components/Card'
-export * from './components/Layouts'
+export { createApiReference } from '@/standalone/lib/html-api'
 
-export * from './stores'
-export * from './helpers'
-export * from './types'
-export * from './hooks'
+export { useSidebar, Sidebar } from '@/features/sidebar'
+
+// TODO: Ideally, we'd remove those exports or at least not export them through the root index.
+export { createEmptySpecification } from '@/libs/openapi'
+export { useNavState } from '@/hooks/useNavState'
+export type {
+  ApiReferenceConfiguration,
+  ReferenceProps,
+} from '@/types'

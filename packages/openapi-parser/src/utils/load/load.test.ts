@@ -2,10 +2,10 @@ import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { stringify } from 'yaml'
 
-import { fetchUrls } from '../../plugins/fetch-urls/fetchUrls.ts'
-import { readFiles } from '../../plugins/read-files/readFiles.ts'
-import { getEntrypoint } from '../getEntrypoint.ts'
-import { load } from './load.ts'
+import { fetchUrls } from '@/plugins/fetch-urls/fetch-urls'
+import { readFiles } from '@/plugins/read-files/read-files'
+import { getEntrypoint } from '@/utils/get-entrypoint'
+import { load } from './load'
 
 global.fetch = vi.fn()
 
@@ -91,10 +91,7 @@ describe('load', async () => {
   })
 
   it('loads file', async () => {
-    const EXAMPLE_FILE = path.join(
-      new URL(import.meta.url).pathname,
-      '../../examples/openapi.yaml',
-    )
+    const EXAMPLE_FILE = path.join(new URL(import.meta.url).pathname, '../../examples/openapi.yaml')
 
     const { filesystem } = await load(EXAMPLE_FILE, {
       plugins: [readFiles(), fetchUrls()],
@@ -111,10 +108,7 @@ describe('load', async () => {
   })
 
   it('loads referenced files in files', async () => {
-    const EXAMPLE_FILE = path.join(
-      new URL(import.meta.url).pathname,
-      '../../../../tests/filesystem/api/openapi.yaml',
-    )
+    const EXAMPLE_FILE = path.join(new URL(import.meta.url).pathname, '../../../../tests/filesystem/api/openapi.yaml')
 
     const { filesystem } = await load(EXAMPLE_FILE, {
       plugins: [readFiles()],
@@ -364,10 +358,7 @@ describe('load', async () => {
       },
     )
 
-    expect(filesystem.map((entry) => entry.filename)).toStrictEqual([
-      null,
-      'https://example.com/foobar.json',
-    ])
+    expect(filesystem.map((entry) => entry.filename)).toStrictEqual([null, 'https://example.com/foobar.json'])
 
     expect(filesystem[0].specification).toMatchObject({
       openapi: '3.1.0',
@@ -406,7 +397,7 @@ describe('load', async () => {
     expect(errors).toMatchObject([
       {
         code: 'EXTERNAL_REFERENCE_NOT_FOUND',
-        message: 'Can’t resolve external reference: INVALID',
+        message: "Can't resolve external reference: INVALID",
       },
     ])
   })
@@ -417,6 +408,6 @@ describe('load', async () => {
         plugins: [readFiles(), fetchUrls()],
         throwOnError: true,
       })
-    }).rejects.toThrowError('Can’t resolve external reference: INVALID')
+    }).rejects.toThrowError("Can't resolve external reference: INVALID")
   })
 })

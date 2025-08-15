@@ -6,7 +6,9 @@ dist/
 .turbo
 *.tgz
 *.tsbuildinfo
-
+__pycache__/
+.output
+.nuxt
 # Testing data
 test-*.json
 /test-results/
@@ -16,6 +18,11 @@ test-*.json
 
 # Temporary Vite/Vitest config files
 *.config.ts.timestamp-*.mjs
-
+rollup.config-*.mjs
 
 .DS_Store
+
+# Svelte
+.svelte-kit
+
+.pnpm-store/

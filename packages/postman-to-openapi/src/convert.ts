@@ -12,16 +12,12 @@ import type { PostmanCollection } from './types'
 /**
  * Extracts tags from Postman collection folders
  */
-function extractTags(
-  items: PostmanCollection['item'],
-): OpenAPIV3_1.TagObject[] {
+function extractTags(items: PostmanCollection['item']): OpenAPIV3_1.TagObject[] {
   const tags: OpenAPIV3_1.TagObject[] = []
 
   function processTagItem(item: any, parentPath: string = '') {
     if (item.item) {
-      const currentPath = parentPath
-        ? `${parentPath} > ${item.name}`
-        : item.name
+      const currentPath = parentPath ? `${parentPath} > ${item.name}` : item.name
 
       // Add tag for the current folder
       tags.push({
@@ -43,22 +39,16 @@ function extractTags(
  * This function processes the collection's information, servers, authentication,
  * and items to create a corresponding OpenAPI structure.
  */
-export function convert(
-  postmanCollection: PostmanCollection | string,
-): OpenAPIV3_1.Document {
+export function convert(postmanCollection: PostmanCollection | string): OpenAPIV3_1.Document {
   // Parse string input if provided
   const collection: PostmanCollection =
-    typeof postmanCollection === 'string'
-      ? JSON.parse(postmanCollection)
-      : postmanCollection
+    typeof postmanCollection === 'string' ? JSON.parse(postmanCollection) : postmanCollection
 
   // Extract title from collection info, fallback to 'API' if not provided
   const title = collection.info.name || 'API'
 
   // Look for version in collection variables, default to '1.0.0'
-  const version =
-    (collection.variable?.find((v) => v.key === 'version')?.value as string) ||
-    '1.0.0'
+  const version = (collection.variable?.find((v) => v.key === 'version')?.value as string) || '1.0.0'
 
   // Handle different description formats in Postman
   const description =
@@ -121,19 +111,8 @@ export function convert(
         // Convert colon-style params to curly brace style
         const normalizedPathKey = normalizePath(pathKey)
 
-        /**
-         * this is a bit of a hack to skip empty paths only if they have no parameters
-         * because there is a test where if I remove the empty path it breaks the test
-         * but there is another test where if I leave the empty path it breaks the test
-         * so I added this check to only remove the empty path if all the methods on it have no parameters
-         */
-        if (normalizedPathKey === '/') {
-          const allMethodsHaveEmptyParams = Object.values(pathItem || {}).every(
-            (method) => !method.parameters || method.parameters.length === 0,
-          )
-          if (allMethodsHaveEmptyParams) {
-            continue
-          }
+        if (!pathItem) {
+          continue
         }
 
         if (!openapi.paths[normalizedPathKey]) {
@@ -142,19 +121,6 @@ export function convert(
           openapi.paths[normalizedPathKey] = {
             ...openapi.paths[normalizedPathKey],
             ...pathItem,
-          }
-        }
-
-        // Handle the /raw endpoint specifically
-        if (normalizedPathKey === '/raw' && pathItem?.post) {
-          if (pathItem.post.requestBody?.content['text/plain']) {
-            pathItem.post.requestBody.content['application/json'] = {
-              schema: {
-                type: 'object',
-                examples: [],
-              },
-            }
-            delete pathItem.post.requestBody.content['text/plain']
           }
         }
       }
@@ -193,10 +159,7 @@ export function convert(
                 }
               } else if ('text/plain' in content) {
                 // Preserve schema if it exists, otherwise keep an empty object
-                if (
-                  !content['text/plain'].schema ||
-                  Object.keys(content['text/plain'].schema).length === 0
-                ) {
+                if (!content['text/plain'].schema || Object.keys(content['text/plain'].schema).length === 0) {
                   content['text/plain'] = {}
                 }
               }
@@ -217,5 +180,22 @@ export function convert(
     delete openapi.components
   }
 
-  return openapi
+  // Remove undefined properties recursively
+  const removeUndefined = (obj: any): any => {
+    if (Array.isArray(obj)) {
+      return obj.map(removeUndefined).filter((item) => item !== undefined)
+    }
+
+    if (obj && typeof obj === 'object') {
+      return Object.fromEntries(
+        Object.entries(obj)
+          .map(([key, value]) => [key, removeUndefined(value)])
+          .filter(([_, value]) => value !== undefined),
+      )
+    }
+
+    return obj
+  }
+
+  return removeUndefined(openapi)
 }

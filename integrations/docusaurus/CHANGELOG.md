@@ -1,5 +1,437 @@
 # @scalar/docusaurus
 
+## 0.7.11
+
+### Patch Changes
+
+- 7031d9c: fix(api-reference): reference theme and style fixes
+- Updated dependencies [ccf875a]
+- Updated dependencies [94d6d0c]
+  - @scalar/types@0.2.11
+
+## 0.7.10
+
+### Patch Changes
+
+- Updated dependencies [fb62e1b]
+  - @scalar/types@0.2.10
+
+## 0.7.9
+
+### Patch Changes
+
+- Updated dependencies [591562f]
+  - @scalar/types@0.2.9
+
+## 0.7.8
+
+### Patch Changes
+
+- Updated dependencies [c10e191]
+  - @scalar/types@0.2.8
+
+## 0.7.7
+
+### Patch Changes
+
+- Updated dependencies [ad2e3e6]
+  - @scalar/types@0.2.7
+
+## 0.7.6
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+- Updated dependencies [2d7f995]
+  - @scalar/types@0.2.6
+
+## 0.7.5
+
+### Patch Changes
+
+- @scalar/types@0.2.5
+
+## 0.7.4
+
+### Patch Changes
+
+- Updated dependencies [1468280]
+  - @scalar/types@0.2.4
+
+## 0.7.3
+
+### Patch Changes
+
+- Updated dependencies [221e35f]
+  - @scalar/types@0.2.3
+
+## 0.7.2
+
+### Patch Changes
+
+- @scalar/types@0.2.2
+
+## 0.7.1
+
+### Patch Changes
+
+- Updated dependencies [4440949]
+  - @scalar/types@0.2.1
+
+## 0.7.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- Updated dependencies [483ca93]
+  - @scalar/types@0.2.0
+
+## 0.6.7
+
+### Patch Changes
+
+- Updated dependencies [be8a6ec]
+  - @scalar/types@0.1.16
+
+## 0.6.6
+
+### Patch Changes
+
+- Updated dependencies [f711ab5]
+- Updated dependencies [0222ad4]
+- Updated dependencies [cb9428c]
+- Updated dependencies [67aa0f4]
+  - @scalar/types@0.1.15
+
+## 0.6.5
+
+### Patch Changes
+
+- Updated dependencies [8c7bad8]
+  - @scalar/types@0.1.14
+
+## 0.6.4
+
+### Patch Changes
+
+- Updated dependencies [e8457cb]
+  - @scalar/types@0.1.13
+
+## 0.6.3
+
+### Patch Changes
+
+- Updated dependencies [62c4ce3]
+  - @scalar/types@0.1.12
+
+## 0.6.2
+
+### Patch Changes
+
+- Updated dependencies [eb4854d]
+  - @scalar/types@0.1.11
+
+## 0.6.1
+
+### Patch Changes
+
+- @scalar/types@0.1.10
+
+## 0.6.0
+
+### Minor Changes
+
+- 17e7d02: fix: moved docusaurus to pull from CDN + html api
+
+### Patch Changes
+
+- Updated dependencies [17e7d02]
+  - @scalar/types@0.1.9
+
+## 0.5.23
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.20
+
+## 0.5.22
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.19
+
+## 0.5.21
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.18
+
+## 0.5.20
+
+### Patch Changes
+
+- Updated dependencies [feaa314]
+  - @scalar/types@0.1.8
+  - @scalar/api-reference-react@0.6.17
+
+## 0.5.19
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.16
+
+## 0.5.18
+
+### Patch Changes
+
+- Updated dependencies [9def02e]
+- Updated dependencies [3745d77]
+  - @scalar/types@0.1.7
+  - @scalar/api-reference-react@0.6.15
+
+## 0.5.17
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.14
+
+## 0.5.16
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.13
+
+## 0.5.15
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.12
+
+## 0.5.14
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.11
+
+## 0.5.13
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.10
+
+## 0.5.12
+
+### Patch Changes
+
+- Updated dependencies [3783345]
+  - @scalar/types@0.1.6
+  - @scalar/api-reference-react@0.6.9
+
+## 0.5.11
+
+### Patch Changes
+
+- Updated dependencies [e09dab3]
+- Updated dependencies [04e27a1]
+  - @scalar/types@0.1.5
+  - @scalar/api-reference-react@0.6.8
+
+## 0.5.10
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.7
+
+## 0.5.9
+
+### Patch Changes
+
+- Updated dependencies [8efedf3]
+- Updated dependencies [82a4ba8]
+- Updated dependencies [57feba6]
+  - @scalar/types@0.1.4
+  - @scalar/api-reference-react@0.6.6
+
+## 0.5.8
+
+### Patch Changes
+
+- Updated dependencies [543a16c]
+- Updated dependencies [57e96a0]
+  - @scalar/types@0.1.3
+  - @scalar/api-reference-react@0.6.5
+
+## 0.5.7
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.4
+
+## 0.5.6
+
+### Patch Changes
+
+- Updated dependencies [7a8965c]
+- Updated dependencies [0f13162]
+- Updated dependencies [49dffff]
+  - @scalar/types@0.1.2
+  - @scalar/api-reference-react@0.6.3
+
+## 0.5.5
+
+### Patch Changes
+
+- Updated dependencies [0fb83f2]
+  - @scalar/api-reference-react@0.6.2
+
+## 0.5.4
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.6.1
+
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [39c0f47]
+- Updated dependencies [39c0f47]
+  - @scalar/api-reference-react@0.6.0
+  - @scalar/types@0.1.1
+
+## 0.5.2
+
+### Patch Changes
+
+- cef8100: fix: PNGs line ending broke
+- 632978d: fix(themes): hide summary caret in reset
+  - @scalar/api-reference-react@0.5.2
+
+## 0.5.1
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.5.1
+
+## 0.5.0
+
+### Minor Changes
+
+- 5f9a8a2: feat!: remove the spec prefix, make content and url top-level attributes
+
+### Patch Changes
+
+- Updated dependencies [5f9a8a2]
+  - @scalar/api-reference-react@0.5.0
+  - @scalar/types@0.1.0
+
+## 0.4.212
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.43
+
+## 0.4.211
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.42
+
+## 0.4.210
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.41
+
+## 0.4.209
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.40
+
+## 0.4.208
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.39
+
+## 0.4.207
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.38
+
+## 0.4.206
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.37
+
+## 0.4.205
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.36
+
+## 0.4.204
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.35
+
+## 0.4.203
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.34
+
+## 0.4.202
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.33
+
+## 0.4.201
+
+### Patch Changes
+
+- c10bbf5: chore: code style
+- Updated dependencies [ed5dd8c]
+- Updated dependencies [c10bbf5]
+  - @scalar/api-reference-react@0.4.32
+
+## 0.4.200
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.31
+
+## 0.4.199
+
+### Patch Changes
+
+- e350f23: chore: code style
+- Updated dependencies [e350f23]
+  - @scalar/api-reference-react@0.4.30
+
+## 0.4.198
+
+### Patch Changes
+
+- @scalar/api-reference-react@0.4.29
+
+## 0.4.197
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+- 1223c1f: chore: code style
+- Updated dependencies [fa6afe8]
+  - @scalar/api-reference-react@0.4.28
+
 ## 0.4.196
 
 ### Patch Changes

@@ -1,4 +1,17 @@
 <script setup lang="ts">
+import {
+  ScalarDropdownButton,
+  ScalarDropdownMenu,
+  ScalarFloating,
+  ScalarIcon,
+  ScalarModal,
+  useModal,
+  type ScalarDropdown,
+} from '@scalar/components'
+import type { Collection } from '@scalar/oas-utils/entities/spec'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+
 import DeleteSidebarListElement from '@/components/Sidebar/Actions/DeleteSidebarListElement.vue'
 import EditSidebarListCollection from '@/components/Sidebar/Actions/EditSidebarListCollection.vue'
 import EditSidebarListElement from '@/components/Sidebar/Actions/EditSidebarListElement.vue'
@@ -7,18 +20,6 @@ import { useWorkspace } from '@/store'
 import { useActiveEntities } from '@/store/active-entities'
 import { createInitialRequest } from '@/store/requests'
 import type { SidebarMenuItem } from '@/views/Request/types'
-import {
-  type ScalarDropdown,
-  ScalarDropdownButton,
-  ScalarDropdownMenu,
-  ScalarFloating,
-  ScalarIcon,
-  ScalarModal,
-  useModal,
-} from '@scalar/components'
-import type { Collection } from '@scalar/oas-utils/entities/spec'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 
 const props = defineProps<{ menuItem: SidebarMenuItem }>()
 
@@ -115,7 +116,9 @@ const handleItemDelete = () => {
 // Manually focus the popup - not pretty but it works
 const menuRef = ref<typeof ScalarDropdown | null>(null)
 watch([() => props.menuItem.open, menuRef], async ([open]) => {
-  if (open && menuRef.value?.$parent?.$el) menuRef.value.$parent.$el.focus()
+  if (open && menuRef.value?.$parent?.$el) {
+    menuRef.value.$parent.$el.focus()
+  }
 })
 
 // Close menu on click because headless doesn't seem to work

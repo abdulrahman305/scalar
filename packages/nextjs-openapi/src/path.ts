@@ -1,10 +1,6 @@
-import {
-  generateResponses,
-  getJSDocFromNode,
-  getSchemaFromTypeNode,
-} from '@scalar/ts-to-openapi'
+import { generateResponses, getJSDocFromNode, getSchemaFromTypeNode } from '@scalar/ts-to-openapi'
 import type { OpenAPIV3_1 } from 'openapi-types'
-import { extname, join } from 'path'
+import { extname, join } from 'node:path'
 import {
   type Identifier,
   type ParameterDeclaration,
@@ -19,12 +15,10 @@ import {
 } from 'typescript'
 
 /** Check if identifier is a supported http method */
-const checkForMethod = (identifier: Identifier) => {
+const checkForMethod = (identifier: Pick<Identifier, 'escapedText'> | undefined) => {
   const method = identifier?.escapedText?.toLowerCase()
 
-  return method?.match(/^(get|post|put|patch|delete|head|options)$/)
-    ? (method as OpenAPIV3_1.HttpMethods)
-    : null
+  return method?.match(/^(get|post|put|patch|delete|head|options)$/) ? (method as OpenAPIV3_1.HttpMethods) : null
 }
 
 const fileNameResolver = (source: string, target: string) => {
@@ -40,10 +34,7 @@ const fileNameResolver = (source: string, target: string) => {
 /**
  * Takes a parameter node and returns a path parameter schema
  */
-const extractPathParams = (
-  node: ParameterDeclaration,
-  program: Program,
-): OpenAPIV3_1.ParameterObject[] => {
+const extractPathParams = (node: ParameterDeclaration | undefined, program: Program): OpenAPIV3_1.ParameterObject[] => {
   // Traverse to the params with type guards
   if (
     node &&
@@ -56,9 +47,11 @@ const extractPathParams = (
     node.type.members[0].name.escapedText === 'params' &&
     node.type.members[0].type &&
     isTypeLiteralNode(node.type.members[0].type)
-  )
+  ) {
     return node.type.members[0].type?.members.flatMap((member) => {
-      if (!isPropertySignature(member) || !member.type) return []
+      if (!isPropertySignature(member) || !member.type) {
+        return []
+      }
 
       return {
         name: member.name?.getText(),
@@ -66,6 +59,7 @@ const extractPathParams = (
         in: 'path',
       } as OpenAPIV3_1.ParameterObject
     })
+  }
 
   return []
 }
@@ -97,9 +91,8 @@ export const getPathSchema = (sourceFile: SourceFile, program: Program) => {
 
     // TODO: variables
     else if (isVariableStatement(statement)) {
-      const method = checkForMethod(
-        statement.declarationList.declarations[0].name as Identifier,
-      )
+      // TODO: Remove this typecast. It looks totally incompatible
+      const method = checkForMethod(statement.declarationList.declarations[0]?.name as Identifier)
       if (method) {
         const { title, description } = getJSDocFromNode(statement)
         const responses = generateResponses(statement, typeChecker)

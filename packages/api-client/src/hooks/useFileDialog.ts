@@ -12,12 +12,7 @@ export type UseFileDialogOptions = {
  * Simplified interface for opening a file picker dialog
  * Derived from vueuse @see https://vueuse.org/useFileDialog
  */
-export function useFileDialog({
-  multiple,
-  accept,
-  onChange,
-  onError,
-}: UseFileDialogOptions = {}) {
+export function useFileDialog({ multiple, accept, onChange, onError }: UseFileDialogOptions = {}) {
   const files = ref<FileList | null>(null)
 
   let input: HTMLInputElement | undefined
@@ -38,7 +33,9 @@ export function useFileDialog({
   }
 
   const open = () => {
-    if (!input) return onError?.()
+    if (!input) {
+      return onError?.()
+    }
 
     input.click()
   }

@@ -1,66 +1,76 @@
 <script setup lang="ts">
-import { OpenApiClientButton } from '@/components'
-import AddressBar from '@/components/AddressBar/AddressBar.vue'
-import SidebarToggle from '@/components/Sidebar/SidebarToggle.vue'
-import { useLayout } from '@/hooks'
-import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
 import { ScalarIcon } from '@scalar/components'
+import type { Environment } from '@scalar/oas-utils/entities/environment'
+import type {
+  Collection,
+  Operation,
+  Server,
+} from '@scalar/oas-utils/entities/spec'
+import type { Workspace } from '@scalar/oas-utils/entities/workspace'
 import { useRouter } from 'vue-router'
 
-defineProps<{
-  modelValue: boolean
-}>()
+import { OpenApiClientButton } from '@/components'
+import AddressBar from '@/components/AddressBar/AddressBar.vue'
+import { useLayout } from '@/hooks/useLayout'
+import { useSidebar } from '@/hooks/useSidebar'
+import { useWorkspace } from '@/store'
+import type { EnvVariable } from '@/store/active-entities'
+
+const { collection, operation, server, environment, envVariables, workspace } =
+  defineProps<{
+    collection: Collection
+    operation: Operation
+    server: Server | undefined
+    environment: Environment
+    envVariables: EnvVariable[]
+    workspace: Workspace
+  }>()
 
 defineEmits<{
-  (e: 'update:modelValue', v: boolean): void
   (e: 'hideModal'): void
   (e: 'importCurl', value: string): void
 }>()
 
-const { activeCollection } = useActiveEntities()
 const { hideClientButton, showSidebar, integration } = useWorkspace()
+const { isSidebarOpen } = useSidebar()
 
 const { layout } = useLayout()
 const { currentRoute } = useRouter()
 </script>
 <template>
   <div
-    class="lg:min-h-client-header flex items-center w-full justify-center p-2 pt-2 lg:pt-1 lg:p-1 flex-wrap t-app__top-container border-b-1/2">
+    class="lg:min-h-header t-app__top-container flex w-full flex-wrap items-center justify-center border-b p-2 pt-2 lg:p-1 lg:pt-1">
     <div
-      class="flex flex-row items-center gap-1 lg:px-1 lg:mb-0 mb-2 lg:flex-1 w-1/2">
-      <SidebarToggle
+      class="mb-2 flex w-1/2 flex-row items-center gap-1 lg:mb-0 lg:flex-1 lg:px-1">
+      <!-- Holds space for the sidebar toggle -->
+      <div
         v-if="showSidebar"
-        class="ml-1"
-        :class="[
-          { hidden: modelValue },
-          { 'xl:!flex': !modelValue },
-          { '!flex': layout === 'modal' },
-          { '!hidden': layout === 'modal' && modelValue },
-        ]"
-        :modelValue="modelValue"
-        @update:modelValue="$emit('update:modelValue', $event)" />
+        class="size-8"
+        :class="{ hidden: layout === 'modal' && !isSidebarOpen }" />
     </div>
-    <AddressBar @importCurl="$emit('importCurl', $event)" />
+    <!-- Address Bar - we should always have a collection and operation -->
+    <AddressBar
+      :collection="collection"
+      :envVariables="envVariables"
+      :environment="environment"
+      :operation="operation"
+      :server="server"
+      :workspace="workspace"
+      @importCurl="$emit('importCurl', $event)" />
     <div
-      class="flex flex-row items-center gap-1 lg:px-2.5 lg:mb-0 mb-2 lg:flex-1 justify-end w-1/2">
+      class="mb-2 flex w-1/2 flex-row items-center justify-end gap-1 lg:mb-0 lg:flex-1 lg:px-2.5">
       <OpenApiClientButton
-        v-if="
-          layout === 'modal' &&
-          activeCollection?.documentUrl &&
-          !hideClientButton
-        "
+        v-if="layout === 'modal' && collection.documentUrl && !hideClientButton"
         buttonSource="modal"
         class="!w-fit lg:-mr-1"
-        :integration="integration ?? activeCollection?.integration ?? null"
+        :integration="integration ?? collection.integration ?? null"
         :source="
           currentRoute.query.source === 'gitbook' ? 'gitbook' : 'api-reference'
         "
-        :url="activeCollection?.documentUrl" />
-      <!-- TODO: There should be an `ìsModal` flag instead -->
+        :url="collection.documentUrl" />
       <button
         v-if="layout === 'modal'"
-        class="app-exit-button p-2 rounded-full fixed right-2 top-2 gitbook-hidden"
+        class="app-exit-button gitbook-hidden zoomed:static zoomed:p-1 fixed top-2 right-2 rounded-full p-2"
         type="button"
         @click="$emit('hideModal')">
         <ScalarIcon
@@ -72,7 +82,7 @@ const { currentRoute } = useRouter()
       <!-- TODO: temporary solution: 2nd button (not fixed position) for our friends at GitBook -->
       <button
         v-if="layout === 'modal'"
-        class="text-c-1 hover:bg-b-2 active:text-c-1 p-2 rounded -mr-1.5 gitbook-show"
+        class="text-c-1 hover:bg-b-2 active:text-c-1 gitbook-show -mr-1.5 rounded p-2"
         type="button"
         @click="$emit('hideModal')">
         <ScalarIcon

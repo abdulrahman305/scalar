@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  flattenEnvVars,
-  getDotPathValue,
-  replaceTemplateVariables,
-} from './string-template'
+import { flattenEnvVars, getDotPathValue, replaceTemplateVariables } from './string-template'
 
 describe('Gets nested values from an object', () => {
   it('Gets basic value', () => {
@@ -37,35 +33,57 @@ describe('Replaces template vars with context values', () => {
       city: 'Peel',
       country: 'Bananaland',
     },
+    single: {
+      name: 'Nolan',
+      age: '1 month',
+    },
   }
-  it('Handles double curly variable substitution', () => {
-    const res = replaceTemplateVariables(
-      'My name is {{name}} from {{address.city}}',
-      ctx,
-    )
-    expect(res).toEqual('My name is Dave from Peel')
-  })
-  it('Handles single curly variable substitution', () => {
-    const res = replaceTemplateVariables(
-      'My name is {name} from { address.city }',
-      ctx,
-    )
-    expect(res).toEqual('My name is Dave from Peel')
-  })
-  it('Handles colon variable substitution', () => {
-    const res = replaceTemplateVariables(
-      'My name is :name from :address.city',
-      ctx,
-    )
-    expect(res).toEqual('My name is Dave from Peel')
-  })
-  it('Handles object conversion to string', () => {
-    const res = replaceTemplateVariables(
-      'My name is {{name}} from {{address}}',
-      ctx,
-    )
 
+  it('Handles double curly variable substitution', () => {
+    const res = replaceTemplateVariables('My name is {{name}} from {{address.city}}', ctx)
+    expect(res).toEqual('My name is Dave from Peel')
+  })
+
+  it('Handles single curly variable substitution', () => {
+    const res = replaceTemplateVariables('My name is {name} from { address.city }', ctx)
+    expect(res).toEqual('My name is Dave from Peel')
+  })
+
+  it('Handles colon variable substitution', () => {
+    const res = replaceTemplateVariables('My name is :name from :address.city', ctx)
+    expect(res).toEqual('My name is Dave from Peel')
+  })
+
+  it('Handles object conversion to string', () => {
+    const res = replaceTemplateVariables('My name is {{name}} from {{address}}', ctx)
     expect(res).toEqual(`My name is Dave from ${JSON.stringify(ctx.address)}`)
+  })
+
+  it('Handles mixed double and single curly braces independently', () => {
+    const res = replaceTemplateVariables('{{name}} and {single.name} which is {single.age}', ctx)
+    expect(res).toEqual('Dave and Nolan which is 1 month')
+  })
+
+  it('Preserves variable placeholders when value is empty string', () => {
+    const ctxWithEmpty = {
+      name: 'Dave',
+      emptyValue: '',
+      nullValue: null,
+      undefinedValue: undefined,
+    }
+
+    const res = replaceTemplateVariables('/api/{name}/{emptyValue}', ctxWithEmpty)
+    expect(res).toEqual('/api/Dave/{emptyValue}')
+  })
+
+  it('Preserves double curly variable placeholders when value is empty string', () => {
+    const ctxWithEmpty = {
+      name: 'Dave',
+      emptyValue: '',
+    }
+
+    const res = replaceTemplateVariables('{{name}} and {{emptyValue}}', ctxWithEmpty)
+    expect(res).toEqual('Dave and {{emptyValue}}')
   })
 })
 

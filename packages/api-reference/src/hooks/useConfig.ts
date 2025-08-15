@@ -1,11 +1,16 @@
-import type { ReferenceConfiguration } from '@/types'
-import { type InjectionKey, inject } from 'vue'
+import { apiReferenceConfigurationSchema, type ApiReferenceConfiguration } from '@scalar/types/api-reference'
+import { type ComputedRef, type InjectionKey, computed, inject } from 'vue'
 
-export const CONFIGURATION_SYMBOL =
-  Symbol() as InjectionKey<ReferenceConfiguration>
+export const CONFIGURATION_SYMBOL = Symbol() as InjectionKey<ComputedRef<ApiReferenceConfiguration>>
 
-/** Hook for easy access to the reference configuration */
+/**
+ * New hook for reactive access to the client config
+ * TODO: we need to move some properties from the store this way so that they are reactive
+ */
 export const useConfig = () => {
-  const config = inject(CONFIGURATION_SYMBOL, {})
+  const config = inject(
+    CONFIGURATION_SYMBOL,
+    computed(() => apiReferenceConfigurationSchema.parse({})),
+  )
   return config
 }

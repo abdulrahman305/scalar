@@ -1,6 +1,23 @@
 <script setup lang="ts">
+import { ScalarErrorBoundary, ScalarMarkdown } from '@scalar/components'
+import type { HttpMethod as HttpMethodType } from '@scalar/helpers/http/http-methods'
+import { ScalarIconWebhooksLogo } from '@scalar/icons'
+import {
+  getOperationStability,
+  getOperationStabilityColor,
+  isOperationDeprecated,
+} from '@scalar/oas-utils/helpers'
+import type { OpenAPIV3_1 } from '@scalar/openapi-types'
+import type { WorkspaceStore } from '@scalar/workspace-store/client'
+import type { OperationObject } from '@scalar/workspace-store/schemas/v3.1/strict/path-operations'
+import type { SecuritySchemeObject } from '@scalar/workspace-store/schemas/v3.1/strict/security-scheme'
+import type { ServerObject } from '@scalar/workspace-store/schemas/v3.1/strict/server'
+import type { Dereference } from '@scalar/workspace-store/schemas/v3.1/type-guard'
+import { computed, useId } from 'vue'
+
 import { Anchor } from '@/components/Anchor'
 import { Badge } from '@/components/Badge'
+import { LinkList } from '@/components/LinkList'
 import OperationPath from '@/components/OperationPath.vue'
 import {
   Section,
@@ -8,53 +25,93 @@ import {
   SectionColumns,
   SectionContent,
   SectionHeader,
+  SectionHeaderTag,
 } from '@/components/Section'
-import { ExampleRequest } from '@/features/ExampleRequest'
-import { ExampleResponses } from '@/features/ExampleResponses'
-import { TestRequestButton } from '@/features/TestRequestButton'
-import {
-  getOperationStability,
-  getOperationStabilityColor,
-  isOperationDeprecated,
-} from '@/helpers/operation'
-import { ScalarErrorBoundary, ScalarMarkdown } from '@scalar/components'
-import type {
-  Collection,
-  Operation,
-  Server,
-} from '@scalar/oas-utils/entities/spec'
-import type { TransformedOperation } from '@scalar/types/legacy'
-import { defineProps } from 'vue'
+import { ExampleResponses } from '@/features/example-responses'
+import { ExternalDocs } from '@/features/external-docs'
+import Callbacks from '@/features/Operation/components/callbacks/Callbacks.vue'
+import OperationParameters from '@/features/Operation/components/OperationParameters.vue'
+import OperationResponses from '@/features/Operation/components/OperationResponses.vue'
+import type { Schemas } from '@/features/Operation/types/schemas'
+import { TestRequestButton } from '@/features/test-request-button'
+import { XBadges } from '@/features/x-badges'
+import { useConfig } from '@/hooks/useConfig'
+import { RequestExample } from '@/v2/blocks/scalar-request-example-block'
+import type { ClientOptionGroup } from '@/v2/blocks/scalar-request-example-block/types'
 
-import OperationParameters from '../components/OperationParameters.vue'
-import OperationResponses from '../components/OperationResponses.vue'
-
-defineProps<{
-  id?: string
-  collection: Collection
-  server: Server | undefined
-  operation: Operation
-  /** @deprecated Use `operation` instead */
-  transformedOperation: TransformedOperation
+const { path, operation, method, isWebhook, oldOperation } = defineProps<{
+  id: string
+  path: string
+  clientOptions: ClientOptionGroup[]
+  method: HttpMethodType
+  operation: Dereference<OperationObject>
+  oldOperation: OpenAPIV3_1.OperationObject
+  // pathServers: ServerObject[] | undefined
+  isWebhook: boolean
+  securitySchemes: SecuritySchemeObject[]
+  server: ServerObject | undefined
+  schemas?: Schemas
+  store: WorkspaceStore
 }>()
+
+const operationTitle = computed(() => operation.summary || path || '')
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
+
+const labelId = useId()
+const config = useConfig()
+
+const handleDiscriminatorChange = (type: string) => {
+  emit('update:modelValue', type)
+}
 </script>
+
 <template>
   <Section
     :id="id"
-    :label="transformedOperation.name">
-    <SectionContent>
-      <Badge
-        v-if="getOperationStability(transformedOperation)"
-        :class="getOperationStabilityColor(transformedOperation)">
-        {{ getOperationStability(transformedOperation) }}
-      </Badge>
-      <div
-        :class="
-          isOperationDeprecated(transformedOperation) ? 'deprecated' : ''
-        ">
-        <SectionHeader :level="3">
-          <Anchor :id="id ?? ''">
-            {{ transformedOperation.name }}
+    :aria-labelledby="labelId"
+    :label="operationTitle"
+    tabindex="-1">
+    <SectionContent :loading="config.isLoading">
+      <div class="flex flex-row justify-between gap-1">
+        <!-- Left -->
+        <div class="flex gap-1">
+          <!-- Stability badge -->
+          <Badge
+            class="capitalize"
+            v-if="getOperationStability(operation)"
+            :class="getOperationStabilityColor(operation)">
+            {{ getOperationStability(operation) }}
+          </Badge>
+          <!-- Webhook badge -->
+          <Badge
+            v-if="isWebhook"
+            class="font-code text-green flex w-fit items-center justify-center gap-1">
+            <ScalarIconWebhooksLogo weight="bold" />Webhook
+          </Badge>
+          <!-- x-badges before -->
+          <XBadges
+            :badges="operation['x-badges']"
+            position="before" />
+        </div>
+        <!-- Right -->
+        <div class="flex gap-1">
+          <!-- x-badges after -->
+          <XBadges
+            :badges="operation['x-badges']"
+            position="after" />
+        </div>
+      </div>
+      <div :class="isOperationDeprecated(operation) ? 'deprecated' : ''">
+        <SectionHeader>
+          <Anchor :id="id">
+            <SectionHeaderTag
+              :id="labelId"
+              :level="3">
+              {{ operationTitle }}
+            </SectionHeaderTag>
           </Anchor>
         </SectionHeader>
       </div>
@@ -63,31 +120,69 @@ defineProps<{
           <div class="operation-details">
             <ScalarMarkdown
               :value="operation.description"
-              withImages />
-            <OperationParameters :operation="operation" />
-            <OperationResponses :operation="transformedOperation" />
+              withImages
+              withAnchors
+              transformType="heading"
+              :anchorPrefix="id" />
+            <OperationParameters
+              :breadcrumb="[id]"
+              :parameters="operation.parameters"
+              :requestBody="oldOperation.requestBody"
+              :schemas
+              @update:modelValue="handleDiscriminatorChange">
+            </OperationParameters>
+            <OperationResponses
+              :breadcrumb="[id]"
+              :responses="oldOperation.responses"
+              :schemas="schemas" />
+
+            <!-- Callbacks -->
+            <ScalarErrorBoundary>
+              <Callbacks
+                class="mt-6"
+                v-if="operation.callbacks"
+                :path="path"
+                :callbacks="operation.callbacks"
+                :method="method"
+                :schemas="schemas" />
+            </ScalarErrorBoundary>
           </div>
         </SectionColumn>
         <SectionColumn>
           <div class="examples">
+            <!-- External Docs -->
+            <LinkList v-if="operation.externalDocs">
+              <ExternalDocs :value="operation.externalDocs" />
+            </LinkList>
+
+            <!-- New Example Request -->
             <ScalarErrorBoundary>
-              <ExampleRequest
-                :collection="collection"
+              <RequestExample
+                :method="method"
+                :selectedServer="server"
+                :clientOptions="clientOptions"
+                :securitySchemes="securitySchemes"
+                :selectedClient="store.workspace['x-scalar-default-client']"
+                :path="path"
                 fallback
                 :operation="operation"
-                :server="server"
-                :transformedOperation="transformedOperation">
+                @update:modelValue="handleDiscriminatorChange">
                 <template #header>
                   <OperationPath
-                    class="example-path"
-                    :deprecated="transformedOperation.information?.deprecated"
-                    :path="transformedOperation.path" />
+                    class="font-code text-c-2 [&_em]:text-c-1 [&_em]:not-italic"
+                    :deprecated="operation?.deprecated"
+                    :path="path" />
                 </template>
-                <template #footer>
-                  <TestRequestButton :operation="operation" />
+                <template
+                  #footer
+                  v-if="!isWebhook">
+                  <TestRequestButton
+                    :method="method"
+                    :path="path" />
                 </template>
-              </ExampleRequest>
+              </RequestExample>
             </ScalarErrorBoundary>
+
             <ScalarErrorBoundary>
               <ExampleResponses
                 :responses="operation.responses"
@@ -105,15 +200,24 @@ defineProps<{
   position: sticky;
   top: calc(var(--refs-header-height) + 24px);
 }
+
+.examples > * {
+  max-height: calc(
+    ((var(--full-height) - var(--refs-header-height)) - 60px) / 2
+  );
+  position: relative;
+}
+
+/*
+ * Don't constrain card height on mobile
+ * (or zoomed in screens)
+ */
+@media (max-width: 600px) {
+  .examples > * {
+    max-height: unset;
+  }
+}
 .deprecated * {
   text-decoration: line-through;
-}
-.example-path {
-  color: var(--scalar-color-2);
-  font-family: var(--scalar-font-code);
-}
-.example-path :deep(em) {
-  color: var(--scalar-color-1);
-  font-style: normal;
 }
 </style>

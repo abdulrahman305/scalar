@@ -7,8 +7,6 @@
 
 A modern way to generate HTTP request examples for different languages and libraries.
 
-Check out some examples [here](https://scalar-snippetz-801498848929.us-central1.run.app/)
-
 ## Installation
 
 ```bash
@@ -86,7 +84,7 @@ console.log(source)
 
 ## Community
 
-We are API nerds. You too? Let’s chat on Discord: <https://discord.gg/scalar>
+We are API nerds. You too? Let's chat on Discord: <https://discord.gg/scalar>
 
 ## License
 

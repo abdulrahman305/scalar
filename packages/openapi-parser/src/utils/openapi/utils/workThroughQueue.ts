@@ -1,16 +1,14 @@
-import type { CommandChain, Merge, Queue, Task } from '../../../types/index.ts'
-import { dereference } from '../../dereference.ts'
-import { filter } from '../../filter.ts'
-import { load } from '../../load/load.ts'
-import { upgrade } from '../../upgrade.ts'
-import { validate } from '../../validate.ts'
+import type { CommandChain, Merge, Queue, Task } from '@/types/index'
+import { dereference } from '@/utils/dereference'
+import { filter } from '@/utils/filter'
+import { load } from '@/utils/load/load'
+import { upgrade } from '@/utils/upgrade'
+import { validate } from '@/utils/validate'
 
 /**
  * Takes a queue of tasks and works through them
  */
-export async function workThroughQueue<T extends Task[]>(
-  queue: Queue<T>,
-): Promise<CommandChain<T>> {
+export async function workThroughQueue<T extends Task[]>(queue: Queue<T>): Promise<CommandChain<T>> {
   const { input } = {
     ...queue,
   }
@@ -41,10 +39,7 @@ export async function workThroughQueue<T extends Task[]>(
     else if (name === 'filter') {
       result = {
         ...result,
-        ...filter(
-          currentSpecification,
-          options as Commands['filter']['task']['options'],
-        ),
+        ...filter(currentSpecification, options as Commands['filter']['task']['options']),
       } as Merge<typeof result, ReturnType<typeof filter>>
     }
 
@@ -52,10 +47,7 @@ export async function workThroughQueue<T extends Task[]>(
     else if (name === 'dereference') {
       result = {
         ...result,
-        ...(await dereference(
-          currentSpecification,
-          options as Commands['dereference']['task']['options'],
-        )),
+        ...(await dereference(currentSpecification, options as Commands['dereference']['task']['options'])),
       } as Merge<typeof result, Awaited<typeof dereference>>
     }
 
@@ -71,17 +63,16 @@ export async function workThroughQueue<T extends Task[]>(
     else if (name === 'validate') {
       result = {
         ...result,
-        ...(await validate(
-          currentSpecification,
-          options as Commands['validate']['task']['options'],
-        )),
+        ...(await validate(currentSpecification, options as Commands['validate']['task']['options'])),
       } as Merge<typeof result, Awaited<typeof validate>>
     }
 
     // Make TS complain when we forgot to handle a command.
     else {
-      // @ts-expect-error to throw a ts error
       const _: never = name
+
+      // @ts-expect-error Needed to allow the unused type to still be checked
+      const nada = _
     }
   }
 

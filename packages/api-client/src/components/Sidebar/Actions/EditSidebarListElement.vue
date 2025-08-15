@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import SidebarListElementForm from '@/components/Sidebar/Actions/SidebarListElementForm.vue'
-import { ScalarTextField } from '@scalar/components'
+import { ScalarTextInput } from '@scalar/components'
 import { ref } from 'vue'
+
+import SidebarListElementForm from '@/components/Sidebar/Actions/SidebarListElementForm.vue'
 
 const props = defineProps<{
   name: string
@@ -18,7 +19,7 @@ const newName = ref(props.name)
   <SidebarListElementForm
     @cancel="emit('close')"
     @submit="emit('edit', newName)">
-    <ScalarTextField
+    <ScalarTextInput
       v-model="newName"
       autofocus />
   </SidebarListElementForm>

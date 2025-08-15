@@ -4,10 +4,14 @@ import json from '@scalar/galaxy/3.1.json'
 import {
   type Request,
   type SecurityScheme,
-  type SecuritySchemePayload,
   type Server,
   type Tag,
   collectionSchema,
+  operationSchema,
+  securityHttpSchema,
+  securitySchemeSchema,
+  serverSchema,
+  tagSchema,
 } from '@scalar/oas-utils/entities/spec'
 import { parseSchema } from '@scalar/oas-utils/transforms'
 import microdiff, { type Difference } from 'microdiff'
@@ -27,15 +31,10 @@ import {
 } from './watch-mode'
 
 const mockRequests: Record<`request${number}uid`, Request> = {
-  request1uid: {
-    type: 'request',
+  request1uid: operationSchema.parse({
     uid: 'request1uid',
     method: 'get',
     path: '/planets',
-    examples: [],
-    selectedSecuritySchemeUids: [],
-    selectedServerUid: '',
-    servers: [],
     parameters: [
       {
         name: 'limit',
@@ -61,13 +60,11 @@ const mockRequests: Record<`request${number}uid`, Request> = {
     ] as const,
     summary: 'Get all planets',
     description: 'Retrieve all planets',
-  },
-  request2uid: {
-    type: 'request',
+  }),
+  request2uid: operationSchema.parse({
     uid: 'request2uid',
     method: 'post',
     path: '/planets',
-    examples: [],
     requestBody: {
       description: 'Planet',
       content: {
@@ -126,20 +123,14 @@ const mockRequests: Record<`request${number}uid`, Request> = {
     parameters: [],
     summary: 'Create a new planet',
     description: 'Add a new planet to the database',
-  },
-  request3uid: {
-    type: 'request',
+  }),
+  request3uid: operationSchema.parse({
     uid: 'request3uid',
     method: 'get',
     path: '/planets/{planetId}',
-    examples: [],
-    selectedSecuritySchemeUids: [],
-    selectedServerUid: '',
-    servers: [],
-    parameters: [],
     summary: 'Get a planet by ID',
     description: 'Retrieve a single planet by its ID',
-  },
+  }),
 }
 
 const mockCollection = Object.freeze(
@@ -153,24 +144,21 @@ const mockCollection = Object.freeze(
     },
     requests: Object.keys(mockRequests),
     servers: ['server1', 'server2', 'server3'],
-    security: [
-      { bearerAuth: ['read:users', 'read:events'] },
-      { apiKeyQuery: [] },
-    ],
+    security: [{ bearerAuth: ['read:users', 'read:events'] }, { apiKeyQuery: [] }],
     tags: ['tag1uid', 'tag2uid', 'tag3uid'],
   }),
 )
 const mockSecuritySchemes: Record<string, SecurityScheme> = {
-  apiKeyUid: {
+  apiKeyUid: securitySchemeSchema.parse({
     uid: 'apiKeyUid',
     nameKey: 'apiKeyHeader',
     type: 'apiKey',
     name: 'api_key',
     in: 'header',
     value: 'test-api-key',
-  },
-  oauth2: {
-    uid: 'oauth2',
+  }),
+  oauth2: securitySchemeSchema.parse({
+    uid: 'oauth2-uid',
     type: 'oauth2',
     nameKey: 'oauth2',
     flows: {
@@ -188,7 +176,7 @@ const mockSecuritySchemes: Record<string, SecurityScheme> = {
         },
       },
     },
-  },
+  }),
 }
 
 const mockActiveEntities = {
@@ -280,7 +268,7 @@ describe('combineRenameDiffs', () => {
       tags: ['Planets'],
       summary: 'Put all planets',
       description:
-        'It’s easy to say you know them all, but do you really? Retrieve all the planets and check whether you missed one.',
+        "It's easy to say you know them all, but do you really? Retrieve all the planets and check whether you missed one.",
       operationId: 'putAllData',
       security: [{}],
       responses: {
@@ -391,8 +379,7 @@ describe('combineRenameDiffs', () => {
         type: 'REMOVE',
         path: ['paths', '/planets', 'get', 'parameters', 1],
         oldValue: {
-          description:
-            'The number of items to skip before starting to collect the result set',
+          description: 'The number of items to skip before starting to collect the result set',
           name: 'offset',
           in: 'query',
           required: false,
@@ -420,9 +407,7 @@ describe('combineRenameDiffs', () => {
 
   // This one just tests microdiff but we use the value in another test
   it('creates a change diff for changing an oauth2 flow scope', () => {
-    const mutatedSecuritySchemes = JSON.parse(
-      JSON.stringify(mockSecuritySchemes),
-    )
+    const mutatedSecuritySchemes = JSON.parse(JSON.stringify(mockSecuritySchemes))
     mutatedSecuritySchemes.oauth2.flows.implicit.scopes = {
       'write:api': 'modify api',
     }
@@ -441,9 +426,8 @@ describe('combineRenameDiffs', () => {
 
   it('handles deep changes in the schema', () => {
     // Modify a deep property in the schema
-    mutated.paths['/planets'].get.responses['200'].content[
-      'application/json'
-    ].schema.allOf[0].properties.data.type = 'number'
+    mutated.paths['/planets'].get.responses['200'].content['application/json'].schema.allOf[0].properties.data.type =
+      'number'
 
     const diff = microdiff(original, mutated)
     const combinedDiff = combineRenameDiffs(diff)
@@ -489,11 +473,7 @@ describe('mutateCollectionDiff', () => {
 
     const result = mutateCollectionDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith(
-      'collection1',
-      'info.title',
-      'Updated Test API',
-    )
+    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith('collection1', 'info.title', 'Updated Test API')
   })
 
   it('generates a payload for updating the version', () => {
@@ -506,11 +486,7 @@ describe('mutateCollectionDiff', () => {
 
     const result = mutateCollectionDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith(
-      'collection1',
-      'info.version',
-      '2.0.0',
-    )
+    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith('collection1', 'info.version', '2.0.0')
   })
 
   it('generates a payload for updating the description', () => {
@@ -554,11 +530,7 @@ describe('mutateCollectionDiff', () => {
 
     const result = mutateCollectionDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith(
-      'collection1',
-      'info.termsOfService',
-      undefined,
-    )
+    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith('collection1', 'info.termsOfService', undefined)
   })
 
   it('generates a payload for adding a new security requirement', () => {
@@ -570,11 +542,10 @@ describe('mutateCollectionDiff', () => {
 
     const result = mutateCollectionDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith(
-      'collection1',
-      'security',
-      [...mockCollection.security, { oauth2: ['read:api', 'write:api'] }],
-    )
+    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith('collection1', 'security', [
+      ...mockCollection.security,
+      { oauth2: ['read:api', 'write:api'] },
+    ])
   })
 
   it('generates a payload for removing a security requirement', () => {
@@ -586,11 +557,9 @@ describe('mutateCollectionDiff', () => {
 
     const result = mutateCollectionDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith(
-      'collection1',
-      'security',
-      [mockCollection.security[0]],
-    )
+    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith('collection1', 'security', [
+      mockCollection.security[0],
+    ])
   })
 
   it('generates a payload for adding a security scope to oauth2', () => {
@@ -602,11 +571,11 @@ describe('mutateCollectionDiff', () => {
 
     const result = mutateCollectionDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith(
-      'collection1',
-      'security.0.bearerAuth',
-      ['read:users', 'read:events', 'write:events'],
-    )
+    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith('collection1', 'security.0.bearerAuth', [
+      'read:users',
+      'read:events',
+      'write:events',
+    ])
   })
 
   it('generates a payload for removing a security scope from oauth2', () => {
@@ -618,27 +587,25 @@ describe('mutateCollectionDiff', () => {
 
     const result = mutateCollectionDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith(
-      'collection1',
-      'security.0.bearerAuth',
-      ['read:users'],
-    )
+    expect(mockStore.collectionMutators.edit).toHaveBeenCalledWith('collection1', 'security.0.bearerAuth', [
+      'read:users',
+    ])
   })
 })
 
 describe('mutateServerDiff', () => {
   const mockServers: Record<string, Server> = {
-    server1: {
+    server1: serverSchema.parse({
       uid: 'server1',
       url: 'https://api.example.com',
       description: 'Production server',
-    },
-    server2: {
+    }),
+    server2: serverSchema.parse({
       uid: 'server2',
       url: 'https://staging.example.com',
       description: 'Staging server',
-    },
-    server3: {
+    }),
+    server3: serverSchema.parse({
       uid: 'server3',
       url: 'https://{environment}.example.com/{version}/',
       description: 'Development server',
@@ -649,7 +616,7 @@ describe('mutateServerDiff', () => {
           enum: ['production', 'staging'],
         },
       },
-    },
+    }),
   }
   const mockStore = {
     servers: mockServers,
@@ -670,11 +637,7 @@ describe('mutateServerDiff', () => {
 
     const result = mutateServerDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith(
-      'server1',
-      'url',
-      'https://new-api.example.com',
-    )
+    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith('server1', 'url', 'https://new-api.example.com')
   })
 
   it('generates a delete payload for removing a server', () => {
@@ -686,18 +649,15 @@ describe('mutateServerDiff', () => {
 
     const result = mutateServerDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.serverMutators.delete).toHaveBeenCalledWith(
-      'server2',
-      'collection1',
-    )
+    expect(mockStore.serverMutators.delete).toHaveBeenCalledWith('server2', 'collection1')
   })
 
   it('generates an add payload for creating a new server', () => {
-    const newServer: Server = {
+    const newServer = serverSchema.parse({
       uid: 'server4',
       url: 'https://test.example.com',
       description: 'Test server',
-    }
+    })
     const diff: Difference = {
       type: 'CREATE',
       path: ['servers', 3],
@@ -706,10 +666,7 @@ describe('mutateServerDiff', () => {
 
     const result = mutateServerDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.serverMutators.add).toHaveBeenCalledWith(
-      newServer,
-      'collection1',
-    )
+    expect(mockStore.serverMutators.add).toHaveBeenCalledWith(newServer, 'collection1')
   })
 
   it('generates an edit payload for adding a server variable', () => {
@@ -721,11 +678,10 @@ describe('mutateServerDiff', () => {
 
     const result = mutateServerDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith(
-      'server1',
-      'variables.newVar',
-      { default: 'default', enum: ['default', 'other'] },
-    )
+    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith('server1', 'variables.newVar', {
+      default: 'default',
+      enum: ['default', 'other'],
+    })
   })
 
   it('generates an edit payload for updating a server variable', () => {
@@ -738,11 +694,7 @@ describe('mutateServerDiff', () => {
 
     const result = mutateServerDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith(
-      'server3',
-      'variables.version.default',
-      'v2',
-    )
+    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith('server3', 'variables.version.default', 'v2')
   })
 
   it('generates an edit payload for removing a server variable', () => {
@@ -754,11 +706,7 @@ describe('mutateServerDiff', () => {
 
     const result = mutateServerDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith(
-      'server3',
-      'variables.version',
-      undefined,
-    )
+    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith('server3', 'variables.version', undefined)
   })
 
   it('generates an edit payload for adding all variables to a server', () => {
@@ -773,14 +721,10 @@ describe('mutateServerDiff', () => {
 
     const result = mutateServerDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith(
-      'server2',
-      'variables',
-      {
-        version: { default: 'v1', enum: ['v1', 'v2'] },
-        environment: { default: 'staging', enum: ['production', 'staging'] },
-      },
-    )
+    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith('server2', 'variables', {
+      version: { default: 'v1', enum: ['v1', 'v2'] },
+      environment: { default: 'staging', enum: ['production', 'staging'] },
+    })
   })
 
   it('generates an edit payload for removing all variables from a server', () => {
@@ -792,11 +736,7 @@ describe('mutateServerDiff', () => {
 
     const result = mutateServerDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith(
-      'server3',
-      'variables',
-      {},
-    )
+    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith('server3', 'variables', {})
   })
 
   it('generates an edit payload for updating a server variable enum', () => {
@@ -809,11 +749,7 @@ describe('mutateServerDiff', () => {
 
     const result = mutateServerDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith(
-      'server3',
-      'variables.version.enum',
-      ['v1', 'v2', 'v3'],
-    )
+    expect(mockStore.serverMutators.edit).toHaveBeenCalledWith('server3', 'variables.version.enum', ['v1', 'v2', 'v3'])
   })
 
   it('returns false when trying to edit a non-existent server', () => {
@@ -855,30 +791,22 @@ describe('mutateServerDiff', () => {
 
 describe('mutateTagDiff', () => {
   const mockTags: Record<string, Tag> = {
-    tag1uid: {
-      'type': 'tag',
-      'uid': 'tag1uid',
-      'name': 'Tag 1',
-      'description': 'First tag',
-      'children': [],
+    tag1uid: tagSchema.parse({
+      uid: 'tag1uid',
+      name: 'Tag 1',
+      description: 'First tag',
+    }),
+    tag2uid: tagSchema.parse({
+      uid: 'tag2uid',
+      name: 'Tag 2',
+      description: 'Second tag',
       'x-scalar-children': [],
-    },
-    tag2uid: {
-      'type': 'tag',
-      'uid': 'tag2uid',
-      'name': 'Tag 2',
-      'description': 'Second tag',
-      'children': [],
-      'x-scalar-children': [],
-    },
-    tag3uid: {
-      'type': 'tag',
-      'uid': 'tag3uid',
-      'name': 'Tag 3',
-      'description': 'Third tag',
-      'children': [],
-      'x-scalar-children': [],
-    },
+    }),
+    tag3uid: tagSchema.parse({
+      uid: 'tag3uid',
+      name: 'Tag 3',
+      description: 'Third tag',
+    }),
   }
 
   const mockStore = {
@@ -891,14 +819,11 @@ describe('mutateTagDiff', () => {
   } as unknown as WorkspaceStore
 
   it('generates an add payload for creating a new tag', () => {
-    const newTag: Tag = {
-      'type': 'tag',
+    const newTag = tagSchema.parse({
       'uid': 'tag4uid',
       'name': 'New Tag',
       'description': 'New tag description',
-      'children': [],
-      'x-scalar-children': [],
-    }
+    })
     const diff: Difference = {
       type: 'CREATE',
       path: ['tags', 3],
@@ -907,10 +832,7 @@ describe('mutateTagDiff', () => {
 
     const result = mutateTagDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.tagMutators.add).toHaveBeenCalledWith(
-      newTag,
-      'collection1',
-    )
+    expect(mockStore.tagMutators.add).toHaveBeenCalledWith(newTag, 'collection1')
   })
 
   it('generates a remove payload for deleting a tag', () => {
@@ -945,11 +867,7 @@ describe('mutateTagDiff', () => {
 
     const result = mutateTagDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.tagMutators.edit).toHaveBeenCalledWith(
-      'tag1uid',
-      'name',
-      'Updated Tag 1',
-    )
+    expect(mockStore.tagMutators.edit).toHaveBeenCalledWith('tag1uid', 'name', 'Updated Tag 1')
   })
 
   it('generates an edit payload for updating a tag description', () => {
@@ -962,11 +880,7 @@ describe('mutateTagDiff', () => {
 
     const result = mutateTagDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.tagMutators.edit).toHaveBeenCalledWith(
-      'tag2uid',
-      'description',
-      'Updated second tag',
-    )
+    expect(mockStore.tagMutators.edit).toHaveBeenCalledWith('tag2uid', 'description', 'Updated second tag')
   })
 
   it('generates an edit payload for adding a new property to a tag', () => {
@@ -978,11 +892,9 @@ describe('mutateTagDiff', () => {
 
     const result = mutateTagDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.tagMutators.edit).toHaveBeenCalledWith(
-      'tag3uid',
-      'externalDocs',
-      { url: 'https://example.com/docs' },
-    )
+    expect(mockStore.tagMutators.edit).toHaveBeenCalledWith('tag3uid', 'externalDocs', {
+      url: 'https://example.com/docs',
+    })
   })
 
   it('generates an edit payload for removing a property from a tag', () => {
@@ -994,11 +906,7 @@ describe('mutateTagDiff', () => {
 
     const result = mutateTagDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.tagMutators.edit).toHaveBeenCalledWith(
-      'tag1uid',
-      'description',
-      undefined,
-    )
+    expect(mockStore.tagMutators.edit).toHaveBeenCalledWith('tag1uid', 'description', undefined)
   })
 
   it('returns false when trying to edit a non-existent tag', () => {
@@ -1037,7 +945,7 @@ describe('mutateSecuritySchemeDiff', () => {
   } as unknown as WorkspaceStore
 
   it('generates an add payload for creating a new security scheme', () => {
-    const newScheme: SecuritySchemePayload = {
+    const newScheme = securitySchemeSchema.parse({
       type: 'http',
       scheme: 'bearer',
       bearerFormat: 'jwt',
@@ -1046,7 +954,7 @@ describe('mutateSecuritySchemeDiff', () => {
       username: '',
       password: '',
       token: '',
-    }
+    })
     const diff: Difference = {
       type: 'CREATE',
       path: ['components', 'securitySchemes', 'bearerAuth'],
@@ -1055,10 +963,7 @@ describe('mutateSecuritySchemeDiff', () => {
 
     const result = mutateSecuritySchemeDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.securitySchemeMutators.add).toHaveBeenCalledWith(
-      newScheme,
-      'collection1',
-    )
+    expect(mockStore.securitySchemeMutators.add).toHaveBeenCalledWith(newScheme, 'collection1')
   })
 
   it('generates a remove payload for deleting a security scheme', () => {
@@ -1070,9 +975,7 @@ describe('mutateSecuritySchemeDiff', () => {
 
     const result = mutateSecuritySchemeDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.securitySchemeMutators.delete).toHaveBeenCalledWith(
-      'apiKeyUid',
-    )
+    expect(mockStore.securitySchemeMutators.delete).toHaveBeenCalledWith('apiKeyUid')
   })
 
   it('generates an edit payload for updating a security scheme property', () => {
@@ -1085,24 +988,13 @@ describe('mutateSecuritySchemeDiff', () => {
 
     const result = mutateSecuritySchemeDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.securitySchemeMutators.edit).toHaveBeenCalledWith(
-      'apiKeyUid',
-      'name',
-      'new_api_key',
-    )
+    expect(mockStore.securitySchemeMutators.edit).toHaveBeenCalledWith('apiKeyUid', 'name', 'new_api_key')
   })
 
   it('generates an edit payload for updating an oauth2 flow property', () => {
     const diff: Difference = {
       type: 'CHANGE',
-      path: [
-        'components',
-        'securitySchemes',
-        'oauth2',
-        'flows',
-        'implicit',
-        'authorizationUrl',
-      ],
+      path: ['components', 'securitySchemes', 'oauth2', 'flows', 'implicit', 'authorizationUrl'],
       oldValue: 'https://example.com/oauth/authorize',
       value: 'https://example.com/oauth/authorize-admin',
     }
@@ -1110,7 +1002,7 @@ describe('mutateSecuritySchemeDiff', () => {
     const result = mutateSecuritySchemeDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
     expect(mockStore.securitySchemeMutators.edit).toHaveBeenCalledWith(
-      'oauth2',
+      'oauth2-uid',
       'flows.implicit.authorizationUrl',
       'https://example.com/oauth/authorize-admin',
     )
@@ -1135,22 +1027,14 @@ describe('mutateSecuritySchemeDiff', () => {
   it('generates an edit payload for removing a scope from an oauth2 flow', () => {
     const diff: Difference = {
       type: 'REMOVE',
-      path: [
-        'components',
-        'securitySchemes',
-        'oauth2',
-        'flows',
-        'implicit',
-        'scopes',
-        'read:api',
-      ],
+      path: ['components', 'securitySchemes', 'oauth2', 'flows', 'implicit', 'scopes', 'read:api'],
       oldValue: 'read api',
     }
 
     const result = mutateSecuritySchemeDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
     expect(mockStore.securitySchemeMutators.edit).toHaveBeenCalledWith(
-      'oauth2',
+      'oauth2-uid',
       'flows.implicit.scopes.read:api',
       undefined,
     )
@@ -1159,15 +1043,7 @@ describe('mutateSecuritySchemeDiff', () => {
   it('generates an edit payload for adding a scope to an oauth2 flow', () => {
     const diff: Difference = {
       type: 'CHANGE',
-      path: [
-        'components',
-        'securitySchemes',
-        'oauth2',
-        'flows',
-        'implicit',
-        'scopes',
-        'write:users',
-      ],
+      path: ['components', 'securitySchemes', 'oauth2', 'flows', 'implicit', 'scopes', 'write:users'],
       oldValue: '',
       value: 'write users',
     }
@@ -1175,7 +1051,7 @@ describe('mutateSecuritySchemeDiff', () => {
     const result = mutateSecuritySchemeDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
     expect(mockStore.securitySchemeMutators.edit).toHaveBeenCalledWith(
-      'oauth2',
+      'oauth2-uid',
       'flows.implicit.scopes.write:users',
       'write users',
     )
@@ -1184,15 +1060,7 @@ describe('mutateSecuritySchemeDiff', () => {
   it('generates an edit payload for updating a scope from an oauth2 flow', () => {
     const diff: Difference = {
       type: 'CHANGE',
-      path: [
-        'components',
-        'securitySchemes',
-        'oauth2',
-        'flows',
-        'implicit',
-        'scopes',
-        'write:api',
-      ],
+      path: ['components', 'securitySchemes', 'oauth2', 'flows', 'implicit', 'scopes', 'write:api'],
       oldValue: 'modify api',
       value: 'write the api',
     }
@@ -1200,7 +1068,7 @@ describe('mutateSecuritySchemeDiff', () => {
     const result = mutateSecuritySchemeDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
     expect(mockStore.securitySchemeMutators.edit).toHaveBeenCalledWith(
-      'oauth2',
+      'oauth2-uid',
       'flows.implicit.scopes.write:api',
       'write the api',
     )
@@ -1233,14 +1101,7 @@ describe('mutateSecuritySchemeDiff', () => {
   it('handles nested changes in oauth2 flows', () => {
     const diff: Difference = {
       type: 'CHANGE',
-      path: [
-        'components',
-        'securitySchemes',
-        'oauth2',
-        'flows',
-        'implicit',
-        'authorizationUrl',
-      ],
+      path: ['components', 'securitySchemes', 'oauth2', 'flows', 'implicit', 'authorizationUrl'],
       oldValue: 'https://example.com/oauth/authorize',
       value: 'https://api.example.com/oauth2/authorize',
     }
@@ -1248,7 +1109,7 @@ describe('mutateSecuritySchemeDiff', () => {
     const result = mutateSecuritySchemeDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
     expect(mockStore.securitySchemeMutators.edit).toHaveBeenCalledWith(
-      'oauth2',
+      'oauth2-uid',
       'flows.implicit.authorizationUrl',
       'https://api.example.com/oauth2/authorize',
     )
@@ -1271,19 +1132,14 @@ describe('mutateRequestDiff', () => {
   } as unknown as WorkspaceStore
 
   it('generates an add payload for creating a new request', () => {
-    const newRequest: Request = {
-      type: 'request',
+    const newRequest = operationSchema.parse({
       uid: 'request4uid',
       method: 'delete',
       path: '/planets/{planetId}',
       summary: 'Delete a planet',
-      description: 'Remove a planet by its ID',
       parameters: [],
-      examples: [],
-      selectedSecuritySchemeUids: [],
-      selectedServerUid: '',
-      servers: [],
-    }
+      description: 'Remove a planet by its ID',
+    })
     const diff: Difference = {
       type: 'CREATE',
       path: ['paths', '/planets/{planetId}', 'delete'],
@@ -1292,10 +1148,7 @@ describe('mutateRequestDiff', () => {
 
     const result = mutateRequestDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.requestMutators.add).toHaveBeenCalledWith(
-      newRequest,
-      mockCollection.uid,
-    )
+    expect(mockStore.requestMutators.add).toHaveBeenCalledWith(newRequest, mockCollection.uid)
   })
 
   it('generates a delete payload for removing a request', () => {
@@ -1307,10 +1160,7 @@ describe('mutateRequestDiff', () => {
 
     const result = mutateRequestDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.requestMutators.delete).toHaveBeenCalledWith(
-      mockRequests.request2uid,
-      mockCollection.uid,
-    )
+    expect(mockStore.requestMutators.delete).toHaveBeenCalledWith(mockRequests.request2uid, mockCollection.uid)
   })
 
   it('generates an edit payload for updating a request summary', () => {
@@ -1323,11 +1173,7 @@ describe('mutateRequestDiff', () => {
 
     const result = mutateRequestDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.requestMutators.edit).toHaveBeenCalledWith(
-      'request3uid',
-      'summary',
-      'Retrieve planet details',
-    )
+    expect(mockStore.requestMutators.edit).toHaveBeenCalledWith('request3uid', 'summary', 'Retrieve planet details')
   })
 
   it('generates an edit payload for adding a parameter to a request', () => {
@@ -1345,20 +1191,16 @@ describe('mutateRequestDiff', () => {
 
     const result = mutateRequestDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.requestMutators.edit).toHaveBeenCalledWith(
-      'request1uid',
-      'parameters',
-      [
-        ...(mockRequests.request1uid?.parameters ?? []),
-        {
-          name: 'highroller',
-          in: 'query',
-          required: false,
-          deprecated: false,
-          schema: { type: 'integer', format: 'int32' },
-        },
-      ],
-    )
+    expect(mockStore.requestMutators.edit).toHaveBeenCalledWith('request1uid', 'parameters', [
+      ...(mockRequests.request1uid?.parameters ?? []),
+      {
+        name: 'highroller',
+        in: 'query',
+        required: false,
+        deprecated: false,
+        schema: { type: 'integer', format: 'int32' },
+      },
+    ])
   })
 
   it('generates an edit payload for removing a parameter from a request', () => {
@@ -1366,8 +1208,7 @@ describe('mutateRequestDiff', () => {
       type: 'REMOVE',
       path: ['paths', '/planets', 'get', 'parameters', 1],
       oldValue: {
-        description:
-          'The number of items to skip before starting to collect the result set',
+        description: 'The number of items to skip before starting to collect the result set',
         name: 'offset',
         in: 'query',
         required: false,
@@ -1425,16 +1266,8 @@ describe('mutateRequestDiff', () => {
 
     const result = mutateRequestDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.requestMutators.edit).toHaveBeenCalledWith(
-      'request1uid',
-      'path',
-      '/planets/list',
-    )
-    expect(mockStore.requestMutators.edit).toHaveBeenCalledWith(
-      'request2uid',
-      'path',
-      '/planets/list',
-    )
+    expect(mockStore.requestMutators.edit).toHaveBeenCalledWith('request1uid', 'path', '/planets/list')
+    expect(mockStore.requestMutators.edit).toHaveBeenCalledWith('request2uid', 'path', '/planets/list')
   })
 
   it('handles changing the method of a request', () => {
@@ -1447,11 +1280,7 @@ describe('mutateRequestDiff', () => {
 
     const result = mutateRequestDiff(diff, mockActiveEntities, mockStore)
     expect(result).toBe(true)
-    expect(mockStore.requestMutators.edit).toHaveBeenCalledWith(
-      'request1uid',
-      'method',
-      'post',
-    )
+    expect(mockStore.requestMutators.edit).toHaveBeenCalledWith('request1uid', 'method', 'post')
   })
 
   it('handles invalid diff paths', () => {
@@ -1518,13 +1347,15 @@ describe('narrowUnionSchema', () => {
     const result = narrowUnionSchema(discriminatedUnion, 'type', 'two')
     expect(result).equal(schema2)
   })
+
+  it('returns the correct schema from auth discriminated by type', () => {
+    const result = narrowUnionSchema(securitySchemeSchema, 'type', 'http')
+    expect(result).equal(securityHttpSchema)
+  })
 })
 
 describe('traverseZodSchema', () => {
-  const smallSchema = z.record(
-    z.string(),
-    z.array(z.string()).optional().default([]),
-  )
+  const smallSchema = z.record(z.string(), z.array(z.string()).optional().default([]))
   const testSchema = z.object({
     name: z.string(),
     age: z.number().optional(),
@@ -1715,5 +1546,16 @@ describe('parseDiff', () => {
     }
     const result = parseDiff(testSchema, diff)
     expect(result).toBeNull()
+  })
+
+  it('handles a CHANGE diff on an http security scheme with an empty string value', () => {
+    const diff: Difference = {
+      oldValue: 'oldVal',
+      type: 'CHANGE',
+      path: ['token'],
+      value: '',
+    }
+    const result = parseDiff(securityHttpSchema, diff)
+    expect(result).not.toBeNull()
   })
 })

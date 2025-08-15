@@ -1,7 +1,7 @@
-import type { ReferenceConfiguration } from '@scalar/api-reference'
+import type { ApiReferenceConfiguration } from '@scalar/types/api-reference'
 
 export type Configuration = Omit<
-  ReferenceConfiguration,
+  Partial<ApiReferenceConfiguration>,
   'layout' | 'isEditable' | 'onSpecUpdate' | 'theme'
 > & {
   /**
@@ -15,7 +15,7 @@ export type Configuration = Omit<
    *
    * @default undefined (nuxt theme)
    */
-  theme?: ReferenceConfiguration['theme']
+  theme?: ApiReferenceConfiguration['theme']
 }
 
 export type Meta = {

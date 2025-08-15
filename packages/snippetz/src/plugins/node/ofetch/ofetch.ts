@@ -1,6 +1,5 @@
-import type { Plugin } from '@/types'
-import { arrayToObject } from '@/utils/arrayToObject'
 import { objectToString } from '@/utils/objectToString'
+import type { Plugin } from '@scalar/types/snippetz'
 
 /**
  * node/ofetch
@@ -21,25 +20,11 @@ export const nodeOfetch: Plugin = {
 
     // Reset fetch defaults
     const options: Record<string, any> = {
-      method:
-        normalizedRequest.method === 'GET'
-          ? undefined
-          : normalizedRequest.method,
+      method: normalizedRequest.method === 'GET' ? undefined : normalizedRequest.method,
     }
 
     // Query
-    const searchParams = new URLSearchParams(
-      normalizedRequest.queryString
-        ? arrayToObject(normalizedRequest.queryString)
-        : undefined,
-    )
-
-    if (searchParams.size) {
-      options.query = {}
-      searchParams.forEach((value, key) => {
-        options.query[key] = value
-      })
-    }
+    options.query = normalizedRequest.queryString
 
     // Headers
     if (normalizedRequest.headers?.length) {
@@ -80,9 +65,7 @@ export const nodeOfetch: Plugin = {
     }
 
     // Transform to JSON
-    const jsonOptions = Object.keys(options).length
-      ? `, ${objectToString(options)}`
-      : ''
+    const jsonOptions = Object.keys(options).length ? `, ${objectToString(options)}` : ''
 
     // Code Template
     return `import { ofetch } from 'ofetch'

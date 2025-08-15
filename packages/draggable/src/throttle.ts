@@ -4,8 +4,10 @@
 export const throttle = (callback: (...args: any) => void, limit: number) => {
   let wait = false
 
-  return function (...args: unknown[]) {
-    if (wait) return
+  return (...args: unknown[]) => {
+    if (wait) {
+      return
+    }
 
     callback(...args)
     wait = true

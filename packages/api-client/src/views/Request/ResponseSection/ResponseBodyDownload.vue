@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { mediaTypes } from '@/views/Request/consts'
 import { ScalarIcon } from '@scalar/components'
 import { computed } from 'vue'
+
+import { getMediaTypeConfig } from '@/views/Request/consts'
 
 const props = defineProps<{
   href: string
@@ -10,13 +11,14 @@ const props = defineProps<{
 }>()
 
 const filenameExtension = computed(() => {
-  const extension = mediaTypes[props.type ?? '']?.extension ?? '.unknown'
+  const extension =
+    getMediaTypeConfig(props.type ?? '')?.extension ?? '.unknown'
   return props.filename ? props.filename : `response${extension}`
 })
 </script>
 <template>
   <a
-    class="flex gap-1 text-c-3 text-xxs no-underline items-center hover:bg-b-3 rounded py-0.5 px-1.5"
+    class="text-c-3 text-xxs hover:bg-b-3 flex items-center gap-1 rounded px-1.5 py-0.5 no-underline"
     :download="`${filenameExtension}`"
     :href="href"
     @click.stop>

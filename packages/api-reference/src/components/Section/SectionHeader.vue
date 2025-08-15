@@ -1,43 +1,43 @@
 <script setup lang="ts">
 import LoadingSkeleton from '../LoadingSkeleton.vue'
 
-withDefaults(
-  defineProps<{ loading?: boolean; tight?: boolean; level?: number }>(),
-  {
-    loading: false,
-    tight: false,
-    level: 1,
-  },
-)
+defineProps<{
+  loading?: boolean
+  tight?: boolean
+}>()
 </script>
 
 <template>
-  <div class="section-header-wrapper">
+  <div class="section-header-wrapper xl:gap-12">
     <LoadingSkeleton v-if="loading" />
-    <component
-      :is="`h${level}`"
+    <div
       v-else
       class="section-header"
       :class="{ tight }">
       <slot />
-    </component>
+    </div>
+    <slot
+      v-if="$slots.links"
+      name="links" />
   </div>
 </template>
 
 <style scoped>
+@reference "@/style.css";
+
 .section-header-wrapper {
   display: grid;
   grid-template-columns: 1fr;
 }
 
-@screen xl {
+@variant xl {
   .section-header-wrapper {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 .section-header {
-  font-size: var(--font-size, var(--scalar-heading-2));
+  font-size: var(--font-size, var(--scalar-heading-1));
   font-weight: var(--font-weight, var(--scalar-bold));
   /* prettier-ignore */
   color: var(--scalar-color-1);

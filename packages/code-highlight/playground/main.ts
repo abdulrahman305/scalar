@@ -1,16 +1,17 @@
 /**
  * Simple demo page for all Scalar code highlighting functions
  */
-import { getThemeById } from '@scalar/themes'
+import { presets } from '@scalar/themes'
+
 import '@scalar/themes/base.css'
-import '@scalar/themes/fonts.css'
 import '@scalar/themes/style.css'
 
 import { syntaxHighlight } from '../src/code'
 // @ts-expect-error vite not looking for raw types
-import codeExampleLarge from '../src/constants.ts?raw'
+import codeExampleLarge from '../src/constants?raw'
+
 import '../src/css/code.css'
-import '../src/css/markdown.css'
+
 import { standardLanguages } from '../src/languages'
 import { htmlFromMarkdown } from '../src/markdown/markdown'
 // @ts-expect-error vite not looking for raw types
@@ -24,12 +25,7 @@ function createHeader(text: string) {
   document.body.appendChild(header)
 }
 
-function createCodeBlock(
-  content: string,
-  name: string,
-  lang: string,
-  mask?: string[],
-) {
+function createCodeBlock(content: string, name: string, lang: string, mask?: string[]) {
   createHeader(name)
   const el = document.createElement('div')
   el.innerHTML = syntaxHighlight(content, {
@@ -47,7 +43,7 @@ document.getElementById('dark-mode-btn')?.addEventListener('click', () => {
 })
 
 const styleSheet = new CSSStyleSheet()
-styleSheet.replaceSync(getThemeById('deepSpace'))
+styleSheet.replaceSync(presets.deepSpace.theme)
 document.adoptedStyleSheets.push(styleSheet)
 
 // ---------------------------------------------------------------------------
@@ -85,12 +81,7 @@ xhr.send(data);
   'js',
 )
 
-createCodeBlock(
-  codeExampleLarge,
-  'Longer Codeblock with Credential Masking',
-  'ts',
-  ['javascript'],
-)
+createCodeBlock(codeExampleLarge, 'Longer Codeblock with Credential Masking', 'ts', ['javascript'])
 
 // ---------------------------------------------------------------------------
 // HTML

@@ -1,11 +1,12 @@
-import { lowlightLanguageMappings } from '@/constants'
-import { rehypeHighlight } from '@/rehype-highlight'
 import type { Element, Root } from 'hast'
 import type { LanguageFn } from 'highlight.js'
 import rehypeParse from 'rehype-parse'
 import rehypeStringify from 'rehype-stringify'
-import { type Plugin, unified } from 'unified'
+import { unified, type Plugin } from 'unified'
 import { visit } from 'unist-util-visit'
+
+import { lowlightLanguageMappings } from '@/constants'
+import { rehypeHighlight } from '@/rehype-highlight'
 
 import { codeBlockLinesPlugin } from './line-numbers'
 
@@ -23,9 +24,7 @@ export function syntaxHighlight(
 ) {
   // Simple restriction on credentials to prevent unexpected behavior
   const credentials = (
-    typeof options?.maskCredentials === 'string'
-      ? [options.maskCredentials]
-      : (options?.maskCredentials ?? [])
+    typeof options?.maskCredentials === 'string' ? [options.maskCredentials] : (options?.maskCredentials ?? [])
   ).filter((c) => {
     // Credentials must be at least 3 characters to mask.
     if (c.length < 3) {
@@ -64,7 +63,7 @@ export function syntaxHighlight(
         (acc, credential) =>
           acc
             .split(credential)
-            .join(`<span class="credentials">${credential}</span>`),
+            .join(`<span class="credential"><span class="credential-value">${credential}</span></span>`),
         htmlString,
       )
     : htmlString

@@ -13,9 +13,9 @@ runs:
   using: 'composite'
   steps:
     - name: Install pnpm
-      uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2
+      uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4
     - name: Use Node.js ${{ inputs.node-version }}
-      uses: actions/setup-node@0a44ba7841725637a19e28fa30b79a866c81b0a6
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
         node-version: ${{ inputs.node-version }}
         cache: 'pnpm'
@@ -23,7 +23,7 @@ runs:
       shell: bash
       run: pnpm install
     - name: Restore Turborepo cache
-      uses: actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57
+      uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
       with:
         path: .turbo
         key: turbo-${{ runner.os }}-node-${{ inputs.node-version }}-${{ github.sha }}
@@ -33,19 +33,18 @@ runs:
     - if: ${{ inputs.packages-only == 'false' }}
       name: Build
       shell: bash
-      # GitHub Actions runners have two cores, so we can run two tasks in parallel
-      run: pnpm turbo --concurrency=2 build
+      run: pnpm turbo --concurrency=100% build
       env:
-        NODE_OPTIONS: "--max_old_space_size=4096"
+        NODE_OPTIONS: '--max_old_space_size=8192'
     - if: ${{ inputs.packages-only == 'true' }}
       name: Build packages
       shell: bash
-      run: pnpm turbo --concurrency=2 --filter './packages/**' build
+      run: pnpm turbo --concurrency=100% --filter './packages/**' build
       env:
-        NODE_OPTIONS: "--max_old_space_size=4096"
+        NODE_OPTIONS: '--max_old_space_size=8192'
     - if: ${{ inputs.packages-only != 'true' && inputs.packages-only != 'false' }}
       name: Build package
       shell: bash
-      run: pnpm turbo --concurrency=2 --filter './packages/${{inputs.packages-only}}' build
+      run: pnpm turbo --concurrency=100% --filter '${{inputs.packages-only}}' build
       env:
-        NODE_OPTIONS: "--max_old_space_size=4096"
+        NODE_OPTIONS: '--max_old_space_size=8192'

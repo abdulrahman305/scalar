@@ -8,96 +8,107 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch: null
 
+env:
+  NODE_OPTIONS: '--max_old_space_size=8192'
+  TURBO_CACHE_DIR: '${{ github.ref_name }}/.turbo'
 jobs:
   harden_security:
     name: Check used GitHub Actions
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - name: Ensure all Actions are pinned to a Commit SHA
-        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@6eb1abde32fed00453b0d03497f4ba4fecba146d
+        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@fc87bb5b5a97953d987372e74478de634726b3e5
 
+  # Initial build.
+  # We only build the packages and integrations as everything else depends on them
+  # turbo is cached to sticky disk and pnpm is cached in the standard actions cache
   build:
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-8vcpu-ubuntu-2204
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [18, 20]
+        node-version: [20, 22]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - name: Build
-        uses: ./.github/actions/build
+        uses: ./.github/actions/build-blacksmith
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Save Turborepo cache
-        uses: actions/cache/save@1bd1e32a3bdc45362d1e726936510720a7c30a57
-        with:
-          path: .turbo
-          key: turbo-${{ runner.os }}-node-${{ matrix.node-version }}-${{ github.sha }}
+          packages: './{packages,integrations}/**'
 
   docker:
     name: Build and Tag Docker Image
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
       - name: Check whether the Dockerfile or any of its contents were modified
         id: changed-files
-        uses: tj-actions/changed-files@4edd678ac3f81e2dc578756871e4d00c19191daf
+        uses: step-security/changed-files@95b56dadb92a30ca9036f16423fd3c088a71ee94 # v46
         with:
           files_yaml: |
             api_reference_docker:
-              - packages/api-reference/docker/**
+              - integrations/docker/**
             api_reference_docker_version:
-              - packages/api-reference/docker/package.json
-
-      - if: steps.changed-files.outputs.api_reference_docker_any_changed == 'true'
-        name: Set up Docker
-        uses: docker/setup-buildx-action@f7ce87c1d6bead3e36075b2ce75da1f6cc28aaca
+              - integrations/docker/package.json
 
       - if: steps.changed-files.outputs.api_reference_docker_any_changed == 'true'
         name: Get version from package.json
         id: package-version
-        run: echo "VERSION=$(node -p "require('./packages/api-reference/docker/package.json').version")" >> "$GITHUB_OUTPUT"
+        working-directory: integrations/docker
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - if: steps.changed-files.outputs.api_reference_docker_any_changed == 'true'
-        name: Build and tag Docker image
-        uses: docker/build-push-action@ca877d9245402d1537745e0e356eab47c3520991
+        name: Build @scalar/api-reference
+        uses: ./.github/actions/build-blacksmith
         with:
-          context: packages/api-reference/docker/src
-          file: packages/api-reference/docker/src/Dockerfile
-          push: false
+          node-version: 22
+          packages: '@scalar/api-reference...'
+
+      - if: steps.changed-files.outputs.api_reference_docker_any_changed == 'true'
+        name: Copy JavaScript asset from @scalar/api-reference
+        working-directory: integrations/docker
+        run: pnpm copy:standalone
+
+      - if: steps.changed-files.outputs.api_reference_docker_any_changed == 'true'
+        name: Compress static assets
+        working-directory: integrations/docker
+        run: pnpm compress
+
+      - if: steps.changed-files.outputs.api_reference_docker_any_changed == 'true'
+        name: Build Docker image
+        uses: useblacksmith/build-push-action@574eb0ee0b59c6a687ace24192f0727dfb65d6d7 # v1
+        with:
+          context: integrations/docker
+          file: integrations/docker/Dockerfile
           load: true
-          # Linux-only at first
-          platforms: linux/amd64
           tags: |
             scalarapi/api-reference:latest
             scalarapi/api-reference:${{ steps.package-version.outputs.VERSION }}
 
       - if: steps.changed-files.outputs.api_reference_docker_any_changed == 'true'
         name: Scan for vulnerabilities
-        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0
+        uses: aquasecurity/trivy-action@dc5a429b52fcf669ce959baa2c2dd26090d2a6c4 # 0.32.0
         with:
-          scan-type: 'config'
-          scan-ref: 'packages/api-reference/docker/src/Dockerfile'
+          scan-type: 'image'
+          image-ref: 'scalarapi/api-reference:latest'
           format: 'table'
-          exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          retry-count: 3
-          retry-delay: 30s
 
       - if: startsWith(github.event.head_commit.message, 'RELEASING:') && steps.changed-files.outputs.api_reference_docker_version_any_changed == 'true'
         name: Log in to DockerHub
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
         with:
           # Username of your Docker account
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -105,139 +116,456 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - if: startsWith(github.event.head_commit.message, 'RELEASING:') && steps.changed-files.outputs.api_reference_docker_version_any_changed == 'true'
-        name: Push Docker image
-        uses: docker/build-push-action@ca877d9245402d1537745e0e356eab47c3520991
+        name: Build and Push Docker image
+        uses: useblacksmith/build-push-action@574eb0ee0b59c6a687ace24192f0727dfb65d6d7 # v1
         with:
-          context: packages/api-reference/docker/src
-          file: packages/api-reference/docker/src/Dockerfile
+          context: integrations/docker
+          file: integrations/docker/Dockerfile
           push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           # With ARM
-          platforms: linux/amd64,linux/arm64
+          platforms: |
+            linux/amd64
+            linux/arm64
           tags: |
             scalarapi/api-reference:latest
             scalarapi/api-reference:${{ steps.package-version.outputs.VERSION }}
 
   format:
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [20]
-
+        node-version: [22]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
+        uses: useblacksmith/setup-node@65c6ca86fdeb0ab3d85e78f57e4f6a7e4780b391 # v5
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - name: Install dev dependencies
         run: pnpm install --dev
-      - name: Check code style
-        run: pnpm format:check
+      # You might ask why we need a GitHub Action to install Biome.
+      # Well, it's because GHA throws an error when it's run through pnpm.# > Error: Cannot find module '@biomejs/cli-linux-x64/biome'
+      - name: Setup Biome
+        uses: biomejs/setup-biome@454fa0d884737805f48d7dc236c1761a0ac3cc13 # v2
+        with:
+          version: 1.9.4
+      - name: Lint code
+        run: biome lint --diagnostic-level=error
+      - name: Check formatting
+        run: pnpm prettier --check . && biome format
+
+  build-examples:
+    needs: [build]
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node-version: [22]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Build
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: ${{ matrix.node-version }}
+          packages: './examples/**'
 
   types:
     needs: [build]
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [20]
-
+        node-version: [22]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - name: Build
-        uses: ./.github/actions/build
+        uses: ./.github/actions/build-blacksmith
         with:
           node-version: ${{ matrix.node-version }}
+          packages: './{packages,integrations}/**'
       - name: Check types
-        run: pnpm turbo types:check
+        run: pnpm types:check
 
-  test:
+  test-packages:
     needs: [build]
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [18, 20]
+        node-version: [20, 22]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Build packages
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: ${{ matrix.node-version }}
+          packages: './packages/**'
+      - name: Start test servers
+        run: pnpm script run test-servers &
+      - name: Run tests
+        run: |
+          pnpm script wait -p 5051 5052 &&
+          pnpm test:packages:ci
+
+  test-integrations:
+    needs: [build]
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node-version: [20, 22]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Build packages
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: ${{ matrix.node-version }}
+          packages: './integrations/**'
+      - name: Run tests
+        run: pnpm test:integrations:ci
+
+  test-proxy-server:
+    needs: [build]
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        go-version: ['1.21']
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Build packages
-        uses: ./.github/actions/build
-        with:
-          node-version: ${{ matrix.node-version }}
-          packages-only: 'true'
-      - name: Run tests
-        run: pnpm test:ci
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - name: Setup Go
-        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
         with:
-          go-version: '1.21'
+          go-version: ${{ matrix.go-version }}
       - name: Run tests for the proxy server (Go)
-        run: cd examples/proxy-server && pnpm test
+        run: cd projects/proxy-scalar-com && go test -v
+
+  java-webjar-test:
+    needs: [build]
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Build @scalar/api-reference
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: '22'
+          packages: '@scalar/api-reference'
+      - name: Copy JavaScript asset from @scalar/api-reference
+        run: pnpm --filter @scalar/webjar copy:standalone
+      - name: Check if the JS file exists
+        run: |
+          ls -la integrations/java/webjar/src/main/resources/META-INF/resources/webjars/scalar/scalar.js || exit 1
+      - name: Setup Java
+        uses: actions/setup-java@17f84c3641ba7b8f6deff6309fc4c864478f5d62 # v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Run Maven tests
+        run: pnpm --filter @scalar/webjar test
+
+  java-webjar-publish:
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'RELEASING:')
+    needs: [build, java-webjar-test]
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    concurrency:
+      group: java-webjar-publish
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Check for new Webjar version
+        id: changed-files
+        uses: step-security/changed-files@95b56dadb92a30ca9036f16423fd3c088a71ee94 # v46
+        with:
+          files_yaml: |
+            java_webjar_package:
+              - integrations/java/webjar/package.json
+      - if: steps.changed-files.outputs.java_webjar_package_any_changed == 'true'
+        name: Build @scalar/api-reference
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: '22'
+          packages: '@scalar/api-reference'
+      - if: steps.changed-files.outputs.java_webjar_package_any_changed == 'true'
+        name: Copy JavaScript asset from @scalar/api-reference
+        run: pnpm --filter @scalar/webjar copy:standalone
+      - if: steps.changed-files.outputs.java_webjar_package_any_changed == 'true'
+        name: Setup Java
+        uses: actions/setup-java@17f84c3641ba7b8f6deff6309fc4c864478f5d62 # v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          server-id: 'central'
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+      - if: steps.changed-files.outputs.java_webjar_package_any_changed == 'true'
+        name: Set version in pom.xml (using the version from package.json)
+        run: pnpm --filter @scalar/webjar update:version
+      - if: steps.changed-files.outputs.java_webjar_package_any_changed == 'true'
+        name: Build Java WebJar
+        run: pnpm --filter @scalar/webjar build
+      - if: steps.changed-files.outputs.java_webjar_package_any_changed == 'true'
+        name: Release Java WebJar
+        run: pnpm --filter @scalar/webjar release
+        env:
+          # Create an account on Sonatype and add the credentials to the repository secrets.
+          # Generate User Token: https://central.sonatype.com/account
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          GPG_KEYNAME: ${{ secrets.GPG_KEY_ID }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
   stats:
     needs: [build]
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [20]
-
+        node-version: [22]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - name: Build @scalar/api-reference
-        uses: ./.github/actions/build
+        uses: ./.github/actions/build-blacksmith
         with:
           node-version: ${{ matrix.node-version }}
-          packages-only: 'api-reference'
+          packages: '@scalar/api-reference'
       - name: Send bundle stats and build information to RelativeCI
-        uses: relative-ci/agent-action@26338b6cffd0b7eef7136ebed5ff3ddc22cbe113
+        uses: relative-ci/agent-action@1707825cbfcc7452b2913d273414705415ae64d4 # v3
         with:
           key: ${{ secrets.RELATIVE_CI_KEY }}
           token: ${{ secrets.GITHUB_TOKEN }}
           webpackStatsFile: ./packages/api-reference/dist/browser/webpack-stats.json
 
+  test-e2e-api-reference:
+    needs: [build]
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        node-version: [22]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Build packages
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: ${{ matrix.node-version }}
+          packages: './packages/**'
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "PLAYWRIGHT_VERSION=$(npx playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+      - name: Playwright binary cache
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.PLAYWRIGHT_VERSION }}
+      - name: Install Playwright browsers
+        run: npx playwright install
+      - name: Install Playwright dependencies
+        run: npx playwright install-deps
+      - name: Run e2e tests (@scalar/api-reference)
+        run: CI=1 pnpm test:e2e:api-reference
+
+  test-galaxy-scalar-com:
+    needs: [build]
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        node-version: [22]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Build packages
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: ${{ matrix.node-version }}
+          packages: './packages/**'
+      - name: Install Playwright browsers
+        run: npx playwright install
+      - name: Install Playwright dependencies
+        run: npx playwright install-deps
+      - name: Start @scalar/mock-server playground (galaxy.scalar.com)
+        run: pnpm --filter @scalar/mock-server dev:local &
+      - name: Run e2e tests (galaxy.scalar.com)
+        run: CI=1 pnpm test:e2e:galaxy-scalar-com
+
+  test-e2e-scalar-app:
+    needs: [build]
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        node-version: [22]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Build packages
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: ${{ matrix.node-version }}
+          packages: './packages/**'
+      - name: Build scalar-app
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: ${{ matrix.node-version }}
+          packages: './projects/scalar-app'
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "PLAYWRIGHT_VERSION=$(npx playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+      - name: Playwright binary cache
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.PLAYWRIGHT_VERSION }}
+      - name: Install Playwright browsers (chromium only)
+        run: npx playwright install chromium
+      - name: Install Playwright dependencies
+        run: npx playwright install-deps
+      - name: Check whether the appFiles are there
+        run: ls -R ./projects/scalar-app/dist
+      - name: Start Xvfb
+        run: |
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+      - name: Run e2e tests (scalar-app)
+        run: CI=1 DEBUG=pw:browser* pnpm test:e2e:electron
+        env:
+          DISPLAY: ':99'
+      - if: failure()
+        name: Show stack traces and debug info
+        working-directory: playwright
+        run: |
+          echo "=== Playwright Logs ==="
+          cat ~/.cache/ms-playwright/browser_logs/*.log || true
+
+          echo "=== Test Results ==="
+          ls -la test-results/ || true
+
+          echo "=== Trace Information ==="
+          for trace_file in test-results/*/trace.zip; do
+            if [ -f "$trace_file" ]; then
+              echo -e "\nAttempting to show trace: $trace_file"
+              timeout 30 pnpm exec playwright show-trace "$trace_file" || echo "Trace viewing timed out"
+            fi
+          done
+
+  test-component-snapshots:
+    if: github.event_name == 'pull_request'
+    needs: [build]
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    permissions:
+      contents: read
+      pull-requests: write
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        node-version: [22]
+    container:
+      image: mcr.microsoft.com/playwright:v1.54.0-noble
+      options: --user root
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Generate new DEPLOY_ID
+        run: echo "DEPLOY_ID=$(npx uuid)" >> "$GITHUB_ENV" && echo $DEPLOY_ID
+      - name: Build
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: ${{ matrix.node-version }}
+          packages: './packages/**'
+        env:
+          DEPLOY_ID: ${{ env.DEPLOY_ID }}
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "PLAYWRIGHT_VERSION=$(npx playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+      - name: Build storybook
+        run: pnpm --filter components build:storybook
+      - name: Run e2e tests (@scalar/components)
+        run: pnpm --filter components test:e2e:ci
+        # Only when the tests failed and the PR is from the same repository
+      - if: ${{ !cancelled() }} && github.event.pull_request.head.repo.full_name == github.repository && !contains(github.actor, '[bot]')
+        name: Deploy Playwright Report to Netlify
+        run: |
+          pnpx netlify deploy --dir "./packages/components/playwright-report" \
+            --message "Deployed from GitHub (${{ env.DEPLOY_ID }})" \
+            --site ${{ vars.NETLIFY_SITE_ID_COMPONENTS_SNAPSHOTS }} \
+            --auth ${{ secrets.NETLIFY_AUTH_TOKEN }} \
+            --filter @scalar/components \
+            --alias=${{env.DEPLOY_ID}}
+        # Only when the tests failed and the PR is from the same repository
+      - if: ${{ !cancelled() }} && github.event.pull_request.head.repo.full_name == github.repository && !contains(github.actor, '[bot]')
+        name: Add Netlify Playwright Report URL to the PR
+        uses: daun/playwright-report-summary@93883773b4f4f0951d8bcdb780c6443ca51eaf7b # v3
+        with:
+          comment-title: 'Scalar Components Snapshot Test Results'
+          report-url: https://${{env.DEPLOY_ID}}--scalar-snapshots.netlify.app
+          report-file: packages/components/playwright-results.json
+
   npm-publish:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-22.04
-    timeout-minutes: 10
+    runs-on: beefcake
+    timeout-minutes: 15
     # Avoid running this job in parallel:
-    # `changesets/action` creates/updates the release branch, which shouldn’t happen in parallel.
-    # npm publish also shouldn’t happen in parallel.
+    # `changesets/action` creates/updates the release branch, which shouldn't happen in parallel.
+    # npm publish also shouldn't happen in parallel.
     concurrency:
       group: npm-publish
       cancel-in-progress: false
     permissions:
       contents: write
       id-token: write
-    needs: [harden_security, build, format, types, test]
+    needs:
+      [harden_security, build, format, types, test-packages, test-integrations]
     strategy:
       matrix:
-        node-version: [20]
+        node-version: [22]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - name: Build
         uses: ./.github/actions/build
         with:
           node-version: ${{ matrix.node-version }}
+          use-github-runner: 'true'
       - name: Git Status
         run: git status
       - name: Stash changes
         run: git stash
       - name: Create Release Pull Request or Publish to npm
         id: changesets
-        uses: changesets/action@c8bada60c408975afd1a20b3db81d6eee6789308
+        uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1
         with:
           # The pull request title.
           title: 'chore: release'
@@ -260,47 +588,48 @@ jobs:
 
   bust-cdn-cache:
     needs: [npm-publish]
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     steps:
       - name: Bust CDN cache
-        uses: fjogeleit/http-request-action@23ad54bcd1178fcff6a0d17538fa09de3a7f0a4d
+        uses: fjogeleit/http-request-action@23ad54bcd1178fcff6a0d17538fa09de3a7f0a4d # v1.16.4
         with:
           url: 'https://purge.jsdelivr.net/npm/@scalar/api-reference'
           method: 'GET'
 
   todesktop-build:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'RELEASING:')
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
-    needs: [build, test]
+    needs: [build, test-packages]
     strategy:
       matrix:
-        node-version: [20]
+        node-version: [22]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - name: Build
-        uses: ./.github/actions/build
+        uses: ./.github/actions/build-blacksmith
         with:
           node-version: ${{ matrix.node-version }}
+          packages: './{packages,integrations,projects}/**'
       - name: Git Status
         run: git status
       - name: Stash changes
         run: git stash
       - name: Check whether appFiles are there
-        run: ls -R ./packages/scalar-app/dist
+        run: ls -R ./projects/scalar-app/dist
       - if: startsWith(github.event.head_commit.message, 'RELEASING:')
-        name: Check whether there’s a new version of the app
+        name: Check whether there's a new version of the app
         id: changed-files
-        uses: tj-actions/changed-files@4edd678ac3f81e2dc578756871e4d00c19191daf
+        uses: step-security/changed-files@95b56dadb92a30ca9036f16423fd3c088a71ee94 # v46
         with:
           files_yaml: |
             api_client_app:
-              - packages/scalar-app/package.json
+              - projects/scalar-app/package.json
       - if: steps.changed-files.outputs.api_client_app_any_changed == 'true'
         name: Check whether appFiles are there
-        run: ls -R ./packages/scalar-app/dist
+        run: ls -R ./projects/scalar-app/dist
       - if: steps.changed-files.outputs.api_client_app_any_changed == 'true'
         name: Build in the toDesktop cloud
         run: pnpm --filter scalar-app todesktop:build:ci
@@ -308,60 +637,21 @@ jobs:
           TODESKTOP_EMAIL: ${{ secrets.TODESKTOP_EMAIL }}
           TODESKTOP_ACCESS_TOKEN: ${{ secrets.TODESKTOP_ACCESS_TOKEN }}
 
-  stackblitz:
-    if: github.head_ref == 'changeset-release/main'
-    runs-on: ubuntu-22.04
-    timeout-minutes: 10
-    needs: [build]
-    strategy:
-      matrix:
-        node-version: [20]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Build packages
-        uses: ./.github/actions/build
-        with:
-          node-version: ${{ matrix.node-version }}
-          packages-only: 'true'
-      - name: Bump versions
-        # Let’s apply the changesets and bump the version already,
-        # so it’ll have the upcoming version numbers already.
-        run: pnpm changeset version
-      - name: Publish on Stackblitz
-        # We can’t use npx pkg-pr-new publish ./packages/* here.
-        # We want to explicitly publish the packages we want to save some time.
-        run: npx pkg-pr-new publish
-          ./packages/api-client
-          ./packages/api-reference
-          ./packages/api-reference-react
-          ./packages/components
-          ./integrations/docusaurus
-          ./integrations/express
-          ./packages/fastify-api-reference
-          ./integrations/hono
-          ./integrations/nestjs
-          ./integrations/nextjs
-          ./integrations/nuxt
-          ./packages/themes
-
   deploy-api-client:
     # Only run this job for PRs from the same repository
     if: github.ref == 'refs/heads/main' || github.event.pull_request.head.repo.full_name == github.repository
     needs: [build]
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [20]
-
+        node-version: [22]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - name: Check which files were touched
         id: changed-files
-        uses: tj-actions/changed-files@4edd678ac3f81e2dc578756871e4d00c19191daf
+        uses: step-security/changed-files@95b56dadb92a30ca9036f16423fd3c088a71ee94 # v46
         with:
           files_yaml: |
             api_client:
@@ -369,13 +659,14 @@ jobs:
               - packages/api-client/**
       - if: steps.changed-files.outputs.api_client_any_changed == 'true'
         name: Build
-        uses: ./.github/actions/build
+        uses: ./.github/actions/build-blacksmith
         with:
           node-version: ${{ matrix.node-version }}
+          packages: 'client-scalar-com...'
       - if: steps.changed-files.outputs.api_client_any_changed == 'true'
         name: Deploy to client.staging.scalar.com (staging)
         id: deploy-client-staging
-        uses: cloudflare/wrangler-action@7a5f8bbdfeedcde38e6777a50fe685f89259d4ca
+        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3
         with:
           command: pages deploy dist --project-name=client-staging
           workingDirectory: projects/client-scalar-com
@@ -389,17 +680,17 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       - if: github.ref != 'refs/heads/main' && steps.deploy-client-staging.outputs.deployment-url
         name: Add Cloudflare Preview URL to the PR
-        uses: thollander/actions-comment-pull-request@fabd468d3a1a0b97feee5f6b9e499eab0dd903f6
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3
         with:
           message: |
             **Cloudflare Preview for the API Client**
 
             ${{ steps.deploy-client-staging.outputs.deployment-url }}
-          comment_tag: 'cloudflare-preview'
+          comment-tag: 'cloudflare-preview'
       - if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'RELEASING:')
         name: Check for new @scalar/api-client version
         id: client-version
-        uses: tj-actions/changed-files@4edd678ac3f81e2dc578756871e4d00c19191daf
+        uses: step-security/changed-files@95b56dadb92a30ca9036f16423fd3c088a71ee94 # v46
         with:
           files_yaml: |
             api_client:
@@ -407,7 +698,7 @@ jobs:
       - if: steps.client-version.outputs.api_client_any_changed == 'true'
         name: Deploy to client.scalar.com (production)
         id: deploy-client-production
-        uses: cloudflare/wrangler-action@7a5f8bbdfeedcde38e6777a50fe685f89259d4ca
+        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3
         with:
           command: pages deploy dist --project-name=client
           workingDirectory: projects/client-scalar-com
@@ -420,25 +711,67 @@ jobs:
           # 2) Create a token with the following permissions:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
-  deploy-examples:
-    # Skip for forks and bot PRs
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && !contains(github.actor, '[bot]')
-    needs: [build]
-    runs-on: ubuntu-22.04
+  push-to-scalar-registry:
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'RELEASING:')
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
+    needs: [build, test-packages]
     strategy:
       matrix:
-        node-version: [20]
+        node-version: [22]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Build @scalar/galaxy
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: ${{ matrix.node-version }}
+          packages: '@scalar/galaxy...'
+      - name: Check whether there's a new version of @scalar/galaxy
+        id: changed-files
+        uses: step-security/changed-files@95b56dadb92a30ca9036f16423fd3c088a71ee94 # v46
+        with:
+          files_yaml: |
+            galaxy:
+              - packages/galaxy/**
+      - if: steps.changed-files.outputs.galaxy_any_changed == 'true'
+        name: Extract version from package.json
+        working-directory: packages/galaxy
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - if: steps.changed-files.outputs.galaxy_any_changed == 'true'
+        name: Login to Scalar Registry
+        run: npx @scalar/cli auth login --token ${{ secrets.SCALAR_API_KEY }}
+      - if: steps.changed-files.outputs.galaxy_any_changed == 'true'
+        name: Push to Scalar Registry
+        run: npx @scalar/cli registry publish --namespace scalar --slug galaxy --version ${{ env.VERSION }} packages/galaxy/dist/latest.yaml
+
+  deploy-examples:
+    # Main Branch or PR from the same repository
+    if: |
+      github.ref == 'refs/heads/main' || (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository && !contains(github.actor, '[bot]')
+      )
+    needs: [build]
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 10
+    concurrency: ${{ github.workflow }}-${{ github.ref }}
+    strategy:
+      matrix:
+        node-version: [22]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - name: Generate new DEPLOY_ID
         run: echo "DEPLOY_ID=$(uuidgen)" >> "$GITHUB_ENV" && echo $DEPLOY_ID
       - name: Build
-        uses: ./.github/actions/build
+        uses: ./.github/actions/build-blacksmith
         with:
           node-version: ${{ matrix.node-version }}
+          packages: '@scalar-examples/web...'
         env:
           DEPLOY_ID: ${{ env.DEPLOY_ID }}
       - name: Install Netlify CLI
@@ -452,57 +785,46 @@ jobs:
             --filter @scalar-examples/web \
             --alias=${{env.DEPLOY_ID}}
       - name: Add Netlify Preview URL to the PR
-        uses: thollander/actions-comment-pull-request@fabd468d3a1a0b97feee5f6b9e499eab0dd903f6
+        if: github.event_name == 'pull_request'
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3
         with:
           message: |
             **Preview Examples**
 
             https://${{env.DEPLOY_ID}}--scalar-deploy-preview.netlify.app
-          comment_tag: 'netlify-preview'
+          comment-tag: 'netlify-preview'
 
   deploy-components:
     # Skip for forks and bot PRs
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && !contains(github.actor, '[bot]')
     needs: [build]
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [20]
-
+        node-version: [22]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Check which files were touched
-        id: changed-files
-        uses: tj-actions/changed-files@4edd678ac3f81e2dc578756871e4d00c19191daf
-        with:
-          files_yaml: |
-            components:
-              - packages/components/**
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
-      - if: steps.changed-files.outputs.components_any_changed == 'true'
-        name: Generate new DEPLOY_ID
+      - name: Generate new DEPLOY_ID
         run: echo "DEPLOY_ID=$(uuidgen)" >> "$GITHUB_ENV" && echo $DEPLOY_ID
 
-      - if: steps.changed-files.outputs.components_any_changed == 'true'
-        name: Build
-        uses: ./.github/actions/build
+      - name: Build
+        uses: ./.github/actions/build-blacksmith
         with:
           node-version: ${{ matrix.node-version }}
+          packages: './packages/**'
         env:
           DEPLOY_ID: ${{ env.DEPLOY_ID }}
 
-      - if: steps.changed-files.outputs.components_any_changed == 'true'
-        name: Install Netlify CLI
+      - name: Install Netlify CLI
         run: pnpm install -g netlify
 
-      - if: steps.changed-files.outputs.components_any_changed == 'true'
-        name: Build storybook
+      - name: Build storybook
         run: pnpm --filter components build:storybook
 
-      - if: steps.changed-files.outputs.components_any_changed == 'true'
-        name: Deploy Storybook to Netlify (Preview)
+      - name: Deploy Storybook to Netlify (Preview)
         run: |
           netlify deploy --dir "./packages/components/storybook-static" \
             --message "Deployed from GitHub (${{ env.DEPLOY_ID }})" \
@@ -511,38 +833,43 @@ jobs:
             --filter @scalar/components \
             --alias=${{env.DEPLOY_ID}}
 
-      - if: steps.changed-files.outputs.components_any_changed == 'true'
-        name: Add Netlify Preview URL to the PR
-        uses: thollander/actions-comment-pull-request@fabd468d3a1a0b97feee5f6b9e499eab0dd903f6
+      - name: Add Netlify Preview URL to the PR
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3
         with:
           message: |
             **Preview Storybook**
 
             https://${{env.DEPLOY_ID}}--scalar-components.netlify.app
-          comment_tag: 'netlify-preview'
+          comment-tag: 'storybook-preview'
 
   aspnetcore-build-test:
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 10
     needs: [build]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@3951f0dfe7a07e2313ec93c75700083e2005cbab
-        with:
-          dotnet-version: 9.x
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
       - name: Build @scalar/api-reference
-        uses: ./.github/actions/build
+        uses: ./.github/actions/build-blacksmith
         with:
-          node-version: 20
-          packages-only: 'api-reference'
+          node-version: 22
+          packages: '@scalar/api-reference...'
 
       - name: Copy JavaScript asset from @scalar/api-reference
         working-directory: integrations/aspnetcore
-        run: pnpm prepare:build
+        run: pnpm copy:standalone
+
+      - name: Compress static assets
+        working-directory: integrations/aspnetcore
+        run: pnpm compress
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: |
+            9.x
+            8.x
 
       - name: Restore dependencies
         working-directory: integrations/aspnetcore
@@ -556,19 +883,65 @@ jobs:
         working-directory: integrations/aspnetcore
         run: dotnet test -c Release --no-build
 
-  aspnetcore-publish:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-22.04
+  aspire-build-test:
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 10
-    # We don’t want to run `nuget push` (publishing to NuGet) in parallel.
+    needs: [build]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+      - name: Build @scalar/api-reference
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: 22
+          packages: '@scalar/api-reference...'
+
+      - name: Copy JavaScript asset from @scalar/api-reference
+        working-directory: integrations/aspire
+        run: pnpm copy:standalone
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: |
+            9.x
+            8.x
+
+      - name: Restore dependencies
+        working-directory: integrations/aspire
+        run: dotnet restore
+
+      - name: Build solution
+        working-directory: integrations/aspire
+        run: dotnet build -c Release --no-restore
+
+      - name: Test solution
+        working-directory: integrations/aspire
+        run: dotnet test -c Release --no-build
+
+  aspnetcore-publish:
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'RELEASING:')
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 10
+    # We don't want to run `nuget push` (publishing to NuGet) in parallel.
     concurrency:
       group: aspnetcore-publish
       cancel-in-progress: false
-    needs: [harden_security, build, format, types, test, aspnetcore-build-test]
+    needs:
+      [
+        harden_security,
+        build,
+        format,
+        types,
+        test-packages,
+        test-integrations,
+        aspnetcore-build-test,
+      ]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
       - name: Git Status
         run: git status
@@ -576,20 +949,13 @@ jobs:
       - name: Stash changes
         run: git stash
 
-      - if: startsWith(github.event.head_commit.message, 'RELEASING:')
-        name: Check for new NuGet package version
+      - name: Check for new NuGet package version
         id: changed-files
-        uses: tj-actions/changed-files@4edd678ac3f81e2dc578756871e4d00c19191daf
+        uses: step-security/changed-files@95b56dadb92a30ca9036f16423fd3c088a71ee94 # v46
         with:
           files_yaml: |
             aspnetcore_package:
               - integrations/aspnetcore/package.json
-
-      - if: steps.changed-files.outputs.aspnetcore_package_any_changed == 'true'
-        name: Setup .NET
-        uses: actions/setup-dotnet@3951f0dfe7a07e2313ec93c75700083e2005cbab
-        with:
-          dotnet-version: 9.x
 
       - if: steps.changed-files.outputs.aspnetcore_package_any_changed == 'true'
         name: Extract version from package.json
@@ -600,27 +966,234 @@ jobs:
 
       - if: steps.changed-files.outputs.aspnetcore_package_any_changed == 'true'
         name: Build @scalar/api-reference
-        uses: ./.github/actions/build
+        uses: ./.github/actions/build-blacksmith
         with:
-          node-version: 20
-          packages-only: 'api-reference'
+          node-version: 22
+          packages: '@scalar/api-reference...'
 
       - if: steps.changed-files.outputs.aspnetcore_package_any_changed == 'true'
         name: Copy JavaScript asset from @scalar/api-reference
         working-directory: integrations/aspnetcore
-        run: pnpm prepare:build
+        run: pnpm copy:standalone
+
+      - if: steps.changed-files.outputs.aspnetcore_package_any_changed == 'true'
+        name: Compress static assets
+        working-directory: integrations/aspnetcore
+        run: pnpm compress
+
+      - if: steps.changed-files.outputs.aspnetcore_package_any_changed == 'true'
+        name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: |
+            9.x
+            8.x
 
       - if: steps.changed-files.outputs.aspnetcore_package_any_changed == 'true'
         name: Restore dependencies
-        working-directory: integrations/aspnetcore/src/Scalar.AspNetCore
+        working-directory: integrations/aspnetcore
         run: dotnet restore
 
       - if: steps.changed-files.outputs.aspnetcore_package_any_changed == 'true'
-        name: Pack Scalar.AspNetCore
-        working-directory: integrations/aspnetcore/src/Scalar.AspNetCore
-        run: dotnet pack -c Release --no-restore --output nupkgs /p:Version=$VERSION
+        name: Pack packages
+        working-directory: integrations/aspnetcore
+        run: |
+          dotnet pack src/Scalar.AspNetCore -c Release --no-restore --output nupkgs /p:Version=$VERSION
+          dotnet pack src/Scalar.AspNetCore.Microsoft -c Release --no-restore --output nupkgs /p:Version=$VERSION
+          dotnet pack src/Scalar.AspNetCore.Swashbuckle -c Release --no-restore --output nupkgs /p:Version=$VERSION
 
       - if: steps.changed-files.outputs.aspnetcore_package_any_changed == 'true'
-        name: Publish Scalar.AspNetCore
-        working-directory: integrations/aspnetcore/src/Scalar.AspNetCore
+        name: Publish packages
+        working-directory: integrations/aspnetcore
         run: dotnet nuget push nupkgs/*.nupkg -k ${{ secrets.NUGET_TOKEN }} -s https://api.nuget.org/v3/index.json
+
+  aspire-publish:
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'RELEASING:')
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 10
+    concurrency:
+      group: aspire-publish
+      cancel-in-progress: false
+    needs:
+      [
+        harden_security,
+        build,
+        format,
+        types,
+        test-packages,
+        test-integrations,
+        aspire-build-test,
+      ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+      - name: Git Status
+        run: git status
+
+      - name: Stash changes
+        run: git stash
+
+      - name: Check for Aspire package.json changes
+        id: changed-files
+        uses: step-security/changed-files@95b56dadb92a30ca9036f16423fd3c088a71ee94 # v46
+        with:
+          files_yaml: |
+            aspire_package:
+              - integrations/aspire/package.json
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Extract version from package.json
+        working-directory: integrations/aspire
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Build @scalar/api-reference
+        uses: ./.github/actions/build-blacksmith
+        with:
+          node-version: 22
+          packages: '@scalar/api-reference...'
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Copy JavaScript asset from @scalar/api-reference
+        working-directory: integrations/aspire
+        run: pnpm copy:standalone
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Log in to DockerHub
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Build and push Aspire Docker image
+        uses: useblacksmith/build-push-action@574eb0ee0b59c6a687ace24192f0727dfb65d6d7 # v1
+        with:
+          context: integrations/aspire
+          file: integrations/aspire/src/Scalar.Aspire.Service/Dockerfile
+          push: true
+          # With ARM
+          platforms: |
+            linux/amd64
+            linux/arm64
+          tags: |
+            scalarapi/aspire-api-reference:latest
+            scalarapi/aspire-api-reference:${{ env.VERSION }}
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Set version in Constants.cs
+        working-directory: integrations/aspire
+        run: |
+          sed -i 's/ImageTag = "latest"/ImageTag = "'$VERSION'"/' src/Scalar.Aspire/Constants.cs
+          cat src/Scalar.Aspire/Constants.cs
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: |
+            9.x
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Restore dependencies
+        working-directory: integrations/aspire/src/Scalar.Aspire
+        run: dotnet restore
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Pack Scalar.Aspire NuGet package
+        working-directory: integrations/aspire/src/Scalar.Aspire
+        run: dotnet pack -c Release --no-restore --output nupkgs /p:Version=$VERSION
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Publish Scalar.Aspire NuGet package
+        working-directory: integrations/aspire/src/Scalar.Aspire
+        run: dotnet nuget push nupkgs/*.nupkg -k ${{ secrets.NUGET_TOKEN }} -s https://api.nuget.org/v3/index.json
+
+  fastapi-build-test:
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 10
+    needs: [build]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build dependencies
+        working-directory: integrations/fastapi
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build Python package
+        working-directory: integrations/fastapi
+        run: python -m build
+
+      - name: Run tests
+        working-directory: integrations/fastapi
+        run: python run_tests.py
+
+  fastapi-publish:
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'RELEASING:')
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 10
+    concurrency:
+      group: fastapi-publish
+      cancel-in-progress: false
+    needs:
+      [
+        harden_security,
+        build,
+        format,
+        types,
+        test-packages,
+        test-integrations,
+        fastapi-build-test,
+      ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+      - name: Check for FastAPI integration changes
+        id: changed-files
+        uses: step-security/changed-files@95b56dadb92a30ca9036f16423fd3c088a71ee94 # v46
+        with:
+          files_yaml: |
+            fastapi_integration:
+              - integrations/fastapi/package.json
+
+      - if: steps.changed-files.outputs.fastapi_integration_any_changed == 'true'
+        name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+
+      - if: steps.changed-files.outputs.fastapi_integration_any_changed == 'true'
+        name: Install build dependencies
+        working-directory: integrations/fastapi
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - if: steps.changed-files.outputs.fastapi_integration_any_changed == 'true'
+        name: Build Python package
+        working-directory: integrations/fastapi
+        run: python -m build
+
+      - if: steps.changed-files.outputs.fastapi_integration_any_changed == 'true'
+        name: Publish to PyPI
+        working-directory: integrations/fastapi
+        run: |
+          twine upload --username __token__ --password ${{ secrets.PYPI_TOKEN }} dist/*

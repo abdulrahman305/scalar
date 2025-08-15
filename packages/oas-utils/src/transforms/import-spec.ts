@@ -1,46 +1,34 @@
-import type { SelectedSecuritySchemeUids } from '@/entities/shared/utility'
-import {
-  type Collection,
-  type CollectionPayload,
-  type Request,
-  type RequestExample,
-  type RequestParameterPayload,
-  type RequestPayload,
-  type Server,
-  type Tag,
-  collectionSchema,
-  createExampleFromRequest,
-  requestSchema,
-  serverSchema,
-  tagSchema,
-} from '@/entities/spec'
+import { isDefined } from '@scalar/helpers/array/is-defined'
+import { isHttpMethod } from '@scalar/helpers/http/is-http-method'
+import { keysOf } from '@scalar/object-utils/arrays'
+import { type LoadResult, dereference, load, upgrade } from '@scalar/openapi-parser'
+import type { OpenAPIV3_1 } from '@scalar/openapi-types'
+import type { ApiReferenceConfiguration } from '@scalar/types/api-reference'
+import type { SecuritySchemeOauth2 } from '@scalar/types/entities'
 import {
   type Oauth2FlowPayload,
   type SecurityScheme,
   type SecuritySchemePayload,
   securitySchemeSchema,
-} from '@/entities/spec/security'
-import { combineUrlAndPath, isDefined } from '@/helpers'
-import { isHttpMethod } from '@/helpers/httpMethods'
-import { schemaModel } from '@/helpers/schema-model'
-import { keysOf } from '@scalar/object-utils/arrays'
-import {
-  type LoadResult,
-  dereference,
-  load,
-  upgrade,
-} from '@scalar/openapi-parser'
-import type { OpenAPIV3_1 } from '@scalar/openapi-types'
-import type { ReferenceConfiguration } from '@scalar/types/legacy'
+} from '@scalar/types/entities'
 import type { UnknownObject } from '@scalar/types/utils'
 import type { Entries } from 'type-fest'
 
-/** Takes a string or object and parses it into an openapi spec compliant schema */
-export const parseSchema = async (
-  spec: string | UnknownObject,
-  { shouldLoad = true } = {},
+import type { SelectedSecuritySchemeUids } from '@/entities/shared/utility'
+import { type Collection, type CollectionPayload, collectionSchema } from '@/entities/spec/collection'
+import type { RequestParameterPayload } from '@/entities/spec/parameters'
+import { type RequestExample, createExampleFromRequest } from '@/entities/spec/request-examples'
+import { type Request, type RequestPayload, requestSchema } from '@/entities/spec/requests'
+import { type Server, serverSchema } from '@/entities/spec/server'
+import { type Tag, tagSchema } from '@/entities/spec/spec-objects'
+import { schemaModel } from '@/helpers/schema-model'
+import { getServersFromDocument } from '@/helpers/servers'
+
+const dereferenceDocument = async (
+  document: string | UnknownObject,
+  { shouldLoad = true }: { shouldLoad?: boolean } = {},
 ) => {
-  if (spec === null || (typeof spec === 'string' && spec.trim() === '')) {
+  if (document === null || (typeof document === 'string' && document.trim() === '')) {
     console.warn('[@scalar/oas-utils] Empty OpenAPI document provided.')
 
     return {
@@ -49,13 +37,13 @@ export const parseSchema = async (
     }
   }
 
-  let filesystem: LoadResult['filesystem'] | string | UnknownObject = spec
+  let filesystem: LoadResult['filesystem'] | string | UnknownObject = document
   let loadErrors: LoadResult['errors'] = []
 
   if (shouldLoad) {
-    // TODO: Plugins for URLs and files with the proxy is missing here.
+    // TODO: Plugins for URLs and files with the proxy are missing here.
     // @see packages/api-reference/src/helpers/parse.ts
-    const resp = await load(spec).catch((e) => ({
+    const response = await load(document).catch((e) => ({
       errors: [
         {
           code: e.code,
@@ -64,76 +52,82 @@ export const parseSchema = async (
       ],
       filesystem: [],
     }))
-    filesystem = resp.filesystem
-    loadErrors = resp.errors ?? []
+    filesystem = response.filesystem
+    loadErrors = response.errors ?? []
   }
 
   const { specification } = upgrade(filesystem)
   const { schema, errors: derefErrors = [] } = await dereference(specification)
 
-  if (!schema)
-    console.warn(
-      '[@scalar/oas-utils] OpenAPI Parser Warning: Schema is undefined',
-    )
+  return {
+    schema,
+    errors: [...loadErrors, ...derefErrors],
+  }
+}
+
+/** Takes a string or object and parses it into an openapi spec compliant schema */
+export const parseSchema = async (
+  originalDocument: string | UnknownObject | undefined,
+  {
+    shouldLoad = true,
+    /** If a dereferenced document is provided, we will skip the dereferencing step. */
+    dereferencedDocument = undefined,
+  }: { shouldLoad?: boolean; dereferencedDocument?: OpenAPIV3_1.Document } = {},
+) => {
+  // Skip, if a dereferenced document is provided
+  const { schema, errors } = dereferencedDocument
+    ? {
+        schema: dereferencedDocument,
+        errors: [],
+      }
+    : // Otherwise, dereference the original document
+      await dereferenceDocument(originalDocument ?? '', {
+        shouldLoad,
+      })
+
+  if (!schema) {
+    console.warn('[@scalar/oas-utils] OpenAPI Parser Warning: Schema is undefined')
+  }
+
   return {
     /**
      * Temporary fix for the parser returning an empty array
      * TODO: remove this once the parser is fixed
      */
     schema: (Array.isArray(schema) ? {} : schema) as OpenAPIV3_1.Document,
-    errors: [...loadErrors, ...derefErrors],
+    errors,
   }
 }
 
 /** Converts selected security requirements to uids */
 export const getSelectedSecuritySchemeUids = (
-  securityRequirements: SelectedSecuritySchemeUids,
-  authentication: ReferenceConfiguration['authentication'] | undefined,
-  securitySchemeMap: Record<string, string>,
+  securityRequirements: (string | string[])[],
+  preferredSecurityNames: (string | string[])[] = [],
+  securitySchemeMap: Record<string, SecurityScheme['uid']>,
 ): SelectedSecuritySchemeUids => {
-  // Filter the preferred security schemes to only include the ones that are in the security requirements
-  const preferredSecurityNames: SelectedSecuritySchemeUids = [
-    authentication?.preferredSecurityScheme ?? [],
-  ]
-    .flat()
-    .filter((name) => {
-      // Match up complex security requirements, array to array
-      if (Array.isArray(name)) {
-        // We match every element in the array
-        return securityRequirements.some(
-          (r) =>
-            Array.isArray(r) &&
-            r.length === name.length &&
-            r.every((v, i) => v === name[i]),
-        )
-      } else return securityRequirements.includes(name)
-    })
-
   // Set the first security requirement if no preferred security schemes are set
-  if (!preferredSecurityNames.length && securityRequirements[0]) {
-    preferredSecurityNames.push(securityRequirements[0])
-  }
+  const names =
+    securityRequirements[0] && !preferredSecurityNames.length ? [securityRequirements[0]] : preferredSecurityNames
 
   // Map names to uids
-  const uids = preferredSecurityNames.map((name) =>
-    Array.isArray(name)
-      ? name.map((k) => securitySchemeMap[k])
-      : securitySchemeMap[name],
-  )
+  const uids = names
+    .map((name) =>
+      Array.isArray(name) ? name.map((k) => securitySchemeMap[k]).filter(isDefined) : securitySchemeMap[name],
+    )
+    .filter(isDefined)
 
   return uids
 }
 
-export type ImportSpecToWorkspaceArgs = Pick<
-  CollectionPayload,
-  'documentUrl' | 'watchMode'
-> &
-  Pick<
-    ReferenceConfiguration,
-    'authentication' | 'baseServerURL' | 'servers'
-  > & {
+/** Create a "uid" from a slug */
+export const getSlugUid = (slug: string) => `slug-uid-${slug}` as Collection['uid']
+
+export type ImportSpecToWorkspaceArgs = Pick<CollectionPayload, 'documentUrl' | 'watchMode'> &
+  Pick<ApiReferenceConfiguration, 'authentication' | 'baseServerURL' | 'servers' | 'slug'> & {
+    /** The dereferenced document */
+    dereferencedDocument?: OpenAPIV3_1.Document
     /** Sets the preferred security scheme on the collection instead of the requests */
-    setCollectionSecurity?: boolean
+    useCollectionSecurity?: boolean
     /** Call the load step from the parser */
     shouldLoad?: boolean
   }
@@ -152,13 +146,16 @@ export type ImportSpecToWorkspaceArgs = Pick<
  * - Easy lookup and reference of dependent entities
  */
 export async function importSpecToWorkspace(
-  spec: string | UnknownObject,
+  content: string | UnknownObject | undefined,
   {
+    /** If a dereferenced document is provided, we will skip the dereferencing step. */
+    dereferencedDocument,
     authentication,
     baseServerURL,
     documentUrl,
     servers: configuredServers,
-    setCollectionSecurity = false,
+    useCollectionSecurity = false,
+    slug,
     shouldLoad,
     watchMode = false,
   }: ImportSpecToWorkspaceArgs = {},
@@ -173,33 +170,27 @@ export async function importSpecToWorkspace(
       tags: Tag[]
       securitySchemes: SecurityScheme[]
     }
-  | { error: true; importWarnings: string[] }
+  | { error: true; importWarnings: string[]; collection: undefined }
 > {
-  const { schema, errors } = await parseSchema(spec, { shouldLoad })
+  const { schema, errors } = await parseSchema(content, { shouldLoad, dereferencedDocument })
   const importWarnings: string[] = [...errors.map((e) => e.message)]
 
-  if (!schema) return { importWarnings, error: true }
+  if (!schema) {
+    return { importWarnings, error: true, collection: undefined }
+  }
   // ---------------------------------------------------------------------------
   // Some entities will be broken out as individual lists for modification in the workspace
   const start = performance.now()
   const requests: Request[] = []
 
-  // Add the base server url to any relative servers
-  const servers: Server[] = getServersFromOpenApiDocument(
-    configuredServers || schema.servers,
-    {
-      baseServerURL,
-    },
-  )
+  // Add the base server url to collection servers
+  const collectionServers: Server[] = getServersFromDocument(configuredServers || schema.servers, {
+    baseServerURL,
+    documentUrl,
+  })
 
-  // Fallback to the current window.location.origin if no servers are provided
-  if (!servers.length) {
-    const fallbackUrl = getFallbackUrl()
-
-    if (fallbackUrl) {
-      servers.push(serverSchema.parse({ url: fallbackUrl }))
-    }
-  }
+  // Store operation servers
+  const operationServers: Server[] = []
 
   /**
    * List of all tag strings. For non compliant specs we may need to
@@ -210,85 +201,123 @@ export async function importSpecToWorkspace(
   // ---------------------------------------------------------------------------
   // SECURITY HANDLING
 
-  const security =
-    schema.components?.securitySchemes ?? schema?.securityDefinitions ?? {}
+  const security = schema.components?.securitySchemes ?? schema?.securityDefinitions ?? {}
 
-  const securitySchemes = (
-    Object.entries(security) as Entries<
-      Record<string, OpenAPIV3_1.SecuritySchemeObject>
-    >
-  )
+  // @ts-expect-error - Toss out a deprecated warning for the old authentication state
+  if (authentication?.oAuth2 || authentication?.apiKey || authentication?.http) {
+    console.warn(
+      `DEPRECATION WARNING: It looks like you're using legacy authentication config. Please migrate to use the updated config. See https://github.com/scalar/scalar/blob/main/documentation/configuration.md#authentication-partial This will be removed in a future version.`,
+    )
+  }
+
+  const securitySchemes = (Object.entries(security) as Entries<Record<string, OpenAPIV3_1.SecuritySchemeObject>>)
     .map?.(([nameKey, _scheme]) => {
       // Apply any transforms we need before parsing
       const payload = {
         ..._scheme,
+        // Add the new auth config overrides, we keep the old code below for backwards compatibility
+        ...(authentication?.securitySchemes?.[nameKey] ?? {}),
         nameKey,
       } as SecuritySchemePayload
 
       // For oauth2 we need to add the type to the flows + prefill from authentication
       if (payload.type === 'oauth2' && payload.flows) {
-        const flowKeys = Object.keys(payload.flows) as Array<
-          keyof typeof payload.flows
-        >
+        const flowKeys = Object.keys(payload.flows) as Array<keyof typeof payload.flows>
 
         flowKeys.forEach((key) => {
-          if (!payload.flows?.[key]) return
+          if (!payload.flows?.[key] || _scheme.type !== 'oauth2') {
+            return
+          }
+          const authFlow = (authentication?.securitySchemes?.[nameKey] as SecuritySchemeOauth2)?.flows?.[key] ?? {}
+
+          // This part handles setting of flows via the new auth config, the rest can be removed in a future version
+          payload.flows[key] = {
+            ...(_scheme.flows?.[key] ?? {}),
+            ...authFlow,
+          } satisfies Oauth2FlowPayload
+
           const flow = payload.flows[key] as Oauth2FlowPayload
 
           // Set the type
           flow.type = key
 
-          // Prefill values from authorization config
+          // Prefill values from authorization config - old deprecated config
+          // @ts-expect-error - deprecated
           if (authentication?.oAuth2) {
-            if (authentication.oAuth2.accessToken)
+            // @ts-expect-error - deprecated
+            if (authentication.oAuth2.accessToken) {
+              // @ts-expect-error - deprecated
               flow.token = authentication.oAuth2.accessToken
+            }
+
+            // @ts-expect-error - deprecated
+            if (authentication.oAuth2.clientId) {
+              // @ts-expect-error - deprecated
+              flow['x-scalar-client-id'] = authentication.oAuth2.clientId
+            }
+
+            // @ts-expect-error - deprecated
+            if (authentication.oAuth2.scopes) {
+              // @ts-expect-error - deprecated
+              flow.selectedScopes = authentication.oAuth2.scopes
+            }
 
             if (flow.type === 'password') {
+              // @ts-expect-error - deprecated
               flow.username = authentication.oAuth2.username
+              // @ts-expect-error - deprecated
               flow.password = authentication.oAuth2.password
-            }
-            if (authentication.oAuth2.scopes) {
-              flow.selectedScopes = authentication.oAuth2.scopes
-              flow['x-scalar-client-id'] = authentication.oAuth2.clientId
             }
           }
 
           // Convert scopes to an object
-          if (Array.isArray(flow.scopes))
-            flow.scopes = flow.scopes.reduce(
-              (prev, s) => ({ ...prev, [s]: '' }),
-              {},
-            )
+          if (Array.isArray(flow.scopes)) {
+            flow.scopes = flow.scopes.reduce((prev, s) => ({ ...prev, [s]: '' }), {})
+          }
 
           // Handle x-defaultClientId
-          if (flow['x-defaultClientId'])
+          if (flow['x-defaultClientId']) {
             flow['x-scalar-client-id'] = flow['x-defaultClientId']
+          }
         })
       }
-      // Otherwise we just prefill
+      // Otherwise we just prefill  - old deprecated config
       else if (authentication) {
         // ApiKey
-        if (payload.type === 'apiKey' && authentication.apiKey?.token)
+        // @ts-expect-error - deprecated
+        if (payload.type === 'apiKey' && authentication.apiKey?.token) {
+          // @ts-expect-error - deprecated
           payload.value = authentication.apiKey.token
+        }
         // HTTP
         else if (payload.type === 'http') {
+          // @ts-expect-error - deprecated
           if (payload.scheme === 'basic' && authentication.http?.basic) {
+            // @ts-expect-error - deprecated
             payload.username = authentication.http.basic.username ?? ''
+            // @ts-expect-error - deprecated
             payload.password = authentication.http.basic.password ?? ''
-          } else if (payload.scheme === 'bearer' && authentication.http?.bearer)
+          }
+          // Bearer
+          // @ts-expect-error - deprecated
+          else if (payload.scheme === 'bearer' && authentication.http?.bearer?.token) {
+            // @ts-expect-error - deprecated
             payload.token = authentication.http.bearer.token ?? ''
+          }
         }
       }
 
       const scheme = schemaModel(payload, securitySchemeSchema, false)
-      if (!scheme) importWarnings.push(`Security scheme ${nameKey} is invalid.`)
+      if (!scheme) {
+        importWarnings.push(`Security scheme ${nameKey} is invalid.`)
+      }
 
       return scheme
     })
     .filter((v) => !!v)
 
   // Map of security scheme names to UIDs
-  const securitySchemeMap: Record<string, string> = {}
+  const securitySchemeMap: Record<string, SecurityScheme['uid']> = {}
   securitySchemes.forEach((s) => {
     securitySchemeMap[s.nameKey] = s.uid
   })
@@ -299,49 +328,60 @@ export async function importSpecToWorkspace(
   keysOf(schema.paths ?? {}).forEach((pathString) => {
     const path = schema?.paths?.[pathString]
 
-    if (!path) return
+    if (!path) {
+      return
+    }
     // Path level servers must be saved
     const pathServers = serverSchema.array().parse(path.servers ?? [])
-    servers.push(...pathServers)
+    for (const server of pathServers) {
+      collectionServers.push(server)
+    }
 
     // Creates a sorted array of methods based on the path object.
     const methods = Object.keys(path).filter(isHttpMethod)
 
     methods.forEach((method) => {
-      const operation: OpenAPIV3_1.OperationObject = path[method]
-      const operationServers = serverSchema
-        .array()
-        .parse(operation.servers ?? [])
+      const operation = path[method]
+      if (!operation) {
+        return
+      }
 
-      servers.push(...operationServers)
+      const operationLevelServers = serverSchema.array().parse(operation.servers ?? [])
+
+      for (const server of operationLevelServers) {
+        operationServers.push(server)
+      }
 
       // We will save a list of all tags to ensure they exists at the top level
       // TODO: make sure we add any loose requests with no tags to the collection children
       operation.tags?.forEach((t: string) => tagNames.add(t))
 
       // Remove security here and add it correctly below
-      const { security: operationSecurity, ...operationWithoutSecurity } =
-        operation
+      const { security: operationSecurity, ...operationWithoutSecurity } = operation
 
-      const securityRequirements: SelectedSecuritySchemeUids = (
-        operationSecurity ??
-        schema.security ??
-        []
-      )
+      const securityRequirements: (string | string[])[] = (operationSecurity ?? schema.security ?? [])
         .map((s: OpenAPIV3_1.SecurityRequirementObject) => {
           const keys = Object.keys(s)
           return keys.length > 1 ? keys : keys[0]
         })
         .filter(isDefined)
 
+      // Filter the preferred security schemes to only include the ones that are in the security requirements
+      const preferredSecurityNames = [authentication?.preferredSecurityScheme ?? []].flat().filter((name) => {
+        // Match up complex security requirements, array to array
+        if (Array.isArray(name)) {
+          // We match every element in the array
+          return securityRequirements.some(
+            (r) => Array.isArray(r) && r.length === name.length && r.every((v, i) => v === name[i]),
+          )
+        }
+        return securityRequirements.includes(name)
+      })
+
       // Set the initially selected security scheme
       const selectedSecuritySchemeUids =
-        securityRequirements.length && !setCollectionSecurity
-          ? getSelectedSecuritySchemeUids(
-              securityRequirements,
-              authentication,
-              securitySchemeMap,
-            )
+        securityRequirements.length && !useCollectionSecurity
+          ? getSelectedSecuritySchemeUids(securityRequirements, preferredSecurityNames, securitySchemeMap)
           : []
 
       const requestPayload: RequestPayload = {
@@ -349,46 +389,27 @@ export async function importSpecToWorkspace(
         method,
         path: pathString,
         security: operationSecurity,
+        selectedServerUid: operationLevelServers?.[0]?.uid,
         selectedSecuritySchemeUids,
         // Merge path and operation level parameters
-        parameters: [
-          ...(path?.parameters ?? []),
-          ...(operation.parameters ?? []),
-        ] as RequestParameterPayload[],
-        servers: [...pathServers, ...operationServers].map((s) => s.uid),
+        parameters: [...(path?.parameters ?? []), ...(operation.parameters ?? [])] as RequestParameterPayload[],
+        servers: [...pathServers, ...operationLevelServers].map((s) => s.uid),
       }
 
       // Remove any examples from the request payload as they conflict with our examples property and are not valid
       if (requestPayload.examples) {
-        console.warn(
-          '[@scalar/api-client] operation.examples is not a valid openapi property',
-        )
+        console.warn('[@scalar/api-client] operation.examples is not a valid openapi property')
         delete requestPayload.examples
       }
-
-      // Add list of UIDs to associate security schemes
-      // As per the spec if there is operation level security we ignore the top level requirements
-      if (operationSecurity?.length)
-        requestPayload.security = operationSecurity.map(
-          (s: OpenAPIV3_1.SecurityRequirementObject) => {
-            const keys = Object.keys(s)
-
-            // Handle the case of {} for optional
-            if (keys.length) {
-              const [key] = Object.keys(s)
-              return {
-                [key]: s[key],
-              }
-            } else return s
-          },
-        )
 
       // Save parse the request
       const request = schemaModel(requestPayload, requestSchema, false)
 
-      if (!request)
+      if (!request) {
         importWarnings.push(`${method} Request at ${path} is invalid.`)
-      else requests.push(request)
+      } else {
+        requests.push(request)
+      }
     })
   })
 
@@ -411,17 +432,20 @@ export async function importSpecToWorkspace(
   })
 
   // Add all tags by default. We will remove nested ones
-  const collectionChildren = new Set(tags.map((t) => t.uid))
+  const collectionChildren = new Set<Collection['children'][number]>(tags.map((t) => t.uid))
 
   // Nested folders go before any requests
   tags.forEach((t) => {
     t['x-scalar-children']?.forEach((c) => {
       // Add the uid to the appropriate parent.children
-      const nestedUid = tagMap[c.tagName].uid
-      t.children.push(nestedUid)
+      const nestedUid = tagMap[c.tagName]?.uid
 
-      // Remove the nested uid from the root folder
-      collectionChildren.delete(nestedUid)
+      if (nestedUid) {
+        t.children.push(nestedUid)
+
+        // Remove the nested uid from the root folder
+        collectionChildren.delete(nestedUid)
+      }
     })
   })
 
@@ -429,7 +453,7 @@ export async function importSpecToWorkspace(
   requests.forEach((r) => {
     if (r.tags?.length) {
       r.tags.forEach((t) => {
-        tagMap[t].children.push(r.uid)
+        tagMap[t]?.children.push(r.uid)
       })
     } else {
       collectionChildren.add(r.uid)
@@ -456,33 +480,37 @@ export async function importSpecToWorkspace(
   // Generate Collection
 
   // Grab the security requirements for this operation
-  const securityRequirements: SelectedSecuritySchemeUids = (
-    schema.security ?? []
-  ).map((s: OpenAPIV3_1.SecurityRequirementObject) => {
-    const keys = Object.keys(s)
-    return keys.length > 1 ? keys : keys[0]
-  })
+  const securityRequirements: SelectedSecuritySchemeUids = (schema.security ?? [])
+    .map((s: OpenAPIV3_1.SecurityRequirementObject) => {
+      const keys = Object.keys(s)
+      return keys.length > 1 ? keys : keys[0]
+    })
+    .filter(isDefined)
+
+  // Here we do not filter these as we let the preferredSecurityScheme override the requirements
+  const preferredSecurityNames = [authentication?.preferredSecurityScheme ?? []].flat()
 
   // Set the initially selected security scheme
   const selectedSecuritySchemeUids =
-    securityRequirements.length && setCollectionSecurity
-      ? getSelectedSecuritySchemeUids(
-          securityRequirements,
-          authentication,
-          securitySchemeMap,
-        )
+    (securityRequirements.length || preferredSecurityNames?.length) && useCollectionSecurity
+      ? getSelectedSecuritySchemeUids(securityRequirements, preferredSecurityNames, securitySchemeMap)
       : []
 
+  // Set the uid as a prefixed slug if we have one
+  const slugObj = slug?.length ? { uid: getSlugUid(slug) } : {}
+
   const collection = collectionSchema.parse({
+    ...slugObj,
     ...schema,
     watchMode,
     documentUrl,
+    useCollectionSecurity,
     requests: requests.map((r) => r.uid),
-    servers: servers.map((s) => s.uid),
+    servers: collectionServers.map((s) => s.uid),
     tags: tags.map((t) => t.uid),
     children: [...collectionChildren],
     security: schema.security ?? [{}],
-    selectedServerUid: servers?.[0]?.uid,
+    selectedServerUid: collectionServers?.[0]?.uid,
     selectedSecuritySchemeUids,
     components: {
       ...schema.components,
@@ -499,7 +527,7 @@ export async function importSpecToWorkspace(
    */
   return {
     error: false,
-    servers,
+    servers: [...collectionServers, ...operationServers],
     schema,
     requests,
     examples,
@@ -507,73 +535,4 @@ export async function importSpecToWorkspace(
     tags,
     securitySchemes,
   }
-}
-
-/**
- * Retrieves a list of servers from an OpenAPI document and converts them to a list of Server entities.
- */
-export function getServersFromOpenApiDocument(
-  servers: OpenAPIV3_1.ServerObject[] | undefined,
-  { baseServerURL }: Pick<ReferenceConfiguration, 'baseServerURL'> = {},
-): Server[] {
-  if (!servers || !Array.isArray(servers)) return []
-
-  return servers
-    .map((server): Server | undefined => {
-      try {
-        // Validate the server against the schema
-        const parsedSchema = serverSchema.parse(server)
-
-        // Prepend with the base server URL (if the given URL is relative)
-        if (parsedSchema?.url?.startsWith('/')) {
-          // Use the base server URL (if provided)
-          if (baseServerURL) {
-            parsedSchema.url = combineUrlAndPath(
-              baseServerURL,
-              parsedSchema.url,
-            )
-
-            return parsedSchema
-          }
-
-          // Fallback to the current window origin
-          const fallbackUrl = getFallbackUrl()
-
-          if (fallbackUrl) {
-            parsedSchema.url = combineUrlAndPath(
-              fallbackUrl,
-              parsedSchema.url.replace(/^\//, ''),
-            )
-
-            return parsedSchema
-          }
-        }
-
-        // Must be good, return it
-        return parsedSchema
-      } catch (error) {
-        console.warn(`Oops, that’s an invalid server configuration.`)
-        console.warn('Server:', server)
-        console.warn('Error:', error)
-
-        // Return undefined to remove the server
-        return undefined
-      }
-    })
-    .filter(isDefined)
-}
-
-/**
- * Fallback to the current window.location.origin, if available
- */
-function getFallbackUrl() {
-  if (typeof window === 'undefined') {
-    return undefined
-  }
-
-  if (typeof window?.location?.origin !== 'string') {
-    return undefined
-  }
-
-  return window.location.origin
 }

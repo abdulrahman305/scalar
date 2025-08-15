@@ -1,3 +1,8 @@
+import { dereference } from '@scalar/openapi-parser'
+import type { OpenAPI, OpenAPIV3_1 } from '@scalar/openapi-types'
+import { type Context, Hono } from 'hono'
+import { cors } from 'hono/cors'
+
 import type { HttpMethod, MockServerOptions } from '@/types'
 import { getOperations } from '@/utils/getOperations'
 import { handleAuthentication } from '@/utils/handleAuthentication'
@@ -5,10 +10,6 @@ import { honoRouteFromPath } from '@/utils/honoRouteFromPath'
 import { isAuthenticationRequired } from '@/utils/isAuthenticationRequired'
 import { logAuthenticationInstructions } from '@/utils/logAuthenticationInstructions'
 import { setupAuthenticationRoutes } from '@/utils/setupAuthenticationRoutes'
-import { openapi } from '@scalar/openapi-parser'
-import type { OpenAPI, OpenAPIV3_1 } from '@scalar/openapi-types'
-import { type Context, Hono } from 'hono'
-import { cors } from 'hono/cors'
 
 import { mockAnyResponse } from './routes/mockAnyResponse'
 import { respondWithOpenApiDocument } from './routes/respondWithOpenApiDocument'
@@ -20,10 +21,7 @@ export async function createMockServer(options: MockServerOptions) {
   const app = new Hono()
 
   /** Dereferenced OpenAPI document */
-  const { schema } = await openapi()
-    .load(options?.specification ?? {})
-    .dereference()
-    .get()
+  const { schema } = await dereference(options?.specification ?? {})
 
   // CORS headers
   app.use(cors())
@@ -32,8 +30,7 @@ export async function createMockServer(options: MockServerOptions) {
   setupAuthenticationRoutes(app, schema)
 
   logAuthenticationInstructions(
-    schema?.components?.securitySchemes ||
-      ({} as Record<string, OpenAPIV3_1.SecuritySchemeObject>),
+    schema?.components?.securitySchemes || ({} as Record<string, OpenAPIV3_1.SecuritySchemeObject>),
   )
 
   /** Paths specified in the OpenAPI document */
@@ -58,14 +55,10 @@ export async function createMockServer(options: MockServerOptions) {
   })
 
   // OpenAPI JSON file
-  app.get('/openapi.json', (c) =>
-    respondWithOpenApiDocument(c, options?.specification, 'json'),
-  )
+  app.get('/openapi.json', (c) => respondWithOpenApiDocument(c, options?.specification, 'json'))
 
   // OpenAPI YAML file
-  app.get('/openapi.yaml', (c) =>
-    respondWithOpenApiDocument(c, options?.specification, 'yaml'),
-  )
+  app.get('/openapi.yaml', (c) => respondWithOpenApiDocument(c, options?.specification, 'yaml'))
 
   return app
 }

@@ -1,5 +1,5 @@
 import { replaceTemplateVariables } from '@/libs/string-template'
-import type { Cookie } from '@scalar/oas-utils/entities/cookie'
+import { type Cookie, cookieSchema } from '@scalar/oas-utils/entities/cookie'
 import type { RequestExample } from '@scalar/oas-utils/entities/spec'
 import { shouldUseProxy } from '@scalar/oas-utils/helpers'
 
@@ -40,41 +40,34 @@ export function setRequestCookies({
   // Add global cookies that match the current domain
   globalCookies.forEach((c) => {
     const { name, value, domain: configuredHostname, ...params } = c
-
-    if (!matchesDomain(serverUrl, configuredHostname)) {
+    if (!matchesDomain(serverUrl, configuredHostname) || !name) {
       return
     }
 
-    if (!name) {
-      return
-    }
-
-    cookieParams.push({
-      uid: name,
-      name,
-      value,
-      domain: configuredHostname,
-      path: params.path,
-    })
+    cookieParams.push(
+      cookieSchema.parse({
+        name,
+        value,
+        domain: configuredHostname,
+        path: params.path,
+      }),
+    )
   })
 
   // Add local cookies
   example.parameters.cookies.forEach((c) => {
-    if (!c.enabled) {
+    if (!c.enabled || !c.key) {
       return
     }
 
-    if (!c.key) {
-      return
-    }
-
-    cookieParams.push({
-      uid: c.key,
-      name: c.key,
-      value: replaceTemplateVariables(c.value, env),
-      domain: defaultDomain,
-      path: defaultPath,
-    })
+    cookieParams.push(
+      cookieSchema.parse({
+        name: c.key,
+        value: replaceTemplateVariables(c.value, env),
+        domain: defaultDomain,
+        path: defaultPath,
+      }),
+    )
   })
 
   return {
@@ -89,61 +82,48 @@ export function setRequestCookies({
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
  */
 const determineCookieDomain = (url: string) => {
-  const hostname = new URL(url.startsWith('http') ? url : `http://${url}`)
-    .hostname
+  const hostname = new URL(url.startsWith('http') ? url : `http://${url}`).hostname
 
-  // If it’s an IP, just return it
+  // If it's an IP, just return it
   if (hostname.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/)) {
     return hostname
   }
 
-  // If it’s IPv6, just return it
+  // If it's IPv6, just return it
   if (hostname.match(/^[a-fA-F0-9:]+$/)) {
     return hostname
   }
 
-  // If it’s a hostname, return it with a dot
+  // If it's a hostname, return it with a dot
   return hostname.startsWith('.') ? hostname : `.${hostname}`
 }
 
 /**
  * Matches, when:
- * - Isn’t scoped to a domain, or
+ * - Isn't scoped to a domain, or
  * - matches the current host, or
  * - or ends with the current host, or
  * - matches the current host with a wildcard.
  */
-export const matchesDomain = (
-  givenUrl?: string,
-  configuredHostname?: string,
-): boolean => {
-  if (!givenUrl || !configuredHostname) return true
+export const matchesDomain = (givenUrl?: string, configuredHostname?: string): boolean => {
+  if (!givenUrl || !configuredHostname) {
+    return true
+  }
 
   try {
     // Add protocol if not present
-    const urlWithProtocol = givenUrl.startsWith('http')
-      ? givenUrl
-      : `http://${givenUrl}`
+    const urlWithProtocol = givenUrl.startsWith('http') ? givenUrl : `http://${givenUrl}`
 
     // Get just the hostname
     const givenHostname = new URL(urlWithProtocol).hostname
 
-    // Let’s see if the configured hostname matches the given hostname in some way
+    // Let's see if the configured hostname matches the given hostname in some way
     const noHostnameConfigured = !configuredHostname
     const hostnameMatches = configuredHostname === givenHostname
-    const domainMatchesWildcard =
-      configuredHostname.startsWith('.') &&
-      configuredHostname === `.${givenHostname}`
-    const subdomainMatchesWildcard =
-      configuredHostname.startsWith('.') &&
-      givenHostname?.endsWith(configuredHostname)
+    const domainMatchesWildcard = configuredHostname.startsWith('.') && configuredHostname === `.${givenHostname}`
+    const subdomainMatchesWildcard = configuredHostname.startsWith('.') && givenHostname?.endsWith(configuredHostname)
 
-    return (
-      noHostnameConfigured ||
-      hostnameMatches ||
-      subdomainMatchesWildcard ||
-      domainMatchesWildcard
-    )
+    return noHostnameConfigured || hostnameMatches || subdomainMatchesWildcard || domainMatchesWildcard
   } catch {
     return false
   }
@@ -152,14 +132,9 @@ export const matchesDomain = (
 /**
  * Generate a cookie header from the cookie params
  */
-export const getCookieHeader = (
-  cookieParams: Cookie[],
-  originalCookieHeader?: string,
-): string => {
+export const getCookieHeader = (cookieParams: Cookie[], originalCookieHeader?: string): string => {
   // Generate the cookie header from the cookie params
-  const cookieHeader = cookieParams
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ')
+  const cookieHeader = cookieParams.map((c) => `${c.name}=${c.value}`).join('; ')
 
   // Merge with the original cookie header
   if (originalCookieHeader) {

@@ -26,7 +26,7 @@ public enum ScalarClient
     /// </summary>
     [Description("httpclient")]
     HttpClient,
-    
+
     /// <summary>
     /// Http client.
     /// </summary>
@@ -188,10 +188,28 @@ public enum ScalarClient
     /// </summary>
     [Description("wget")]
     Wget,
-    
+
     /// <summary>
     /// OFetch client.
     /// </summary>
     [Description("ofetch")]
-    OFetch
+    OFetch,
+
+    /// <summary>
+    /// HTTPX (Sync) client.
+    /// </summary>
+    [Description("httpx_sync")]
+    HttpxSync,
+
+    /// <summary>
+    /// HTTPX (Async) client.
+    /// </summary>
+    [Description("httpx_async")]
+    HttpxAsync,
+
+    /// <summary>
+    /// Reqwest client.
+    /// </summary>
+    [Description("reqwest")]
+    Reqwest
 }

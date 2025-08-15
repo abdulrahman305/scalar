@@ -1,11 +1,4 @@
 <script setup lang="ts">
-import { HttpMethod } from '@/components/HttpMethod'
-import { useLayout, useSidebar } from '@/hooks'
-import { getModifiers } from '@/libs'
-import { PathId } from '@/router'
-import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
-import type { SidebarItem, SidebarMenuItem } from '@/views/Request/types'
 import {
   ScalarButton,
   ScalarIcon,
@@ -18,10 +11,19 @@ import {
   type DraggingItem,
   type HoveredItem,
 } from '@scalar/draggable'
-import type { Request } from '@scalar/oas-utils/entities/spec'
+import type { Collection, Request } from '@scalar/oas-utils/entities/spec'
 import { shouldIgnoreEntity } from '@scalar/oas-utils/helpers'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+
+import { HttpMethod } from '@/components/HttpMethod'
+import { useLayout } from '@/hooks/useLayout'
+import { useSidebar } from '@/hooks/useSidebar'
+import { getModifiers } from '@/libs'
+import { PathId } from '@/router'
+import { useWorkspace } from '@/store'
+import { useActiveEntities } from '@/store/active-entities'
+import type { SidebarItem, SidebarMenuItem } from '@/views/Request/types'
 
 const {
   isDraggable = false,
@@ -84,45 +86,60 @@ const item = computed<SidebarItem>(() => {
   const request = requests[uid]
   const requestExample = requestExamples[uid]
 
-  if (collection)
+  if (collection) {
     return {
-      title: collection.info?.title ?? 'Unknown title',
+      title: collection.info?.title || 'Untitled Collection',
       entity: collection,
       resourceTitle: 'Collection',
       children: collection.children,
       icon: collection['x-scalar-icon'],
       documentUrl: collection.documentUrl,
       watchMode: collection.watchMode,
+      to:
+        collection.uid && collection?.info?.title !== 'Drafts'
+          ? {
+              name: 'collection',
+              params: {
+                [PathId.Workspace]: activeWorkspace.value?.uid,
+                [PathId.Collection]: collection.uid,
+              },
+            }
+          : undefined,
       warning:
-        'This cannot be undone. You’re about to delete the collection and all folders and requests inside it.',
+        "This cannot be undone. You're about to delete the collection and all folders and requests inside it.",
       edit: (name: string, icon?: string) => {
         collectionMutators.edit(collection.uid, 'info.title', name)
-        if (icon) collectionMutators.edit(collection.uid, 'x-scalar-icon', icon)
+        if (icon) {
+          collectionMutators.edit(collection.uid, 'x-scalar-icon', icon)
+        }
       },
       delete: () => {
-        if (activeWorkspace.value)
+        if (activeWorkspace.value) {
           collectionMutators.delete(collection, activeWorkspace.value)
+        }
       },
     }
+  }
 
-  if (tag)
+  if (tag) {
     return {
       title: tag.name,
       entity: tag,
       resourceTitle: 'Tag',
       children: tag.children,
       warning:
-        'This cannot be undone. You’re about to delete the tag and all requests inside it',
+        "This cannot be undone. You're about to delete the tag and all requests inside it",
       edit: (name: string) => tagMutators.edit(tag.uid, 'name', name),
-      delete: () => {
-        if (parentUids[0]) tagMutators.delete(tag, parentUids[0])
-      },
+      delete: () =>
+        parentUids[0] &&
+        tagMutators.delete(tag, parentUids[0] as Collection['uid']),
     }
+  }
 
-  if (request)
+  if (request) {
     return {
       title: request.summary ?? request.path,
-      link: {
+      to: {
         name: 'request',
         params: {
           workspace: activeWorkspace.value?.uid,
@@ -132,21 +149,20 @@ const item = computed<SidebarItem>(() => {
       method: request.method,
       entity: request,
       resourceTitle: 'Request',
-      warning: 'This cannot be undone. You’re about to delete the request.',
+      warning: "This cannot be undone. You're about to delete the request.",
       children: request.examples.slice(1),
       edit: (name: string) =>
         requestMutators.edit(request.uid, 'summary', name),
-      delete: () => {
-        if (parentUids[0]) {
-          requestMutators.delete(request, parentUids[0])
-        }
-      },
+      delete: () =>
+        parentUids[0] &&
+        requestMutators.delete(request, parentUids[0] as Collection['uid']),
     }
+  }
 
-  if (requestExample)
+  if (requestExample?.requestUid) {
     return {
       title: requestExample.name,
-      link: {
+      to: {
         name: 'request.examples',
         params: {
           workspace: activeWorkspace.value?.uid,
@@ -158,12 +174,13 @@ const item = computed<SidebarItem>(() => {
       entity: requestExample,
       resourceTitle: 'Example',
       warning:
-        'This cannot be undone. You’re about to delete the example from the request.',
+        "This cannot be undone. You're about to delete the example from the request.",
       children: [],
       edit: (name: string) =>
         requestExampleMutators.edit(requestExample.uid, 'name', name),
       delete: () => requestExampleMutators.delete(requestExample),
     }
+  }
 
   // Catch all item which we should never see
   return {
@@ -174,8 +191,8 @@ const item = computed<SidebarItem>(() => {
     },
     resourceTitle: 'Unknown',
     children: [],
-    edit: () => {},
-    delete: () => {},
+    edit: () => null,
+    delete: () => null,
   } satisfies SidebarItem
 })
 
@@ -185,18 +202,26 @@ const isDraftCollection = computed(
     item.value.entity.type === 'collection' && item.value.title === 'Drafts',
 )
 
-const highlightClasses = 'hover:bg-sidebar-active-b indent-padding-left'
+const highlightClasses = 'hover:bg-sidebar-b-active indent-padding-left'
 
 /** Due to the nesting, we need a dynamic left offset for hover and active backgrounds */
 const leftOffset = computed(() => {
-  if (!parentUids.length) return '12px'
-  else if (layout === 'modal') return `${(parentUids.length - 1) * 12}px`
-  else return `${parentUids.length * 12}px`
+  if (!parentUids.length) {
+    return '12px'
+  }
+  if (layout === 'modal') {
+    return `${(parentUids.length - 1) * 12}px`
+  }
+  return `${parentUids.length * 12}px`
 })
 const paddingOffset = computed(() => {
-  if (!parentUids.length) return '0px'
-  else if (layout === 'modal') return `${(parentUids.length - 1) * 12}px`
-  else return `${parentUids.length * 12}px`
+  if (!parentUids.length) {
+    return '0px'
+  }
+  if (layout === 'modal') {
+    return `${(parentUids.length - 1) * 12}px`
+  }
+  return `${parentUids.length * 12}px`
 })
 
 /**
@@ -213,6 +238,8 @@ const showChildren = computed(
 /** Since we have exact routing, we should check if the default request is active */
 const isDefaultActive = computed(
   () =>
+    typeof router.currentRoute.value.name === 'string' &&
+    router.currentRoute.value.name.startsWith('request') &&
     activeRouterParams.value[PathId.Request] === 'default' &&
     activeRequest.value?.uid === uid,
 )
@@ -228,7 +255,9 @@ const getDraggableOffsets = computed(() => {
   let ceiling = 0.5
   let floor = 0.5
 
-  if (!draggableRef.value) return { ceiling, floor }
+  if (!draggableRef.value) {
+    return { ceiling, floor }
+  }
   const { draggingItem } = draggableRef.value
 
   // If hovered over is collection && dragging is not a collection
@@ -251,11 +280,17 @@ const getDraggableOffsets = computed(() => {
 /** Guard to check if an element is able to be dropped on */
 const _isDroppable = (draggingItem: DraggingItem, hoveredItem: HoveredItem) => {
   // Cannot drop in read only mode
-  if (layout === 'modal') return false
+  if (layout === 'modal') {
+    return false
+  }
   // RequestExamples cannot be dropped on
-  if (requestExamples[hoveredItem.id]) return false
+  if (requestExamples[hoveredItem.id]) {
+    return false
+  }
   // Collection cannot be dropped into another collection
-  if (collections[draggingItem.id]) return false
+  if (collections[draggingItem.id]) {
+    return false
+  }
 
   return true
 }
@@ -265,33 +300,66 @@ const handleNavigation = (event: KeyboardEvent, _item: SidebarItem) => {
     const modifier = getModifiers(['default'])
     const isModifierPressed = modifier.some((key) => event[key])
 
-    if (isModifierPressed) emit('newTab', _item.title || '', _item.entity.uid)
-    else if (_item.link) router.push(_item.link)
+    if (isModifierPressed) {
+      emit('newTab', _item.title || '', _item.entity.uid)
+    } else if (_item.to) {
+      router.push(_item.to)
+    }
+
+    nextTick(() => events.focusAddressBar.emit())
   }
 }
 
-function openCommandPaletteRequest() {
-  events.commandPalette.emit({
-    commandName: 'Create Request',
-    metaData: {
-      itemUid: uid,
-      parentUid: parentUids[0],
-    },
-  })
+function addRequest(entityUid: string) {
+  const collectionUid = parentUids[0]
+    ? collections[parentUids[0]]?.uid || ''
+    : entityUid
+
+  // If the entity is a tag, add the tag name to the request
+  const requestData =
+    parentUids[0] && tags[entityUid]?.name
+      ? { tags: [tags[entityUid].name] }
+      : {}
+
+  const newRequest = requestMutators.add(
+    requestData,
+    collectionUid as Collection['uid'],
+  )
+
+  if (newRequest) {
+    router.push({
+      name: 'request',
+      params: {
+        workspace: activeWorkspace.value?.uid,
+        request: newRequest.uid,
+      },
+    })
+
+    // Focus the address bar
+    events.hotKeys.emit({
+      focusAddressBar: new KeyboardEvent('keydown', { key: 'l' }),
+    })
+  }
 }
 
 const watchIconColor = computed(() => {
   const { uid: _uid, watchModeStatus } = activeCollection.value || {}
 
-  if (_uid !== item.value.entity.uid) return 'text-c-3'
-  if (watchModeStatus === 'WATCHING') return 'text-c-1'
-  if (watchModeStatus === 'ERROR') return 'text-red'
+  if (_uid !== item.value.entity.uid) {
+    return 'text-c-3'
+  }
+  if (watchModeStatus === 'WATCHING') {
+    return 'text-c-1'
+  }
+  if (watchModeStatus === 'ERROR') {
+    return 'text-red'
+  }
   return 'text-c-3'
 })
 
 const hasDraftRequests = computed(() => {
   return (
-    item.value.title == 'Drafts' &&
+    item.value.title === 'Drafts' &&
     layout !== 'modal' &&
     item.value.children.length > 0
   )
@@ -303,10 +371,14 @@ const hasDraftRequests = computed(() => {
  */
 const shouldShowItem = computed(() => {
   const request = requests[uid]
-  if (request) return !shouldIgnoreEntity(request)
+  if (request) {
+    return !shouldIgnoreEntity(request)
+  }
 
   const tag = tags[uid]
-  if (tag) return !shouldIgnoreEntity(tag)
+  if (tag) {
+    return !shouldIgnoreEntity(tag)
+  }
 
   return true
 })
@@ -319,14 +391,14 @@ const shouldShowItem = computed(() => {
     :class="[
       (layout === 'modal' && parentUids.length > 1) ||
       (layout !== 'modal' && parentUids.length)
-        ? 'before:bg-border before:pointer-events-none before:z-1 before:absolute before:left-[calc(.75rem_+_.5px)] before:top-0 before:h-[calc(100%_+_.5px)] last:before:h-full before:w-[.5px] mb-[.5px] last:mb-0 indent-border-line-offset'
+        ? 'before:bg-border indent-border-line-offset mb-[.5px] before:pointer-events-none before:absolute before:top-0 before:left-[calc(.75rem_+_.5px)] before:z-1 before:h-[calc(100%_+_.5px)] before:w-[.5px] last:mb-0 last:before:h-full'
         : '',
     ]">
     <Draggable
       :id="item.entity.uid"
       ref="draggableRef"
       :ceiling="getDraggableOffsets.ceiling"
-      class="flex flex-1 flex-col gap-1/2 text-sm"
+      class="gap-1/2 flex flex-1 flex-col text-base"
       :floor="getDraggableOffsets.floor"
       :isDraggable="isDraggable"
       :isDroppable="isDroppable"
@@ -334,30 +406,34 @@ const shouldShowItem = computed(() => {
       @onDragEnd="(...args) => $emit('onDragEnd', ...args)">
       <!-- Request -->
       <RouterLink
-        v-if="item.link"
+        v-if="
+          (item.entity.type === 'request' ||
+            item.entity.type === 'requestExample') &&
+          item.to
+        "
         v-slot="{ isExactActive }"
         class="group no-underline"
-        :to="item.link"
+        :to="item.to"
         @click.prevent="
           (event: KeyboardEvent) => handleNavigation(event, item)
         ">
         <div
-          class="relative flex min-h-8 cursor-pointer flex-row items-start justify-between gap-0.5 py-1.5 pr-2 rounded w-full"
+          class="relative flex min-h-8 w-full cursor-pointer flex-row items-start justify-between gap-0.5 rounded py-1.5 pr-2"
           :class="[
             highlightClasses,
             isExactActive || isDefaultActive
-              ? 'bg-sidebar-active-b text-sidebar-active-c transition-none'
+              ? 'bg-sidebar-b-active text-sidebar-c-active font-medium transition-none'
               : 'text-sidebar-c-2',
           ]">
-          <span class="break-all line-clamp-1 font-medium w-full pl-2">
-            {{ item.title }}
+          <span class="line-clamp-1 w-full pl-2 break-all">
+            {{ item.title || 'Untitled' }}
           </span>
-          <div class="flex flex-row gap-1 items-center">
+          <div class="flex flex-row items-center gap-1">
             <!-- Menu -->
             <div class="relative">
               <ScalarButton
                 v-if="layout !== 'modal'"
-                class="hidden px-0.5 py-0 hover:bg-b-3 opacity-0 group-hover:opacity-100 group-hover:flex group-focus-visible:opacity-100 group-has-[:focus-visible]:opacity-100 aspect-square h-fit"
+                class="hover:bg-b-3 hidden aspect-square h-fit px-0.5 py-0 opacity-0 group-hover:flex group-hover:opacity-100 group-focus-visible:opacity-100 group-has-[:focus-visible]:opacity-100"
                 :class="{
                   flex:
                     menuItem?.item?.entity.uid === item.entity.uid &&
@@ -392,15 +468,30 @@ const shouldShowItem = computed(() => {
         </div>
       </RouterLink>
 
-      <!-- Collection/Folder -->
-      <button
-        v-else-if="layout !== 'modal' || parentUids.length"
+      <!-- Collection -->
+      <RouterLink
+        v-else-if="
+          (layout !== 'modal' || parentUids.length) &&
+          item.entity.type === 'collection' &&
+          item.to
+        "
         :aria-expanded="Boolean(collapsedSidebarFolders[item.entity.uid])"
-        class="hover:bg-b-2 group relative flex w-full flex-row justify-start gap-1.5 rounded p-1.5 focus-visible:z-10"
-        :class="[highlightClasses]"
-        type="button"
-        @click="toggleSidebarFolder(item.entity.uid)">
-        <span class="flex h-5 items-center justify-center max-w-[14px]">
+        class="hover:bg-b-2 group relative flex w-full flex-row justify-start gap-1.5 rounded p-1.5 no-underline focus-visible:z-10"
+        :class="[
+          highlightClasses,
+          {
+            'bg-sidebar-b-active text-sidebar-c-active transition-none':
+              typeof router.currentRoute.value.name === 'string' &&
+              router.currentRoute.value.name.startsWith('collection') &&
+              router.currentRoute.value.params[PathId.Collection] ===
+                item.entity.uid,
+            'text-c-2': item.title === 'Untitled Collection',
+          },
+        ]"
+        :to="item.to">
+        <span
+          class="flex h-5 max-w-[14px] cursor-pointer items-center justify-center"
+          @click.stop.prevent="toggleSidebarFolder(item.entity.uid)">
           <slot name="leftIcon">
             <ScalarSidebarGroupToggle
               class="text-c-3 shrink-0"
@@ -408,13 +499,13 @@ const shouldShowItem = computed(() => {
           </slot>
           &hairsp;
         </span>
-        <div class="flex flex-1 flex-row justify-between">
-          <span class="break-all line-clamp-1 font-medium text-left w-full">
+        <div class="flex flex-1 flex-row justify-between font-medium">
+          <span class="line-clamp-1 w-full text-left break-all">
             {{ item.title }}
           </span>
-          <div class="relative flex justify-end h-fit">
+          <div class="relative flex h-fit justify-end">
             <div
-              class="items-center opacity-0 gap-px group-hover:opacity-100 group-hover:flex group-focus-visible:opacity-100 group-has-[:focus-visible]:opacity-100"
+              class="items-center gap-px opacity-0 group-hover:flex group-hover:opacity-100 group-focus-visible:opacity-100 group-has-[:focus-visible]:opacity-100"
               :class="{
                 flex: menuItem.open,
                 hidden:
@@ -426,7 +517,7 @@ const shouldShowItem = computed(() => {
                   (layout !== 'modal' && !isDraftCollection) ||
                   (isDraftCollection && hasDraftRequests)
                 "
-                class="px-0.5 py-0 hover:bg-b-3 hover:text-c-1 group-focus-visible:opacity-100 group-has-[:focus-visible]:opacity-100 aspect-square h-fit"
+                class="hover:bg-b-3 hover:text-c-1 aspect-square h-fit px-0.5 py-0 group-focus-visible:opacity-100 group-has-[:focus-visible]:opacity-100"
                 size="sm"
                 variant="ghost"
                 @click.stop.prevent="
@@ -444,10 +535,10 @@ const shouldShowItem = computed(() => {
               </ScalarButton>
               <ScalarButton
                 v-if="layout !== 'modal'"
-                class="px-0.5 py-0 hover:bg-b-3 hover:text-c-1 group-focus-visible:opacity-100 group-has-[:focus-visible]:opacity-100 aspect-square h-fit"
+                class="hover:bg-b-3 hover:text-c-1 aspect-square h-fit px-0.5 py-0 group-focus-visible:opacity-100 group-has-[:focus-visible]:opacity-100"
                 size="sm"
                 variant="ghost"
-                @click.stop.prevent="openCommandPaletteRequest()">
+                @click.stop.prevent="addRequest(item.entity.uid)">
                 <ScalarIcon
                   icon="Add"
                   size="md"
@@ -456,26 +547,102 @@ const shouldShowItem = computed(() => {
             </div>
             <ScalarTooltip
               v-if="item.watchMode"
-              side="right"
-              :sideOffset="12">
-              <template #trigger>
+              placement="right"
+              :offset="12"
+              :content="`Watching: ${item.documentUrl}`">
+              <button
+                class="flex items-center justify-center"
+                type="button">
                 <ScalarIcon
                   class="ml-0.5 text-sm"
                   :class="watchIconColor"
                   icon="Watch"
                   size="md"
                   thickness="2" />
-              </template>
-              <template #content>
-                <div
-                  class="grid gap-1.5 pointer-events-none max-w-10 w-content shadow-lg rounded bg-b-1 z-100 p-2 text-xxs leading-5 z-10 text-c-1">
-                  <div class="flex items-center text-c-2">
-                    <p class="text-pretty break-all">
-                      Watching: {{ item.documentUrl }}
-                    </p>
-                  </div>
-                </div>
-              </template>
+              </button>
+            </ScalarTooltip>
+            <span>&hairsp;</span>
+          </div>
+        </div>
+      </RouterLink>
+
+      <!-- Tag -->
+      <button
+        v-else-if="layout !== 'modal' || parentUids.length"
+        :aria-expanded="Boolean(collapsedSidebarFolders[item.entity.uid])"
+        class="hover:bg-b-2 group relative flex w-full flex-row justify-start gap-1.5 rounded p-1.5 focus-visible:z-10"
+        :class="[highlightClasses]"
+        type="button"
+        @click="toggleSidebarFolder(item.entity.uid)">
+        <span class="flex h-5 max-w-[14px] items-center justify-center">
+          <slot name="leftIcon">
+            <ScalarSidebarGroupToggle
+              class="text-c-3 hover:text-c-1 shrink-0"
+              :open="Boolean(collapsedSidebarFolders[item.entity.uid])" />
+          </slot>
+          &hairsp;
+        </span>
+        <div class="flex flex-1 flex-row justify-between">
+          <span class="line-clamp-1 w-full text-left font-medium break-all">
+            {{ item.title }}
+          </span>
+          <div class="relative flex h-fit justify-end">
+            <div
+              class="items-center gap-px opacity-0 group-hover:flex group-hover:opacity-100 group-focus-visible:opacity-100 group-has-[:focus-visible]:opacity-100"
+              :class="{
+                flex: menuItem.open,
+                hidden:
+                  !menuItem.open ||
+                  menuItem.item?.entity.uid !== item.entity.uid,
+              }">
+              <ScalarButton
+                v-if="
+                  (layout !== 'modal' && !isDraftCollection) ||
+                  (isDraftCollection && hasDraftRequests)
+                "
+                class="hover:bg-b-3 hover:text-c-1 aspect-square h-fit px-0.5 py-0 group-focus-visible:opacity-100 group-has-[:focus-visible]:opacity-100"
+                size="sm"
+                variant="ghost"
+                @click.stop.prevent="
+                  (ev) =>
+                    $emit('openMenu', {
+                      item,
+                      parentUids,
+                      targetRef: ev.currentTarget.parentNode,
+                      open: true,
+                    })
+                ">
+                <ScalarIcon
+                  icon="Ellipses"
+                  size="md" />
+              </ScalarButton>
+              <ScalarButton
+                v-if="layout !== 'modal'"
+                class="hover:bg-b-3 hover:text-c-1 aspect-square h-fit px-0.5 py-0 group-focus-visible:opacity-100 group-has-[:focus-visible]:opacity-100"
+                size="sm"
+                variant="ghost"
+                @click.stop.prevent="addRequest(item.entity.uid)">
+                <ScalarIcon
+                  icon="Add"
+                  size="md"
+                  thickness="2" />
+              </ScalarButton>
+            </div>
+            <ScalarTooltip
+              v-if="item.watchMode"
+              content="Watching: {{ item.documentUrl }}"
+              placement="right"
+              :offset="12">
+              <button
+                class="flex items-center justify-center"
+                type="button">
+                <ScalarIcon
+                  class="ml-0.5 text-sm"
+                  :class="watchIconColor"
+                  icon="Watch"
+                  size="md"
+                  thickness="2" />
+              </button>
             </ScalarTooltip>
             <span>&hairsp;</span>
           </div>
@@ -498,14 +665,13 @@ const shouldShowItem = computed(() => {
           @openMenu="(item) => $emit('openMenu', item)" />
         <ScalarButton
           v-if="item.children.length === 0"
-          class="flex gap-1.5 h-8 text-c-1 py-0 justify-start text-xs w-full hover:bg-b-2"
+          class="text-c-1 hover:bg-b-2 flex h-8 w-full justify-start gap-1.5 py-0 text-xs"
           :class="parentUids.length ? 'pl-9' : ''"
           variant="ghost"
-          @click="openCommandPaletteRequest()">
+          @click="addRequest(item.entity.uid)">
           <ScalarIcon
-            class="mx-0.5 h-2.5 w-2.5"
             icon="Add"
-            thickness="3" />
+            size="sm" />
           <span>Add Request</span>
         </ScalarButton>
       </ul>

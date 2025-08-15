@@ -1,21 +1,17 @@
-import { cookieSchema } from '@/entities/cookie'
-import { environmentSchema } from '@/entities/environment'
-import {
-  collectionSchema,
-  requestExampleSchema,
-  requestSchema,
-  securitySchemeSchema,
-  serverSchema,
-} from '@/entities/spec'
+import { writeFile } from 'node:fs'
+import { cookieSchema } from '@/entities/cookie/cookie'
+import { environmentSchema } from '@/entities/environment/environment'
+import { collectionSchema } from '@/entities/spec/collection'
+import { requestExampleSchema } from '@/entities/spec/request-examples'
+import { requestSchema } from '@/entities/spec/requests'
+import { serverSchema } from '@/entities/spec/server'
 import { tagSchema } from '@/entities/spec/spec-objects'
-import { workspaceSchema } from '@/entities/workspace'
+import { workspaceSchema } from '@/entities/workspace/workspace'
 import { DATA_VERSION } from '@/migrations/data-version'
-import { writeFile } from 'fs'
+import { securitySchemeSchema } from '@scalar/types/entities'
 import { createTypeAlias, printNode, zodToTs } from 'zod-to-ts'
 
-console.warn(
-  'Make sure the generate types file is updated for the current version',
-)
+console.warn('Make sure the generate types file is updated for the current version')
 console.info('Generating...')
 
 const entities = [
@@ -62,9 +58,6 @@ typeString += `
 `
 
 // Write to file
-writeFile(
-  __dirname + `/v-${DATA_VERSION}/types.generated.ts`,
-  typeString,
-  { flag: 'w' },
-  (err) => (err ? console.error(err) : console.log('Generation complete!')),
+writeFile(__dirname + `/v-${DATA_VERSION}/types.generated.ts`, typeString, { flag: 'w' }, (err) =>
+  err ? console.error(err) : console.log('Generation complete!'),
 )

@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { type HotKeyEvent, handleHotKeyDown } from '@/libs'
-import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
 import {
-  ScalarTeleportRoot,
   addScalarClassesToHeadless,
+  ScalarTeleportRoot,
 } from '@scalar/components'
 import { useFocusTrap } from '@vueuse/integrations/useFocusTrap'
 import {
+  nextTick,
   onBeforeMount,
   onBeforeUnmount,
   onMounted,
@@ -17,6 +15,10 @@ import {
 } from 'vue'
 import { RouterView } from 'vue-router'
 
+import { handleHotKeyDown, type HotKeyEvent } from '@/libs'
+import { useWorkspace } from '@/store'
+import { useActiveEntities } from '@/store/active-entities'
+
 const { activeWorkspace } = useActiveEntities()
 const { modalState, events } = useWorkspace()
 const client = ref<HTMLElement | null>(null)
@@ -25,7 +27,6 @@ const id = useId()
 const { activate: activateFocusTrap, deactivate: deactivateFocusTrap } =
   useFocusTrap(client, {
     allowOutsideClick: true,
-    initialFocus: () => client.value,
     fallbackFocus: `#${id}`,
   })
 
@@ -41,8 +42,9 @@ watch(
       window.addEventListener('keydown', handleKeyDown)
       // Disable scrolling
       document.documentElement.style.overflow = 'hidden'
+
       // Focus trap the modal
-      activateFocusTrap()
+      activateFocusTrap({ checkCanFocusTrap: () => nextTick() })
     } else {
       // Remove the global hotkey listener
       window.removeEventListener('keydown', handleKeyDown)
@@ -81,25 +83,20 @@ onBeforeUnmount(() => {
         aria-modal="true"
         class="scalar-app-layout scalar-client"
         role="dialog"
-        tabindex="0">
+        tabindex="-1">
         <ScalarTeleportRoot>
           <RouterView key="$route.fullPath" />
         </ScalarTeleportRoot>
       </div>
       <div
-        class="scalar-app-exit -z-1"
+        class="scalar-app-exit"
         @click="modalState.hide()" />
     </div>
   </div>
 </template>
-
-<style>
-@import '@scalar/components/style.css';
-@import '@/tailwind/tailwind.css';
-@import '@/tailwind/variables.css';
-</style>
-
 <style scoped>
+@reference "@/style.css";
+
 .scalar .scalar-app-layout {
   background: var(--scalar-background-1);
   height: calc(100% - 120px);
@@ -112,6 +109,16 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-radius: 8px;
   border: var(--scalar-border-width) solid var(--scalar-border-color);
+}
+/*
+  * Allow the modal to fill more space on
+  * very short (or very zoomed in) screens
+  */
+@variant zoomed {
+  .scalar .scalar-app-layout {
+    height: 100%;
+    max-height: 90svh;
+  }
 }
 @keyframes scalarapiclientfadein {
   from {
@@ -131,6 +138,7 @@ onBeforeUnmount(() => {
   transition: all 0.3s ease-in-out;
   cursor: pointer;
   animation: scalardrawerexitfadein 0.35s forwards;
+  z-index: -1;
 }
 .dark-mode .scalar .scalar-app-exit {
   background: rgba(0, 0, 0, 0.45);

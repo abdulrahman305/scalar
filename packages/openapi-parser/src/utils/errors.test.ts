@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { validate } from './validate.ts'
+import { validate } from './validate'
 
 describe('errors', () => {
   it('info required', async () => {
@@ -43,7 +43,7 @@ describe('errors', () => {
     expect(result).toMatchObject({
       errors: [
         {
-          message: `Property foobar is not expected to be here`,
+          message: 'Property foobar is not expected to be here',
         },
       ],
       valid: false,

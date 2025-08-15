@@ -1,26 +1,14 @@
-using APIWeaver;
 using Scalar.AspNetCore;
 using Scalar.AspNetCore.Playground;
 using Scalar.AspNetCore.Playground.Books;
 using Scalar.AspNetCore.Playground.Extensions;
 
-var builder = WebApplication.CreateSlimBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<BookStore>();
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.TypeInfoResolverChain.Add(BookSerializerContext.Default);
-});
-
-builder.Services.AddApiWeaver(options =>
-{
-    options.AddExample(new Book
-    {
-        BookId = Guid.NewGuid(),
-        Title = "Scalar - The Next Generation",
-        Description = "A book about Scalar",
-        Pages = 69
-    });
 });
 
 // Adds API versioning and OpenAPI
@@ -35,18 +23,18 @@ app.MapStaticAssets();
 
 app.MapOpenApi();
 
-Action<ScalarOptions> configureOptions = options => 
+Action<ScalarOptions> configureOptions = options =>
     options
+        .WithJavaScriptConfiguration("./scalar/config.js")
         .WithCdnUrl("https://cdn.jsdelivr.net/npm/@scalar/api-reference")
         .WithFavicon("/favicon.png")
-        .WithPreferredScheme(AuthConstants.ApiKey)
-        .WithApiKeyAuthentication(x => x.Token = "my-api-key")
+        .AddApiKeyAuthentication(AuthConstants.ApiKeyScheme, scheme => scheme.Value = "my-api-key")
+        .AddPreferredSecuritySchemes(AuthConstants.ApiKeyScheme)
         .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
 
-app.MapScalarApiReference((options, context) =>
+app.MapScalarApiReference(options =>
 {
     configureOptions.Invoke(options);
-    options.Title = context.Request.Path;
     options.WithTheme(ScalarTheme.Mars);
 });
 
@@ -55,7 +43,7 @@ app.MapScalarApiReference("/", configureOptions);
 app.MapScalarApiReference("/scalar-url-pattern", (options, context) =>
 {
     configureOptions.Invoke(options);
-    options.OpenApiRoutePattern = $"{context.Request.Scheme}://{context.Request.Host}/openapi/v1.json";
+    options.OpenApiRoutePattern = $"{context.Request.Scheme}://{context.Request.Host}/openapi/{{documentName}}.json";
 });
 
 app.MapBookEndpoints();

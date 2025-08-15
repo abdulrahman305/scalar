@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { ImportCollectionListener } from '@/components/ImportCollection'
-import MainLayout from '@/layouts/App/MainLayout.vue'
-import { type HotKeyEvent, handleHotKeyDown } from '@/libs'
-import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
-import { addScalarClassesToHeadless } from '@scalar/components'
+import {
+  addScalarClassesToHeadless,
+  ScalarTeleportRoot,
+} from '@scalar/components'
 import { getThemeStyles } from '@scalar/themes'
+import { useBreakpoints } from '@scalar/use-hooks/useBreakpoints'
 import { useColorMode } from '@scalar/use-hooks/useColorMode'
 import { ScalarToasts } from '@scalar/use-toasts'
-import { computed, onBeforeMount, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeMount, onBeforeUnmount, onMounted, watch } from 'vue'
 import { RouterView } from 'vue-router'
+
+import { ImportCollectionListener } from '@/components/ImportCollection'
+import { useSidebar } from '@/hooks/useSidebar'
+import MainLayout from '@/layouts/App/MainLayout.vue'
+import { handleHotKeyDown, type HotKeyEvent } from '@/libs'
+import { useWorkspace } from '@/store'
+import { useActiveEntities } from '@/store/active-entities'
 
 // Initialize color mode state globally
 useColorMode()
@@ -25,7 +31,9 @@ const handleKeyDown = (ev: KeyboardEvent) =>
   handleHotKeyDown(ev, events.hotKeys)
 
 const handleHotKey = (event?: HotKeyEvent) => {
-  if (!event) return
+  if (!event) {
+    return
+  }
 
   // We prevent default on open command so we can use it on the web
   if (event.openCommandPalette) {
@@ -45,6 +53,14 @@ onBeforeUnmount(() => {
   events.hotKeys.off(handleHotKey)
 })
 
+const { mediaQueries } = useBreakpoints()
+const { setSidebarOpen } = useSidebar()
+
+// Single watcher instance for handling responsive behavior
+watch(mediaQueries.xl, setSidebarOpen, {
+  immediate: true,
+})
+
 const themeStyleTag = computed(
   () =>
     activeWorkspace.value &&
@@ -52,35 +68,25 @@ const themeStyleTag = computed(
 )
 </script>
 <template>
-  <!-- Listen for paste and drop events, and look for `url` query parameters to import collections -->
-  <ImportCollectionListener>
-    <div v-html="themeStyleTag"></div>
+  <ScalarTeleportRoot>
+    <!-- Listen for paste and drop events, and look for `url` query parameters to import collections -->
+    <ImportCollectionListener>
+      <div v-html="themeStyleTag" />
 
-    <!-- Ensure we have the workspace loaded from localStorage above -->
-    <MainLayout v-if="activeWorkspace?.uid">
-      <RouterView v-slot="{ Component }">
-        <keep-alive>
-          <component :is="Component" />
-        </keep-alive>
-      </RouterView>
-    </MainLayout>
+      <!-- Ensure we have the workspace loaded from localStorage above -->
+      <MainLayout v-if="activeWorkspace?.uid">
+        <RouterView v-slot="{ Component }">
+          <keep-alive>
+            <component :is="Component" />
+          </keep-alive>
+        </RouterView>
+      </MainLayout>
 
-    <ScalarToasts />
-  </ImportCollectionListener>
+      <ScalarToasts />
+    </ImportCollectionListener>
+  </ScalarTeleportRoot>
 </template>
 <style>
-@import '@scalar/components/style.css';
-@import '@scalar/themes/style.css';
-@import '@/tailwind/tailwind.css';
-@import '@/tailwind/variables.css';
-
-/** Add background for iOS and Safari scroll overflow */
-html,
-body {
-  background-color: var(--scalar-background-1);
-  overscroll-behavior: none;
-}
-
 #scalar-client {
   display: flex;
   flex-direction: column;

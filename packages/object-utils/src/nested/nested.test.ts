@@ -1,5 +1,5 @@
-import { clone } from '@/clone'
 import { describe, expect, it } from 'vitest'
+import { clone } from '../clone'
 
 import { setNestedValue } from './nested'
 
@@ -23,8 +23,7 @@ const nestedObj = {
 const request = {
   tags: ['Planets'],
   summary: 'Get a planet',
-  description:
-    'You’ll better learn a little bit more about the planets. It might come in handy once space travel is available for everyone.',
+  description: `You'll better learn a little bit more about the planets. It might come in handy once space travel is available for everyone.`,
   operationId: 'getPlanet',
   security: [{}],
   parameters: [
@@ -55,7 +54,9 @@ describe('Set a nested value', () => {
     const copy = clone(nestedObj)
 
     setNestedValue(baseObj, 'c.1.name', 'three')
-    if (copy.c[1]) copy.c[1].name = 'three'
+    if (copy.c[1]) {
+      copy.c[1].name = 'three'
+    }
 
     expect(baseObj).toEqual(copy)
   })
@@ -75,8 +76,9 @@ describe('Set a nested value', () => {
     const copy = clone(request)
 
     setNestedValue(baseObj, 'parameters.0.schema.examples.0', 122)
-    if (copy.parameters[0]?.schema?.examples?.[0])
+    if (copy.parameters[0]?.schema?.examples?.[0]) {
       copy.parameters[0].schema.examples[0] = 122
+    }
 
     expect(baseObj).toEqual(copy)
   })

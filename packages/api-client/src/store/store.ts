@@ -1,40 +1,19 @@
-import {
-  createStoreCollections,
-  extendedCollectionDataFactory,
-} from '@/store/collections'
+import { createStoreCollections, extendedCollectionDataFactory } from '@/store/collections'
 import { createStoreCookies } from '@/store/cookies'
-import {
-  createStoreEnvironments,
-  extendedEnvironmentDataFactory,
-} from '@/store/environment'
+import { createStoreEnvironments, extendedEnvironmentDataFactory } from '@/store/environment'
 import { createStoreEvents } from '@/store/events'
 import { importSpecFileFactory } from '@/store/import-spec'
-import {
-  createStoreRequestExamples,
-  extendedExampleDataFactory,
-} from '@/store/request-example'
-import {
-  createStoreRequests,
-  extendedRequestDataFactory,
-} from '@/store/requests'
-import {
-  createStoreSecuritySchemes,
-  extendedSecurityDataFactory,
-} from '@/store/security-schemes'
+import { createStoreRequestExamples, extendedExampleDataFactory } from '@/store/request-example'
+import { createStoreRequests, extendedRequestDataFactory } from '@/store/requests'
+import { createStoreSecuritySchemes, extendedSecurityDataFactory } from '@/store/security-schemes'
 import { createStoreServers, extendedServerDataFactory } from '@/store/servers'
 import type { StoreContext } from '@/store/store-context'
 import { createStoreTags, extendedTagDataFactory } from '@/store/tags'
-import {
-  createStoreWorkspaces,
-  extendedWorkspaceDataFactory,
-} from '@/store/workspace'
+import { createStoreWorkspaces, extendedWorkspaceDataFactory } from '@/store/workspace'
 import { useModal } from '@scalar/components'
-import type {
-  RequestEvent,
-  SecurityScheme,
-} from '@scalar/oas-utils/entities/spec'
+import type { RequestEvent, SecurityScheme } from '@scalar/oas-utils/entities/spec'
 import type { Path, PathValue } from '@scalar/object-utils/nested'
-import type { ReferenceConfiguration } from '@scalar/types/legacy'
+import type { ApiReferenceConfiguration } from '@scalar/types/api-reference'
 import { type InjectionKey, inject, reactive, ref, toRaw } from 'vue'
 
 export type UpdateScheme = <P extends Path<SecurityScheme>>(
@@ -43,60 +22,46 @@ export type UpdateScheme = <P extends Path<SecurityScheme>>(
 ) => void
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
   interface Window {
     dataDump: () => void
   }
 }
 
-type CreateWorkspaceStoreOptions = {
+export type CreateWorkspaceStoreOptions = {
   /**
-   * When true, changes made to the store will be saved in the browser’s localStorage.
+   * When true, changes made to the store will be saved in the browser's localStorage.
    *
    * @default true
    */
   useLocalStorage: boolean
-  /** Should be renamed to theme to match the references config */
-  themeId: ReferenceConfiguration['theme']
-  /** Specifies the integration being used. This is primarily for internal purposes and should not be manually set. */
-  integration: ReferenceConfiguration['_integration']
-} & Pick<
-  ReferenceConfiguration,
-  'proxyUrl' | 'showSidebar' | 'hideClientButton'
->
+} & Pick<ApiReferenceConfiguration, 'proxyUrl' | 'showSidebar' | 'hideClientButton' | 'theme' | '_integration'>
 
 /**
- /**
  * Factory function for creating the centralized store for the API client.
  *
  * This store manages all data and state for the application.
- * It should be instantiated once and injected into the app’s root component.
+ * It should be instantiated once and injected into the app's root component.
  */
 export const createWorkspaceStore = ({
   useLocalStorage = true,
   showSidebar = true,
   proxyUrl,
-  themeId,
+  theme,
   hideClientButton = false,
-  integration,
+  _integration,
 }: CreateWorkspaceStoreOptions) => {
   // ---------------------------------------------------------------------------
   // Initialize all storage objects
 
-  const { collections, collectionMutators } =
-    createStoreCollections(useLocalStorage)
+  const { collections, collectionMutators } = createStoreCollections(useLocalStorage)
   const { tags, tagMutators } = createStoreTags(useLocalStorage)
   const { requests, requestMutators } = createStoreRequests(useLocalStorage)
-  const { requestExamples, requestExampleMutators } =
-    createStoreRequestExamples(useLocalStorage)
+  const { requestExamples, requestExampleMutators } = createStoreRequestExamples(useLocalStorage)
   const { cookies, cookieMutators } = createStoreCookies(useLocalStorage)
-  const { environments, environmentMutators } =
-    createStoreEnvironments(useLocalStorage)
+  const { environments, environmentMutators } = createStoreEnvironments(useLocalStorage)
   const { servers, serverMutators } = createStoreServers(useLocalStorage)
-  const { securitySchemes, securitySchemeMutators } =
-    createStoreSecuritySchemes(useLocalStorage)
-  const { workspaces, workspaceMutators } =
-    createStoreWorkspaces(useLocalStorage)
+  const { securitySchemes, securitySchemeMutators } = createStoreSecuritySchemes(useLocalStorage)
+  const { workspaces, workspaceMutators } = createStoreWorkspaces(useLocalStorage)
 
   // ---------------------------------------------------------------------------
   // Extended Mutators - Adds side effects as needed
@@ -123,34 +88,24 @@ export const createWorkspaceStore = ({
     workspaceMutators,
   }
   const { addTag, deleteTag } = extendedTagDataFactory(storeContext)
-  const { addRequest, deleteRequest, findRequestParents } =
-    extendedRequestDataFactory(storeContext, addTag)
+  const { addRequest, deleteRequest, findRequestParents } = extendedRequestDataFactory(storeContext, addTag)
   const { deleteEnvironment } = extendedEnvironmentDataFactory(storeContext)
   const { addServer, deleteServer } = extendedServerDataFactory(storeContext)
-  const { addCollection, deleteCollection } =
-    extendedCollectionDataFactory(storeContext)
-  const { addRequestExample, deleteRequestExample } =
-    extendedExampleDataFactory(storeContext)
-  const { addWorkspace, deleteWorkspace } =
-    extendedWorkspaceDataFactory(storeContext)
-  const { addSecurityScheme, deleteSecurityScheme } =
-    extendedSecurityDataFactory(storeContext)
-  const { addCollectionEnvironment, removeCollectionEnvironment } =
-    extendedCollectionDataFactory(storeContext)
+  const { addCollection, deleteCollection } = extendedCollectionDataFactory(storeContext)
+  const { addRequestExample, deleteRequestExample } = extendedExampleDataFactory(storeContext)
+  const { addWorkspace, deleteWorkspace } = extendedWorkspaceDataFactory(storeContext)
+  const { addSecurityScheme, deleteSecurityScheme } = extendedSecurityDataFactory(storeContext)
+  const { addCollectionEnvironment, removeCollectionEnvironment } = extendedCollectionDataFactory(storeContext)
 
   // ---------------------------------------------------------------------------
   // OTHER HELPER DATA
   /** Running request history list */
   const requestHistory = reactive<RequestEvent[]>([])
 
-  const { importSpecFile, importSpecFromUrl } =
-    importSpecFileFactory(storeContext)
+  const { importSpecFile, importSpecFromUrl } = importSpecFileFactory(storeContext)
 
   /** Helper function to manage the sidebar width */
-  const sidebarWidth = ref(
-    (useLocalStorage ? localStorage?.getItem('sidebarWidth') : undefined) ||
-      '280px',
-  )
+  const sidebarWidth = ref((useLocalStorage ? localStorage?.getItem('sidebarWidth') : undefined) || '280px')
 
   // Set the sidebar width
   const setSidebarWidth = (width: string) => {
@@ -164,9 +119,13 @@ export const createWorkspaceStore = ({
   const modalState = useModal()
 
   // Set some defaults on all workspaces
-  Object.keys(workspaces).forEach((uid) => {
-    if (proxyUrl) workspaceMutators.edit(uid, 'proxyUrl', proxyUrl)
-    if (themeId) workspaceMutators.edit(uid, 'themeId', themeId)
+  Object.values(workspaces).forEach(({ uid }) => {
+    if (proxyUrl) {
+      workspaceMutators.edit(uid, 'proxyUrl', proxyUrl)
+    }
+    if (theme) {
+      workspaceMutators.edit(uid, 'themeId', theme)
+    }
   })
 
   /**
@@ -212,7 +171,7 @@ export const createWorkspaceStore = ({
     // TODO: move these to their own store
     hideClientButton,
     showSidebar,
-    integration,
+    integration: _integration,
     // ---------------------------------------------------------------------------
     // METHODS
     importSpecFile,
@@ -284,6 +243,8 @@ export const WORKSPACE_SYMBOL = Symbol() as InjectionKey<WorkspaceStore>
  */
 export const useWorkspace = (): WorkspaceStore => {
   const store = inject(WORKSPACE_SYMBOL)
-  if (!store) throw new Error('Workspace store not provided')
+  if (!store) {
+    throw new Error('Workspace store not provided')
+  }
   return store
 }

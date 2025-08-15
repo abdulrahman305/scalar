@@ -1,8 +1,8 @@
 import { themeIds } from '@scalar/themes'
 import { z } from 'zod'
 
-import { HOTKEY_EVENT_NAMES, KEYDOWN_KEYS } from '../hotkeys'
-import { nanoidSchema } from '../shared'
+import { type ENTITY_BRANDS, nanoidSchema } from '@scalar/types/utils'
+import { HOTKEY_EVENT_NAMES, KEYDOWN_KEYS } from '../hotkeys/hotkeys'
 
 const modifier = z
   .enum(['Meta', 'Control', 'Shift', 'Alt', 'default'] as const)
@@ -29,24 +29,24 @@ const hotKeyConfigSchema = z
   .optional()
 
 export const workspaceSchema = z.object({
-  uid: nanoidSchema,
+  uid: nanoidSchema.brand<ENTITY_BRANDS['WORKSPACE']>(),
   name: z.string().default('Default Workspace'),
   /** Workspace description */
   description: z.string().default('Basic Scalar Workspace'),
   /** List of all collection uids in a given workspace */
-  collections: z.array(z.string()).default([]),
-  /** List of all environment uids in a given workspace */
+  collections: z.array(z.string().brand<ENTITY_BRANDS['COLLECTION']>()).default([]),
+  /** List of all environment uids in a given workspace, TODO: why is this a record? */
   environments: z.record(z.string()).default({}),
   /** Customize hotkeys */
   hotKeyConfig: hotKeyConfigSchema,
   /** Active Environment ID to use for requests  */
   activeEnvironmentId: z.string().optional().default('default'),
   /** List of all cookie uids in a given workspace */
-  cookies: z.array(z.string()).default([]),
+  cookies: z.array(z.string().brand<ENTITY_BRANDS['COOKIE']>()).default([]),
   /** Workspace level proxy for all requests to be sent through */
   proxyUrl: z.string().optional(),
   /** Workspace level theme, we might move this to user level later */
-  themeId: z.enum(themeIds).optional().default('default'),
+  themeId: z.enum(themeIds).optional().default('default').catch('default'),
   /** Currently selected snippet client */
   selectedHttpClient: z
     .object({

@@ -1,21 +1,18 @@
-import type { MockServerOptions } from '@/types'
-import { findPreferredResponseKey } from '@/utils/findPreferredResponseKey'
 import { getExampleFromSchema } from '@scalar/oas-utils/spec-getters'
 import type { OpenAPI } from '@scalar/openapi-types'
 import type { Context } from 'hono'
 import { accepts } from 'hono/accepts'
 import type { StatusCode } from 'hono/utils/http-status'
-// @ts-expect-error Doesn’t come with types
+// @ts-expect-error Doesn't come with types
 import objectToXML from 'object-to-xml'
+
+import type { MockServerOptions } from '@/types'
+import { findPreferredResponseKey } from '@/utils/findPreferredResponseKey'
 
 /**
  * Mock any response
  */
-export function mockAnyResponse(
-  c: Context,
-  operation: OpenAPI.Operation,
-  options: MockServerOptions,
-) {
+export function mockAnyResponse(c: Context, operation: OpenAPI.Operation, options: MockServerOptions) {
   // Call onRequest callback
   if (options?.onRequest) {
     options.onRequest({
@@ -26,12 +23,8 @@ export function mockAnyResponse(
 
   // Response
   // default, 200, 201 …
-  const preferredResponseKey = findPreferredResponseKey(
-    Object.keys(operation.responses ?? {}),
-  )
-  const preferredResponse = preferredResponseKey
-    ? operation.responses?.[preferredResponseKey]
-    : null
+  const preferredResponseKey = findPreferredResponseKey(Object.keys(operation.responses ?? {}))
+  const preferredResponse = preferredResponseKey ? operation.responses?.[preferredResponseKey] : null
 
   if (!preferredResponse) {
     c.status(500)
@@ -44,9 +37,7 @@ export function mockAnyResponse(
   // Headers
   const headers = preferredResponse?.headers ?? {}
   Object.keys(headers).forEach((header) => {
-    const value = headers[header].schema
-      ? getExampleFromSchema(headers[header].schema)
-      : null
+    const value = headers[header].schema ? getExampleFromSchema(headers[header].schema) : null
     if (value !== null) {
       c.header(header, value)
     }
@@ -58,7 +49,7 @@ export function mockAnyResponse(
     supports: supportedContentTypes,
     default: supportedContentTypes.includes('application/json')
       ? 'application/json'
-      : supportedContentTypes[0],
+      : (supportedContentTypes[0] ?? 'text/plain;charset=UTF-8'),
   })
 
   c.header('Content-Type', acceptedContentType)
@@ -70,17 +61,15 @@ export function mockAnyResponse(
     ? acceptedResponse.example
     : acceptedResponse?.schema
       ? getExampleFromSchema(acceptedResponse.schema, {
-          emptyString: '…',
+          emptyString: 'string',
           variables: c.req.param(),
           mode: 'read',
         })
       : null
 
   // Status code
-  const statusCode = parseInt(
-    preferredResponseKey === 'default'
-      ? '200'
-      : (preferredResponseKey ?? '200'),
+  const statusCode = Number.parseInt(
+    preferredResponseKey === 'default' ? '200' : (preferredResponseKey ?? '200'),
     10,
   ) as StatusCode
 

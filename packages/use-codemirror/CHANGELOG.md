@@ -1,5 +1,464 @@
 # @scalar/use-codemirror
 
+## 0.12.25
+
+### Patch Changes
+
+- Updated dependencies [58b9321]
+- Updated dependencies [fbafeab]
+  - @scalar/components@0.14.24
+
+## 0.12.24
+
+### Patch Changes
+
+- @scalar/components@0.14.23
+
+## 0.12.23
+
+### Patch Changes
+
+- Updated dependencies [dd00357]
+  - @scalar/components@0.14.22
+
+## 0.12.22
+
+### Patch Changes
+
+- Updated dependencies [f913898]
+- Updated dependencies [cf5d6a2]
+- Updated dependencies [1af32c0]
+- Updated dependencies [f3d0216]
+- Updated dependencies [af22451]
+  - @scalar/components@0.14.21
+
+## 0.12.21
+
+### Patch Changes
+
+- Updated dependencies [60c7bef]
+- Updated dependencies [cac47ea]
+  - @scalar/components@0.14.20
+
+## 0.12.20
+
+### Patch Changes
+
+- Updated dependencies [a04cc15]
+- Updated dependencies [85ee2ce]
+- Updated dependencies [fbaaa12]
+- Updated dependencies [85ee2ce]
+- Updated dependencies [97721b5]
+- Updated dependencies [85ee2ce]
+  - @scalar/components@0.14.19
+
+## 0.12.19
+
+### Patch Changes
+
+- Updated dependencies [934dff9]
+  - @scalar/components@0.14.18
+
+## 0.12.18
+
+### Patch Changes
+
+- Updated dependencies [cd1c367]
+- Updated dependencies [4d89219]
+- Updated dependencies [244edda]
+- Updated dependencies [1db9130]
+  - @scalar/components@0.14.17
+
+## 0.12.17
+
+### Patch Changes
+
+- Updated dependencies [ca77d70]
+- Updated dependencies [a696604]
+- Updated dependencies [3fdc2f2]
+  - @scalar/components@0.14.16
+
+## 0.12.16
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+  - @scalar/components@0.14.15
+
+## 0.12.15
+
+### Patch Changes
+
+- Updated dependencies [533469b]
+- Updated dependencies [3393c83]
+- Updated dependencies [4f47b3c]
+- Updated dependencies [8e85856]
+  - @scalar/components@0.14.14
+
+## 0.12.14
+
+### Patch Changes
+
+- Updated dependencies [c907685]
+- Updated dependencies [4bbbb32]
+  - @scalar/components@0.14.13
+
+## 0.12.13
+
+### Patch Changes
+
+- @scalar/components@0.14.12
+
+## 0.12.12
+
+### Patch Changes
+
+- Updated dependencies [699df60]
+  - @scalar/components@0.14.11
+
+## 0.12.11
+
+### Patch Changes
+
+- @scalar/components@0.14.10
+
+## 0.12.10
+
+### Patch Changes
+
+- @scalar/components@0.14.9
+
+## 0.12.9
+
+### Patch Changes
+
+- Updated dependencies [4156f1d]
+- Updated dependencies [177438d]
+  - @scalar/components@0.14.8
+
+## 0.12.8
+
+### Patch Changes
+
+- @scalar/components@0.14.7
+
+## 0.12.7
+
+### Patch Changes
+
+- Updated dependencies [ba84a3c]
+  - @scalar/components@0.14.6
+
+## 0.12.6
+
+### Patch Changes
+
+- Updated dependencies [f1c0c01]
+- Updated dependencies [df7efac]
+  - @scalar/components@0.14.5
+
+## 0.12.5
+
+### Patch Changes
+
+- @scalar/components@0.14.4
+
+## 0.12.4
+
+### Patch Changes
+
+- Updated dependencies [785939b]
+- Updated dependencies [cad6277]
+- Updated dependencies [ffa93fa]
+- Updated dependencies [cedca9b]
+  - @scalar/components@0.14.3
+
+## 0.12.3
+
+### Patch Changes
+
+- @scalar/components@0.14.2
+
+## 0.12.2
+
+### Patch Changes
+
+- ca8d9bc: chore: remove unused dependencies
+
+## 0.12.1
+
+### Patch Changes
+
+- Updated dependencies [4440949]
+  - @scalar/components@0.14.1
+
+## 0.12.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- Updated dependencies [5613e40]
+- Updated dependencies [483ca93]
+- Updated dependencies [0efcab4]
+  - @scalar/components@0.14.0
+
+## 0.11.104
+
+### Patch Changes
+
+- Updated dependencies [1843cfe]
+  - @scalar/components@0.13.59
+
+## 0.11.103
+
+### Patch Changes
+
+- Updated dependencies [af38fa6]
+  - @scalar/components@0.13.58
+
+## 0.11.102
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+- Updated dependencies [8c7bad8]
+  - @scalar/components@0.13.57
+
+## 0.11.101
+
+### Patch Changes
+
+- @scalar/components@0.13.56
+
+## 0.11.100
+
+### Patch Changes
+
+- Updated dependencies [d2f27f4]
+  - @scalar/components@0.13.55
+
+## 0.11.99
+
+### Patch Changes
+
+- @scalar/components@0.13.54
+
+## 0.11.98
+
+### Patch Changes
+
+- @scalar/components@0.13.53
+
+## 0.11.97
+
+### Patch Changes
+
+- Updated dependencies [1f8ac99]
+  - @scalar/components@0.13.52
+
+## 0.11.96
+
+### Patch Changes
+
+- Updated dependencies [2b61d8e]
+- Updated dependencies [ab4cf5a]
+  - @scalar/components@0.13.51
+
+## 0.11.95
+
+### Patch Changes
+
+- Updated dependencies [363276e]
+- Updated dependencies [a9f232a]
+  - @scalar/components@0.13.50
+
+## 0.11.94
+
+### Patch Changes
+
+- Updated dependencies [cdaafe4]
+  - @scalar/components@0.13.49
+
+## 0.11.93
+
+### Patch Changes
+
+- @scalar/components@0.13.48
+
+## 0.11.92
+
+### Patch Changes
+
+- Updated dependencies [5b19c90]
+- Updated dependencies [f705230]
+  - @scalar/components@0.13.47
+
+## 0.11.91
+
+### Patch Changes
+
+- @scalar/components@0.13.46
+
+## 0.11.90
+
+### Patch Changes
+
+- Updated dependencies [799845f]
+- Updated dependencies [73f5553]
+  - @scalar/components@0.13.45
+
+## 0.11.89
+
+### Patch Changes
+
+- @scalar/components@0.13.44
+
+## 0.11.88
+
+### Patch Changes
+
+- @scalar/components@0.13.43
+
+## 0.11.87
+
+### Patch Changes
+
+- @scalar/components@0.13.42
+
+## 0.11.86
+
+### Patch Changes
+
+- @scalar/components@0.13.41
+
+## 0.11.85
+
+### Patch Changes
+
+- @scalar/components@0.13.40
+
+## 0.11.84
+
+### Patch Changes
+
+- Updated dependencies [427c325]
+- Updated dependencies [9a2d008]
+  - @scalar/components@0.13.39
+
+## 0.11.83
+
+### Patch Changes
+
+- Updated dependencies [0f13162]
+- Updated dependencies [cc1ec74]
+- Updated dependencies [2716898]
+  - @scalar/components@0.13.38
+
+## 0.11.82
+
+### Patch Changes
+
+- @scalar/components@0.13.37
+
+## 0.11.81
+
+### Patch Changes
+
+- Updated dependencies [e0ee082]
+- Updated dependencies [1437882]
+  - @scalar/components@0.13.36
+
+## 0.11.80
+
+### Patch Changes
+
+- @scalar/components@0.13.35
+
+## 0.11.79
+
+### Patch Changes
+
+- @scalar/components@0.13.34
+
+## 0.11.78
+
+### Patch Changes
+
+- Updated dependencies [4d03e0f]
+  - @scalar/components@0.13.33
+
+## 0.11.77
+
+### Patch Changes
+
+- Updated dependencies [df4dee8]
+- Updated dependencies [8c5b0c6]
+  - @scalar/components@0.13.32
+
+## 0.11.76
+
+### Patch Changes
+
+- Updated dependencies [3f99afc]
+  - @scalar/components@0.13.31
+
+## 0.11.75
+
+### Patch Changes
+
+- @scalar/components@0.13.30
+
+## 0.11.74
+
+### Patch Changes
+
+- Updated dependencies [479a2ef]
+  - @scalar/components@0.13.29
+
+## 0.11.73
+
+### Patch Changes
+
+- Updated dependencies [0d4520f]
+  - @scalar/components@0.13.28
+
+## 0.11.72
+
+### Patch Changes
+
+- @scalar/components@0.13.27
+
+## 0.11.71
+
+### Patch Changes
+
+- 7dc4415: feat: adds code mirror history commands
+- Updated dependencies [f61e986]
+- Updated dependencies [c9a8fd8]
+- Updated dependencies [8d9a2c0]
+- Updated dependencies [bd70ab6]
+- Updated dependencies [e55bfd2]
+  - @scalar/components@0.13.26
+
+## 0.11.70
+
+### Patch Changes
+
+- Updated dependencies [e350f23]
+- Updated dependencies [e47a698]
+  - @scalar/components@0.13.25
+
+## 0.11.69
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+- Updated dependencies [825bc40]
+  - @scalar/components@0.13.24
+
 ## 0.11.68
 
 ### Patch Changes

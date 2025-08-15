@@ -11,7 +11,7 @@ internal static class BookEndpoints
             .HasApiVersion(new ApiVersion(1))
             .HasApiVersion(new ApiVersion(2))
             .Build();
-        
+
         var books = builder.MapGroup("v{version:apiVersion}/books")
             .WithTags("bookstore")
             .WithApiVersionSet(apiVersionSet)
@@ -20,7 +20,7 @@ internal static class BookEndpoints
             .RequireAuthorization();
 
         books
-            .MapGet("/", ([FromServices] BookStore bookStore) => bookStore.GetAll())
+            .MapGet("/", [Stability(Stability.Stable)] ([FromServices] BookStore bookStore) => bookStore.GetAll())
             .Produces<IEnumerable<Book>>();
 
         books
@@ -29,6 +29,7 @@ internal static class BookEndpoints
                 var book = bookStore.GetById(bookId);
                 return book is null ? Results.NotFound() : Results.Ok(book);
             })
+            .Experimental()
             .Produces<Book>()
             .Produces(StatusCodes.Status404NotFound);
 

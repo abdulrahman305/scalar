@@ -1,5 +1,23 @@
 # @scalar/use-toasts
 
+## 0.8.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+## 0.7.10
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+
+## 0.7.9
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+
 ## 0.7.8
 
 ### Patch Changes

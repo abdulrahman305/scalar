@@ -17,19 +17,20 @@ internal static class ScalarOptionsMapper
         { ScalarTarget.OCaml, [ScalarClient.CoHttp] },
         { ScalarTarget.Php, [ScalarClient.Curl, ScalarClient.Guzzle, ScalarClient.Http1, ScalarClient.Http2] },
         { ScalarTarget.PowerShell, [ScalarClient.WebRequest, ScalarClient.RestMethod] },
-        { ScalarTarget.Python, [ScalarClient.Python3, ScalarClient.Requests] },
+        { ScalarTarget.Python, [ScalarClient.Python3, ScalarClient.Requests, ScalarClient.HttpxSync, ScalarClient.HttpxAsync] },
         { ScalarTarget.R, [ScalarClient.Httr] },
         { ScalarTarget.Ruby, [ScalarClient.Native] },
         { ScalarTarget.Shell, [ScalarClient.Curl, ScalarClient.Httpie, ScalarClient.Wget] },
         { ScalarTarget.Swift, [ScalarClient.Nsurlsession] },
         { ScalarTarget.Go, [ScalarClient.Native] },
         { ScalarTarget.Kotlin, [ScalarClient.OkHttp] },
-        { ScalarTarget.Dart , [ScalarClient.Http]}
+        { ScalarTarget.Dart, [ScalarClient.Http] },
+        { ScalarTarget.Rust, [ScalarClient.Reqwest] }
     };
 
     internal static ScalarConfiguration ToScalarConfiguration(this ScalarOptions options)
     {
-        var documentUrls = options.DocumentNames.Select(name => options.OpenApiRoutePattern.Replace(DocumentName, name));
+        var sources = GetSources(options);
         return new ScalarConfiguration
         {
             ProxyUrl = options.ProxyUrl,
@@ -39,7 +40,6 @@ internal static class ScalarOptionsMapper
             DarkMode = options.DarkMode,
             HideModels = options.HideModels,
             HideDarkModeToggle = options.HideDarkModeToggle,
-            HideDownloadButton = options.HideDownloadButton,
             HideTestRequestButton = options.HideTestRequestButton,
             DefaultOpenAllTags = options.DefaultOpenAllTags,
             ForceDarkModeState = options.ForceThemeMode?.ToStringFast(true),
@@ -50,7 +50,7 @@ internal static class ScalarOptionsMapper
             Servers = options.Servers,
             MetaData = options.Metadata,
             Authentication = options.Authentication,
-            TagSorter = options.TagSorter?.ToStringFast(true),
+            TagsSorter = options.TagSorter?.ToStringFast(true),
             OperationsSorter = options.OperationSorter?.ToStringFast(true),
             HiddenClients = options.HiddenClients ? options.HiddenClients : GetHiddenClients(options),
             DefaultHttpClient = new DefaultHttpClient
@@ -60,34 +60,47 @@ internal static class ScalarOptionsMapper
             },
             Integration = options.DotNetFlag ? "dotnet" : null,
             HideClientButton = options.HideClientButton,
-            Documents = documentUrls
+            Sources = sources,
+            BaseServerUrl = options.BaseServerUrl,
+            PersistAuth = options.PersistentAuthentication,
+#pragma warning disable CS0618 // Type or member is obsolete
+            DocumentDownloadType = options.HideDownloadButton ? DocumentDownloadType.None.ToStringFast(true) : options.DocumentDownloadType?.ToStringFast(true)
+#pragma warning restore CS0618 // Type or member is obsolete
         };
     }
 
-    private static Dictionary<string, IEnumerable<string>>? GetHiddenClients(ScalarOptions options)
+    private static IEnumerable<ScalarSource> GetSources(ScalarOptions options)
     {
-        var targets = ProcessOptions(options);
+        var trimmedOpenApiRoutePattern = options.OpenApiRoutePattern.TrimStart('/');
 
-        return targets?.ToDictionary(k =>
-                k.Key.ToStringFast(true),
-            k => k.Value.Select(v => v.ToStringFast(true))
-        );
+        foreach (var (name, title, routePattern) in options.Documents)
+        {
+            var openApiRoutePattern = routePattern is null ? trimmedOpenApiRoutePattern : routePattern.TrimStart('/');
+            yield return new ScalarSource
+            {
+                Title = title ?? name,
+                Url = openApiRoutePattern.Replace(DocumentName, name)
+            };
+        }
     }
 
-    private static Dictionary<ScalarTarget, ScalarClient[]>? ProcessOptions(ScalarOptions options)
+    private static Dictionary<string, IEnumerable<string>>? GetHiddenClients(ScalarOptions options)
     {
         if (options.EnabledTargets.Length == 0 && options.EnabledClients.Length == 0)
         {
             return null;
         }
 
-        var selected = new Dictionary<ScalarTarget, ScalarClient[]>();
+        var hiddenClients = new Dictionary<string, IEnumerable<string>>(ClientOptions.Count);
+
         foreach (var item in ClientOptions)
         {
-            if (options.EnabledTargets.Length != 0 &&
-                !options.EnabledTargets.Contains(item.Key))
+            if (options.EnabledTargets.Length > 0 && !options.EnabledTargets.Contains(item.Key))
             {
-                selected.Add(item.Key, item.Value);
+                var targetKey = item.Key.ToStringFast(true);
+                var values = item.Value.Select(x => x.ToStringFast(true));
+
+                hiddenClients[targetKey] = values;
                 continue;
             }
 
@@ -96,16 +109,21 @@ internal static class ScalarOptionsMapper
                 continue;
             }
 
-            var clients = item.Value
-                .Where(client => !options.EnabledClients.Contains(client))
-                .ToArray();
 
-            if (clients.Length != 0)
+            var clients = item.Value
+                .Where(x => !options.EnabledClients.Contains(x))
+                .Select(x => x.ToStringFast(true)).ToArray();
+
+            // Only add to hidden clients if there are actually clients to hide
+            if (clients.Length == 0)
             {
-                selected.Add(item.Key, clients);
+                continue;
             }
+
+            var key = item.Key.ToStringFast(true);
+            hiddenClients[key] = clients;
         }
 
-        return selected;
+        return hiddenClients.Count > 0 ? hiddenClients : null;
     }
 }

@@ -1,2 +1,6 @@
-export * from './import-spec'
-export * from './export-spec'
+export {
+  getSlugUid,
+  importSpecToWorkspace,
+  parseSchema,
+  type ImportSpecToWorkspaceArgs,
+} from './import-spec'

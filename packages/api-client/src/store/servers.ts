@@ -1,10 +1,12 @@
 import type { StoreContext } from '@/store/store-context'
 import {
+  type Collection,
+  type Request,
   type Server,
   type ServerPayload,
   serverSchema,
 } from '@scalar/oas-utils/entities/spec'
-import { LS_KEYS } from '@scalar/oas-utils/helpers'
+import { LS_KEYS } from '@scalar/helpers/object/local-storage'
 import { mutationFactory } from '@scalar/object-utils/mutator-record'
 import { reactive } from 'vue'
 
@@ -12,11 +14,7 @@ import { reactive } from 'vue'
 export function createStoreServers(useLocalStorage: boolean) {
   const servers = reactive<Record<string, Server>>({})
 
-  const serverMutators = mutationFactory(
-    servers,
-    reactive({}),
-    useLocalStorage && LS_KEYS.SERVER,
-  )
+  const serverMutators = mutationFactory(servers, reactive({}), useLocalStorage && LS_KEYS.SERVER)
 
   return {
     servers,
@@ -41,17 +39,14 @@ export function extendedServerDataFactory({
 
     // Add to collection
     if (collections[parentUid]) {
-      collectionMutators.edit(parentUid, 'servers', [
+      collectionMutators.edit(parentUid as Collection['uid'], 'servers', [
         ...collections[parentUid].servers,
         server.uid,
       ])
     }
     // Add to request
     else if (requests[parentUid]) {
-      requestMutators.edit(parentUid, 'servers', [
-        ...requests[parentUid].servers,
-        server.uid,
-      ])
+      requestMutators.edit(parentUid as Request['uid'], 'servers', [...requests[parentUid].servers, server.uid])
     }
 
     // Add to servers
@@ -61,8 +56,10 @@ export function extendedServerDataFactory({
   }
 
   /** Delete a server */
-  const deleteServer = (serverUid: string, collectionUid: string) => {
-    if (!collections[collectionUid]) return
+  const deleteServer = (serverUid: Server['uid'], collectionUid: Collection['uid']) => {
+    if (!collections[collectionUid]) {
+      return
+    }
 
     // Remove from parent collection
     collectionMutators.edit(

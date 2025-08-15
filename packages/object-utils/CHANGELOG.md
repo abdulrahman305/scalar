@@ -1,5 +1,43 @@
 # @scalar/object-utils
 
+## 1.2.3
+
+### Patch Changes
+
+- Updated dependencies [c0d6793]
+- Updated dependencies [f3d0216]
+  - @scalar/helpers@0.0.7
+
+## 1.2.2
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+
+## 1.2.1
+
+### Patch Changes
+
+- 4440949: chore: bumping packages
+
+## 1.2.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+## 1.1.14
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+
+## 1.1.13
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+
 ## 1.1.12
 
 ### Patch Changes

@@ -15,14 +15,16 @@
     "css-variables",
     "scalar"
   ],
-  "version": "0.9.66",
+  "version": "0.13.12",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
-    "build": "vite build && pnpm types:build && tsc-alias -p tsconfig.build.json",
-    "lint:check": "eslint .",
-    "lint:fix": "eslint .  --fix",
+    "build": "scalar-build-vite",
+    "format": "scalar-format",
+    "format:check": "scalar-format-check",
+    "lint:check": "scalar-lint-check",
+    "lint:fix": "scalar-lint-fix",
     "types:build": "vue-tsc -p tsconfig.build.json",
     "types:check": "vue-tsc --noEmit --skipLibCheck --composite false"
   },
@@ -32,35 +34,28 @@
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./tailwind": {
-      "import": "./dist/tailwind.js",
-      "require": "./dist/tailwind.cjs",
-      "types": "./dist/tailwind.d.ts",
-      "default": "./dist/tailwind.js"
-    },
-    "./presets/*.css": "./dist/presets/*.css",
-    "./style.css": "./dist/style.css"
+    "./tailwind.css": "./dist/tailwind.css",
+    "./style.css": "./dist/style.css",
+    "./fonts.css": "./dist/fonts/fonts.css"
   },
   "files": [
     "dist",
-    "CHANGELOG.md",
-    "src/tailwind.ts"
+    "CHANGELOG.md"
   ],
   "module": "./dist/index.js",
   "dependencies": {
-    "@scalar/types": "workspace:*"
+    "@scalar/types": "workspace:*",
+    "nanoid": "catalog:*"
   },
   "devDependencies": {
     "@scalar/build-tooling": "workspace:*",
-    "@vitejs/plugin-vue": "^5.0.4",
-    "@vitest/coverage-v8": "^1.6.0",
-    "tailwindcss": "^3.4.4",
-    "vite": "^5.4.10",
-    "vite-plugin-static-copy": "^1.0.2",
-    "vitest": "^1.6.0"
+    "@vitejs/plugin-vue": "catalog:*",
+    "tailwindcss": "catalog:*",
+    "vite": "catalog:*",
+    "vite-plugin-static-copy": "^2.2.0",
+    "vitest": "catalog:*"
   }
 }

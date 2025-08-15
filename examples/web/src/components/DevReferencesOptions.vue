@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { ReferenceConfiguration } from '@scalar/api-reference'
-import { availableThemes } from '@scalar/themes'
+import { themeIds } from '@scalar/themes'
+import type { ApiReferenceConfiguration } from '@scalar/types/api-reference'
 import { computed } from 'vue'
 
 const props = defineProps<{
-  modelValue: ReferenceConfiguration
+  modelValue: Partial<ApiReferenceConfiguration>
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', v: ReferenceConfiguration): void
+  (e: 'update:modelValue', v: Partial<ApiReferenceConfiguration>): void
 }>()
 
 /**
@@ -47,7 +47,7 @@ const configuration = computed(
     Theme:
     <select v-model="configuration.theme">
       <option
-        v-for="theme in availableThemes"
+        v-for="theme in themeIds"
         :key="theme"
         :value="theme">
         {{ theme }}

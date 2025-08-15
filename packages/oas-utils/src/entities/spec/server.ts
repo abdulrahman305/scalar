@@ -1,6 +1,5 @@
-import { nanoidSchema } from '@/entities/shared'
-import type { OpenAPIV3_1 } from '@scalar/openapi-types'
-import { type ZodSchema, z } from 'zod'
+import { type ENTITY_BRANDS, nanoidSchema } from '@scalar/types/utils'
+import { z } from 'zod'
 
 /**
  * Server Variable Object
@@ -34,11 +33,7 @@ const extendedServerVariableSchema = oasServerVariableSchema
   })
   .refine((data) => {
     // Set default to the first enum value if invalid
-    if (
-      Array.isArray(data.enum) &&
-      !data.enum.includes(data.default ?? '') &&
-      data.enum.length > 0
-    ) {
+    if (Array.isArray(data.enum) && !data.enum.includes(data.default ?? '') && data.enum.length > 0) {
       data.default = data.enum[0]
     }
 
@@ -46,14 +41,9 @@ const extendedServerVariableSchema = oasServerVariableSchema
       delete data.enum
     }
 
-    // Always return true since we’ve modified the data to be valid
+    // Always return true since we've modified the data to be valid
     return true
-  }) as ZodSchema<
-  Omit<OpenAPIV3_1.ServerVariableObject, 'enum'> & {
-    enum?: [string, ...string[]]
-    value?: string
-  }
->
+  })
 
 /**
  * Server Object
@@ -76,10 +66,10 @@ export const oasServerSchema = z.object({
   description: z.string().optional(),
   /** A map between a variable name and its value. The value is used for substitution in the server's URL template. */
   variables: z.record(z.string(), extendedServerVariableSchema).optional(),
-}) satisfies ZodSchema<OpenAPIV3_1.ServerObject>
+})
 
 export const serverSchema = oasServerSchema.extend({
-  uid: nanoidSchema,
+  uid: nanoidSchema.brand<ENTITY_BRANDS['SERVER']>(),
 })
 
 export type Server = z.infer<typeof serverSchema>

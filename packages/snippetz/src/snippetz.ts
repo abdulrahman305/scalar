@@ -1,25 +1,16 @@
 import { clients } from '@/clients'
-import type { ClientId, HarRequest, TargetId } from '@/types'
+import type { ClientId, HarRequest, TargetId } from '@scalar/types/snippetz'
 
 /**
  * Generate code examples for HAR requests
  */
 export function snippetz() {
-  function findPlugin<T extends TargetId>(
-    target: T | string,
-    client: ClientId<T> | string,
-  ) {
-    return clients
-      .find(({ key }) => key === target)
-      ?.clients.find((plugin) => plugin.client === client)
+  function findPlugin<T extends TargetId>(target: T | string, client: ClientId<T> | string) {
+    return clients.find(({ key }) => key === target)?.clients.find((plugin) => plugin.client === client)
   }
 
   return {
-    print<T extends TargetId>(
-      target: T,
-      client: ClientId<T>,
-      request: Partial<HarRequest>,
-    ) {
+    print<T extends TargetId>(target: T, client: ClientId<T>, request: Partial<HarRequest>) {
       return findPlugin(target, client)?.generate(request)
     },
     clients() {
@@ -34,10 +25,7 @@ export function snippetz() {
       )
     },
     findPlugin,
-    hasPlugin<T extends TargetId>(
-      target: T | string,
-      client: ClientId<T> | string,
-    ) {
+    hasPlugin<T extends TargetId>(target: T | string, client: ClientId<T> | string) {
       return Boolean(findPlugin(target, client))
     },
   }

@@ -10,10 +10,7 @@ type HighlightOptions = {
   /** Optional existing lowlight instance to use */
   lowlight?: ReturnType<typeof createLowlight> | undefined
   /** Register more aliases (optional); passed to `lowlight.registerAlias` */
-  aliases?:
-    | Readonly<Record<string, ReadonlyArray<string> | string>>
-    | null
-    | undefined
+  aliases?: Readonly<Record<string, ReadonlyArray<string> | string>> | null | undefined
   /** Register languages (default: `common`) passed to `lowlight.register` */
   languages?: Readonly<Record<string, LanguageFn>> | null | undefined
   /** List of language names to not highlight (optional). Note: you can also add `no-highlight` classes. */
@@ -33,9 +30,7 @@ const emptyOptions: HighlightOptions = {}
  *
  * Derived from: @url https://github.com/rehypejs/rehype-highlight/blob/main/lib/index.js
  */
-export function rehypeHighlight(
-  options?: Readonly<HighlightOptions> | null | undefined,
-) {
+export function rehypeHighlight(options?: Readonly<HighlightOptions> | null | undefined) {
   const settings = options || emptyOptions
   const aliases = settings.aliases
   const detect = options?.detect ?? false
@@ -48,7 +43,9 @@ export function rehypeHighlight(
   // Create a lowlight instance if not provided
   const lowlight = options?.lowlight ?? createLowlight(languages)
 
-  if (aliases) lowlight.registerAlias(aliases)
+  if (aliases) {
+    lowlight.registerAlias(aliases)
+  }
 
   if (prefix) {
     const pos = prefix.indexOf('-')
@@ -56,24 +53,15 @@ export function rehypeHighlight(
   }
 
   /** Transform.*/
-  return function (tree: Root, file: VFile) {
-    visit(tree, 'element', function (node, _, parent) {
-      if (
-        node.tagName !== 'code' ||
-        !parent ||
-        parent.type !== 'element' ||
-        parent.tagName !== 'pre'
-      ) {
+  return (tree: Root, file: VFile) => {
+    visit(tree, 'element', (node, _, parent) => {
+      if (node.tagName !== 'code' || !parent || parent.type !== 'element' || parent.tagName !== 'pre') {
         return
       }
 
       const lang = language(node)
 
-      if (
-        lang === 'no-highlight' ||
-        (!lang && !detect) ||
-        (lang && plainText?.includes(lang))
-      ) {
+      if (lang === 'no-highlight' || (!lang && !detect) || (lang && plainText?.includes(lang))) {
         return
       }
 
@@ -95,16 +83,13 @@ export function rehypeHighlight(
         const cause = error as Error
 
         if (lang && /Unknown language/.test(cause.message)) {
-          file.message(
-            'Cannot highlight as `' + lang + '`, it’s not registered',
-            {
-              ancestors: [parent, node],
-              cause,
-              place: node.position,
-              ruleId: 'missing-language',
-              source: 'rehype-highlight',
-            },
-          )
+          file.message(`Cannot highlight as \`${lang}\`, it's not registered`, {
+            ancestors: [parent, node],
+            cause,
+            place: node.position,
+            ruleId: 'missing-language',
+            source: 'rehype-highlight',
+          })
 
           /* c8 ignore next 5 -- throw arbitrary hljs errors */
           return
@@ -128,15 +113,25 @@ export function rehypeHighlight(
 function language(node: Element) {
   const list = node.properties.className
 
-  if (!Array.isArray(list)) return ''
+  if (!Array.isArray(list)) {
+    return ''
+  }
 
   const name: string = list.reduce<string>((result, _item) => {
-    if (result) return result
+    if (result) {
+      return result
+    }
     const item = String(_item)
 
-    if (item === 'no-highlight' || item === 'nohighlight') return 'no-highlight'
-    if (item.slice(0, 5) === 'lang-') return item.slice(5)
-    if (item.slice(0, 9) === 'language-') return item.slice(9)
+    if (item === 'no-highlight' || item === 'nohighlight') {
+      return 'no-highlight'
+    }
+    if (item.slice(0, 5) === 'lang-') {
+      return item.slice(5)
+    }
+    if (item.slice(0, 9) === 'language-') {
+      return item.slice(9)
+    }
 
     return result
   }, '')

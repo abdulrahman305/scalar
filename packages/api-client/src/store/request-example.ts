@@ -1,10 +1,7 @@
 import type { StoreContext } from '@/store/store-context'
-import {
-  type Request,
-  type RequestExample,
-  createExampleFromRequest,
-} from '@scalar/oas-utils/entities/spec'
-import { LS_KEYS, iterateTitle } from '@scalar/oas-utils/helpers'
+import { type Request, type RequestExample, createExampleFromRequest } from '@scalar/oas-utils/entities/spec'
+import { LS_KEYS } from '@scalar/helpers/object/local-storage'
+import { iterateTitle } from '@scalar/helpers/string/iterate-title'
 import { mutationFactory } from '@scalar/object-utils/mutator-record'
 import { reactive } from 'vue'
 
@@ -49,23 +46,22 @@ export function extendedExampleDataFactory({
     requestExampleMutators.add(example)
 
     // Add the uid to the request
-    requestMutators.edit(request.uid, 'examples', [
-      ...request.examples,
-      example.uid,
-    ])
+    requestMutators.edit(request.uid, 'examples', [...request.examples, example.uid])
 
     return example
   }
 
   /** Ensure we remove from the base as well as from the request it is in */
   const deleteRequestExample = (requestExample: RequestExample) => {
+    if (!requestExample.requestUid) {
+      return
+    }
+
     // Remove from request
     requestMutators.edit(
       requestExample.requestUid,
       'examples',
-      requests[requestExample.requestUid]?.examples.filter(
-        (uid) => uid !== requestExample.uid,
-      ) || [],
+      requests[requestExample.requestUid]?.examples.filter((uid) => uid !== requestExample.uid) || [],
     )
 
     // Remove from base

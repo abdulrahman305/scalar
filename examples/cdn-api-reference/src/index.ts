@@ -1,9 +1,9 @@
-import fastifyStatic from '@fastify/static'
-import apiReferenceBundle from '@scalar/api-reference/browser/standalone.js?raw'
-import playButtonBundle from '@scalar/play-button?raw'
-import fastify from 'fastify'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
+
+import fastifyStatic from '@fastify/static'
+import apiReferenceBundle from '@scalar/api-reference/browser/standalone.js?raw'
+import fastify from 'fastify'
 
 const app = await fastify({ logger: true })
 
@@ -21,26 +21,14 @@ app.get('/ping', (_request, reply) => {
 // @scalar/api-reference bundle
 
 app.get('/api-reference/standalone.js', (_request, reply) => {
-  reply
-    .code(200)
-    .header('Content-Type', 'text/javascript; charset=utf-8')
-    .send(apiReferenceBundle)
-})
-
-// @scalar/play-button bundle
-
-app.get('/play-button/standalone.js', (_request, reply) => {
-  reply
-    .code(200)
-    .header('Content-Type', 'text/javascript; charset=utf-8')
-    .send(playButtonBundle)
+  reply.code(200).header('Content-Type', 'text/javascript; charset=utf-8').send(apiReferenceBundle)
 })
 
 // Run the server!
 try {
   app.listen({ port: 3173 }, () => {
     console.log()
-    console.info(`📦 CDN Example listening on http://127.0.0.1:3173`)
+    console.info('📦 CDN Example listening on http://127.0.0.1:3173')
     console.log()
     // List all files in the public directory
     readdirSync(join(__dirname, 'public')).forEach((file) => {

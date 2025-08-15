@@ -15,7 +15,7 @@ public class ScalarOptionsMapperTests
         configuration.ProxyUrl.Should().BeNull();
         configuration.ShowSidebar.Should().BeTrue();
         configuration.HideModels.Should().BeFalse();
-        configuration.HideDownloadButton.Should().BeFalse();
+        configuration.DocumentDownloadType.Should().BeNull();
         configuration.HideTestRequestButton.Should().BeFalse();
         configuration.DarkMode.Should().BeTrue();
         configuration.ForceDarkModeState.Should().BeNull();
@@ -30,11 +30,12 @@ public class ScalarOptionsMapperTests
         configuration.Authentication.Should().BeNull();
         configuration.WithDefaultFonts.Should().BeTrue();
         configuration.DefaultOpenAllTags.Should().BeFalse();
-        configuration.TagSorter.Should().BeNull();
+        configuration.TagsSorter.Should().BeNull();
         configuration.OperationsSorter.Should().BeNull();
         configuration.Theme.Should().Be("purple");
         configuration.Integration.Should().Be("dotnet");
-        configuration.Documents.Should().BeEmpty();
+        configuration.Sources.Should().BeEmpty();
+        configuration.PersistAuth.Should().BeFalse();
     }
 
     [Fact]
@@ -46,7 +47,6 @@ public class ScalarOptionsMapperTests
             ProxyUrl = "http://localhost:8080",
             ShowSidebar = false,
             HideModels = true,
-            HideDownloadButton = true,
             HideTestRequestButton = true,
             DarkMode = false,
             ForceThemeMode = ThemeMode.Light,
@@ -59,6 +59,8 @@ public class ScalarOptionsMapperTests
             Metadata = new Dictionary<string, string> { ["key"] = "value" },
             DefaultHttpClient = new KeyValuePair<ScalarTarget, ScalarClient>(ScalarTarget.CSharp, ScalarClient.HttpClient),
             HiddenClients = true,
+#pragma warning disable CS0618 // Type or member is obsolete
+            HideDownloadButton = true,
             Authentication = new ScalarAuthenticationOptions
             {
                 PreferredSecurityScheme = "my-scheme",
@@ -66,13 +68,15 @@ public class ScalarOptionsMapperTests
                 {
                     Token = "my-token"
                 }
+#pragma warning restore CS0618 // Type or member is obsolete
             },
             DefaultFonts = false,
             DefaultOpenAllTags = true,
             TagSorter = TagSorter.Alpha,
             OperationSorter = OperationSorter.Method,
             DotNetFlag = false,
-            HideClientButton = true
+            HideClientButton = true,
+            PersistentAuthentication = true
         };
         options.AddDocument("v2");
 
@@ -83,10 +87,9 @@ public class ScalarOptionsMapperTests
         configuration.ProxyUrl.Should().Be("http://localhost:8080");
         configuration.ShowSidebar.Should().BeFalse();
         configuration.HideModels.Should().BeTrue();
-        configuration.HideDownloadButton.Should().BeTrue();
+        configuration.DocumentDownloadType.Should().Be("none");
         configuration.HideTestRequestButton.Should().BeTrue();
         configuration.DarkMode.Should().BeFalse();
-        configuration.ForceDarkModeState.Should().Be("light");
         configuration.HideDarkModeToggle.Should().BeTrue();
         configuration.CustomCss.Should().Be("*{}");
         configuration.SearchHotKey.Should().Be("o");
@@ -96,18 +99,21 @@ public class ScalarOptionsMapperTests
         configuration.DefaultHttpClient!.ClientKey.Should().Be("httpclient");
         ((bool) configuration.HiddenClients!).Should().BeTrue();
         configuration.Authentication.Should().NotBeNull();
+#pragma warning disable CS0618 // Type or member is obsolete
         configuration.Authentication!.PreferredSecurityScheme.Should().Be("my-scheme");
         configuration.Authentication.ApiKey.Should().NotBeNull();
         configuration.Authentication.ApiKey!.Token.Should().Be("my-token");
+#pragma warning restore CS0618 // Type or member is obsolete
         configuration.WithDefaultFonts.Should().BeFalse();
         configuration.DefaultOpenAllTags.Should().BeTrue();
-        configuration.TagSorter.Should().Be("alpha");
+        configuration.TagsSorter.Should().Be("alpha");
         configuration.OperationsSorter.Should().Be("method");
         configuration.Theme.Should().Be("saturn");
         configuration.Layout.Should().Be("classic");
         configuration.Integration.Should().BeNull();
         configuration.HideClientButton.Should().BeTrue();
-        configuration.Documents.Should().ContainSingle().Which.Should().Be("openapi/v2.json");
+        configuration.Sources.Should().ContainSingle().Which.Url.Should().Be("openapi/v2.json");
+        configuration.PersistAuth.Should().BeTrue();
     }
 
     [Fact]
@@ -164,7 +170,7 @@ public class ScalarOptionsMapperTests
         hiddenClients.Should().ContainKey("csharp")
             .WhoseValue.Should().ContainSingle().Which.Should().Be("restsharp");
         hiddenClients.Should().ContainKey("python")
-            .WhoseValue.Should().ContainSingle().Which.Should().Be("requests");
+            .WhoseValue.Should().ContainInOrder("requests", "httpx_sync", "httpx_async");
     }
 
     [Fact]
@@ -179,5 +185,46 @@ public class ScalarOptionsMapperTests
         // Assert
         hiddenClients.Should().HaveCount(ScalarOptionsMapper.ClientOptions.Count - 1);
         hiddenClients.Should().NotContainKey("kotlin");
+    }
+
+    [Fact]
+    public void GetSources_ShouldUseCorrectPattern_WhenCustomPatternIsProvided()
+    {
+        // Arrange
+        var options = new ScalarOptions();
+        options
+            .AddDocument("default")
+            .AddDocument("custom", routePattern: "/external/{documentName}.json");
+
+        // Act 
+        var configuration = options.ToScalarConfiguration();
+
+        // Assert
+        configuration.Sources.Should()
+            .SatisfyRespectively(
+                first => first.Url.Should().Be("openapi/default.json"),
+                second => second.Url.Should().Be("external/custom.json")
+            );
+    }
+
+    [Fact]
+    public void PreferredSecurityScheme_ShouldOverridePreferredSecuritySchemes_WhenSet()
+    {
+        // Arrange
+        var options = new ScalarOptions
+        {
+            // Act
+            Authentication = new ScalarAuthenticationOptions
+            {
+#pragma warning disable CS0618 // Type or member is obsolete
+                PreferredSecurityScheme = "my-scheme"
+#pragma warning restore CS0618 // Type or member is obsolete
+            }
+        };
+
+        var configuration = options.ToScalarConfiguration();
+
+        // Assert
+        configuration.Authentication!.PreferredSecuritySchemes.Should().ContainSingle().Which.Should().Be("my-scheme");
     }
 }

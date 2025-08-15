@@ -1,5 +1,278 @@
 # @scalar/types
 
+## 0.2.11
+
+### Patch Changes
+
+- ccf875a: feat: support x-scalar-credentials-location extension
+- 94d6d0c: fix: remove old ssr state and update nuxt for workspace store
+- Updated dependencies [ccf875a]
+  - @scalar/openapi-types@0.3.7
+
+## 0.2.10
+
+### Patch Changes
+
+- fb62e1b: feat: add externalDocs
+
+## 0.2.9
+
+### Patch Changes
+
+- 591562f: feat: add support for x-scalar-security-body extension
+- Updated dependencies [591562f]
+  - @scalar/openapi-types@0.3.6
+
+## 0.2.8
+
+### Patch Changes
+
+- c10e191: feat(oauth2): add support for x-tokenName extension
+
+## 0.2.7
+
+### Patch Changes
+
+- ad2e3e6: feat: new onBeforeRequest hook to modify the request
+
+## 0.2.6
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+- Updated dependencies [2d7f995]
+  - @scalar/openapi-types@0.3.5
+
+## 0.2.5
+
+### Patch Changes
+
+- Updated dependencies [533469b]
+  - @scalar/openapi-types@0.3.4
+
+## 0.2.4
+
+### Patch Changes
+
+- 1468280: feat: allow fine gained download button file type control
+
+## 0.2.3
+
+### Patch Changes
+
+- 221e35f: feat: added webhooks
+- Updated dependencies [221e35f]
+  - @scalar/openapi-types@0.3.3
+
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [05c22c7]
+  - @scalar/openapi-types@0.3.2
+
+## 0.2.1
+
+### Patch Changes
+
+- 4440949: chore: bumping packages
+- Updated dependencies [4440949]
+  - @scalar/openapi-types@0.3.1
+
+## 0.2.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- Updated dependencies [483ca93]
+  - @scalar/openapi-types@0.3.0
+
+## 0.1.16
+
+### Patch Changes
+
+- be8a6ec: chore: remove unused HarRequestWithPath
+
+## 0.1.15
+
+### Patch Changes
+
+- f711ab5: feat: add auth persistance to references
+- 0222ad4: feat: render specification extensions with React
+- cb9428c: Support additional query parameters for the OAuth authorization request (prompt, audience, anything), and handle OAuth authorization denials
+- 67aa0f4: fix: render correct queries with form data
+- Updated dependencies [cb9428c]
+  - @scalar/openapi-types@0.2.3
+
+## 0.1.14
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+- Updated dependencies [8c7bad8]
+  - @scalar/openapi-types@0.2.2
+
+## 0.1.13
+
+### Patch Changes
+
+- e8457cb: Unify themes across scalar. Cleanup interface and remove CJS build.
+
+## 0.1.12
+
+### Patch Changes
+
+- 62c4ce3: feat: SvelteKit API Reference integration
+  - @scalar/openapi-types@0.2.1
+
+## 0.1.11
+
+### Patch Changes
+
+- eb4854d: fix: types of authentication config
+
+## 0.1.10
+
+### Patch Changes
+
+- Updated dependencies [fa8ed84]
+  - @scalar/openapi-types@0.2.1
+
+## 0.1.9
+
+### Patch Changes
+
+- 17e7d02: chore: export more types from the base types package for commonjs apps
+
+## 0.1.8
+
+### Patch Changes
+
+- feaa314: feat(themes): add laserwave theme
+
+## 0.1.7
+
+### Patch Changes
+
+- 9def02e: feat: added new callback for execution request
+- 3745d77: feat: new plugin system
+
+## 0.1.6
+
+### Patch Changes
+
+- 3783345: feat: add some callbacks to sidebar items
+
+## 0.1.5
+
+### Patch Changes
+
+- e09dab3: feat: multiple configurations with multiple sources
+- 04e27a1: feat: support x-default-scopes
+- Updated dependencies [e62e677]
+- Updated dependencies [82f16a5]
+  - @scalar/openapi-types@0.2.0
+
+## 0.1.4
+
+### Patch Changes
+
+- 8efedf3: fix: allow async functions in onDocumentSelect
+- 82a4ba8: chore: move security schemes into types package for future reference
+- 57feba6: feat: added new auth config (v2)
+
+## 0.1.3
+
+### Patch Changes
+
+- 543a16c: feat: allow to explicitly set the default source
+- 57e96a0: feat: add onDocumentSelect callback when switching multi configs
+
+## 0.1.2
+
+### Patch Changes
+
+- 7a8965c: chore: remove spec prefix
+- 49dffff: feat: expose the isLoading prop to control loading of references
+
+## 0.1.1
+
+### Patch Changes
+
+- 39c0f47: chore: export multi doc types
+
+## 0.1.0
+
+### Minor Changes
+
+- 5f9a8a2: feat!: remove the spec prefix, make content and url top-level attributes
+
+## 0.0.41
+
+### Patch Changes
+
+- fc6a45e: refactor: use import aliases
+
+## 0.0.40
+
+### Patch Changes
+
+- 4d03e0f: feat: multiple documents
+
+## 0.0.39
+
+### Patch Changes
+
+- bab7990: refactor: move HtmlRenderingConfiguration type to types package
+- 2c621d4: refactor: move snippetz types to @scalar/types
+
+## 0.0.38
+
+### Patch Changes
+
+- 7f1a40e: fix: hiddenClients can be a boolean
+
+## 0.0.37
+
+### Patch Changes
+
+- 89d8b75: feat: new ApiReferenceConfiguration type
+- 8a04b8d: fix: adds vendor specific mime type support
+  - @scalar/openapi-types@0.1.9
+
+## 0.0.36
+
+### Patch Changes
+
+- 4db5161: feat: allow multiple tokens for bearer auth
+
+## 0.0.35
+
+### Patch Changes
+
+- 946a5df: feat: add front-end redirect
+- cf14cbb: fix: show _/_ mimetype in example response
+- Updated dependencies [c10bbf5]
+  - @scalar/openapi-types@0.1.9
+
+## 0.0.34
+
+### Patch Changes
+
+- Updated dependencies [e350f23]
+  - @scalar/openapi-types@0.1.8
+
+## 0.0.33
+
+### Patch Changes
+
+- 54fdfcb: chore: remove spec wording
+- fa6afe8: chore: code formatting
+  - @scalar/openapi-types@0.1.7
+
 ## 0.0.32
 
 ### Patch Changes

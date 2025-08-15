@@ -1,26 +1,16 @@
-/**
- * @vitest-environment jsdom
- */
-import type {
-  Oauth2Flow,
-  SecuritySchemeOauth2,
-  Server,
-} from '@scalar/oas-utils/entities/spec'
+import { securityOauthSchema, serverSchema } from '@scalar/oas-utils/entities/spec'
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { authorizeOauth2 } from './oauth2'
 
-const baseScheme: Pick<SecuritySchemeOauth2, 'uid' | 'nameKey' | 'type'> = {
+const baseScheme = {
   uid: 'test-scheme',
   nameKey: 'test-name-key',
   type: 'oauth2',
 }
 
-const baseFlow: Pick<
-  Oauth2Flow,
-  'refreshUrl' | 'scopes' | 'selectedScopes' | 'x-scalar-client-id'
-> = {
+const baseFlow = {
   'refreshUrl': 'https://auth.example.com/refresh',
   'scopes': {
     read: 'Read access',
@@ -68,13 +58,13 @@ describe('oauth2', () => {
     vi.restoreAllMocks()
   })
 
-  const mockServer: Server = {
+  const mockServer = serverSchema.parse({
     uid: 'test-server',
     url: 'https://api.example.com',
-  }
+  })
 
   describe('Authorization Code Grant', () => {
-    const scheme = {
+    const scheme = securityOauthSchema.parse({
       ...baseScheme,
       type: 'oauth2',
       flows: {
@@ -89,8 +79,11 @@ describe('oauth2', () => {
           'x-scalar-redirect-uri': redirectUri,
         },
       },
-    } satisfies SecuritySchemeOauth2
+    })
     const flow = scheme.flows.authorizationCode
+    if (!flow) {
+      throw new Error('Flow is undefined')
+    }
 
     it('should handle successful authorization code flow', async () => {
       const promise = authorizeOauth2(flow, mockServer)
@@ -145,85 +138,133 @@ describe('oauth2', () => {
     })
 
     // PKCE
-    // Could not get this test to work on node 18
-    it.skipIf(process.version.startsWith('v18'))(
-      'should generate valid PKCE code verifier and challenge using SHA-256 encryption',
-      async () => {
-        const _flow = {
-          ...flow,
-          'x-usePkce': 'SHA-256',
-        } as const
+    it('should generate valid PKCE code verifier and challenge using SHA-256 encryption', async () => {
+      const _flow = {
+        ...flow,
+        'x-usePkce': 'SHA-256',
+        'x-scalar-security-query': {
+          prompt: 'login',
+          audience: 'scalar',
+        },
+      } as const
 
-        const accessToken = 'pkce_access_token_123'
-        const codeChallenge = 'AQIDBAUGCAkK'
-        const code = 'pkce_auth_code_123'
+      const accessToken = 'pkce_access_token_123'
+      const codeChallenge = 'AQIDBAUGCAkK'
+      const code = 'pkce_auth_code_123'
 
-        // Mock crypto.getRandomValues
-        vi.spyOn(crypto, 'getRandomValues').mockImplementation((arr) => {
-          if (arr instanceof Uint8Array) {
-            for (let i = 0; i < arr.length; i++) {
-              arr[i] = i
-            }
+      // Mock crypto.getRandomValues
+      vi.spyOn(crypto, 'getRandomValues').mockImplementation((arr) => {
+        if (arr instanceof Uint8Array) {
+          for (let i = 0; i < arr.length; i++) {
+            arr[i] = i
           }
-          return arr
-        })
+        }
+        return arr
+      })
 
-        // Mock crypto.subtle.digest
-        vi.spyOn(crypto.subtle, 'digest').mockResolvedValue(
-          new Uint8Array([1, 2, 3, 4, 5, 6, 8, 9, 10]).buffer,
-        )
+      // Mock crypto.subtle.digest
+      vi.spyOn(crypto.subtle, 'digest').mockResolvedValue(new Uint8Array([1, 2, 3, 4, 5, 6, 8, 9, 10]).buffer)
 
-        const promise = authorizeOauth2(_flow, mockServer)
-        await flushPromises()
+      const promise = authorizeOauth2(_flow, mockServer)
+      await flushPromises()
 
-        // Test the window.open call
-        expect(window.open).toHaveBeenCalledWith(
-          new URL(
-            `${_flow.authorizationUrl}?${new URLSearchParams({
-              response_type: 'code',
-              code_challenge: codeChallenge,
-              code_challenge_method: 'S256',
-              redirect_uri: _flow['x-scalar-redirect-uri'],
-              client_id: _flow['x-scalar-client-id'],
-              state: state,
-              scope: scope.join(' '),
-            }).toString()}`,
-          ),
-          windowTarget,
-          windowFeatures,
-        )
-        mockWindow.location.href = `https://callback.example.com?code=${code}&state=${state}`
-
-        global.fetch = vi.fn().mockResolvedValueOnce({
-          json: () => Promise.resolve({ access_token: accessToken }),
-        })
-
-        // Run setInterval
-        vi.advanceTimersByTime(200)
-
-        // Resolve
-        const [error, result] = await promise
-        expect(error).toBe(null)
-        expect(result).toBe(accessToken)
-
-        // Check fetch parameters
-        expect(global.fetch).toHaveBeenCalledWith(tokenUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': `Basic ${secretAuth}`,
-          },
-          body: new URLSearchParams({
-            client_id: _flow['x-scalar-client-id'],
-            client_secret: _flow.clientSecret,
+      // Test the window.open call
+      expect(window.open).toHaveBeenCalledWith(
+        new URL(
+          `${_flow.authorizationUrl}?${new URLSearchParams({
+            response_type: 'code',
+            code_challenge: codeChallenge,
+            code_challenge_method: 'S256',
             redirect_uri: _flow['x-scalar-redirect-uri'],
-            code,
-            grant_type: 'authorization_code',
-            code_verifier: 'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8',
-          }),
-        })
-      },
-    )
+            prompt: 'login',
+            audience: 'scalar',
+            client_id: _flow['x-scalar-client-id'],
+            state: state,
+            scope: scope.join(' '),
+          }).toString()}`,
+        ),
+        windowTarget,
+        windowFeatures,
+      )
+      mockWindow.location.href = `https://callback.example.com?code=${code}&state=${state}`
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        json: () => Promise.resolve({ access_token: accessToken }),
+      })
+
+      // Run setInterval
+      vi.advanceTimersByTime(200)
+
+      // Resolve
+      const [error, result] = await promise
+      expect(error).toBe(null)
+      expect(result).toBe(accessToken)
+
+      // Check fetch parameters
+      expect(global.fetch).toHaveBeenCalledWith(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${secretAuth}`,
+        },
+        body: new URLSearchParams({
+          client_id: _flow['x-scalar-client-id'],
+          client_secret: _flow.clientSecret,
+          redirect_uri: _flow['x-scalar-redirect-uri'],
+          code,
+          grant_type: 'authorization_code',
+          code_verifier: 'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8',
+        }),
+      })
+    })
+
+    it('should include x-scalar-security-body parameters in authorization code token request', async () => {
+      const customFlow = {
+        ...flow,
+        'x-scalar-security-body': {
+          audience: 'https://api.example.com',
+          custom_param: 'custom_value',
+        },
+      } as const
+
+      const promise = authorizeOauth2(customFlow, mockServer)
+      const accessToken = 'access_token_123'
+      const code = 'auth_code_123'
+
+      // Mock redirect back from login
+      mockWindow.location.href = `${customFlow['x-scalar-redirect-uri']}?code=${code}&state=${state}`
+
+      // Mock the token exchange
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        json: () => Promise.resolve({ access_token: accessToken }),
+      })
+
+      // Run setInterval
+      vi.advanceTimersByTime(200)
+
+      // Resolve
+      const [error, result] = await promise
+      expect(error).toBe(null)
+      expect(result).toBe(accessToken)
+
+      // Test the server call includes custom body parameters
+      expect(global.fetch).toHaveBeenCalledWith(tokenUrl, {
+        method: 'POST',
+        body: new URLSearchParams({
+          client_id: customFlow['x-scalar-client-id'],
+          client_secret: customFlow.clientSecret,
+          redirect_uri: customFlow['x-scalar-redirect-uri'],
+          code,
+          grant_type: 'authorization_code',
+          audience: 'https://api.example.com',
+          custom_param: 'custom_value',
+        }),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${secretAuth}`,
+        },
+      })
+    })
 
     // Test user closing the window
     it('should handle window closure before authorization', async () => {
@@ -235,9 +276,7 @@ describe('oauth2', () => {
       const [error, result] = await promise
       expect(result).toBe(null)
       expect(error).toBeInstanceOf(Error)
-      expect(error!.message).toBe(
-        'Window was closed without granting authorization',
-      )
+      expect(error!.message).toBe('Window was closed without granting authorization')
     })
 
     // Test relative redirect URIs
@@ -279,11 +318,7 @@ describe('oauth2', () => {
     })
 
     it('should use the proxy if provided', async () => {
-      const promise = authorizeOauth2(
-        flow,
-        mockServer,
-        'https://proxy.example.com',
-      )
+      const promise = authorizeOauth2(flow, mockServer, 'https://proxy.example.com')
 
       const accessToken = 'access_token_123'
 
@@ -340,7 +375,7 @@ describe('oauth2', () => {
   })
 
   describe('Client Credentials Grant', () => {
-    const scheme = {
+    const scheme = securityOauthSchema.parse({
       ...baseScheme,
       flows: {
         clientCredentials: {
@@ -351,8 +386,11 @@ describe('oauth2', () => {
           token: '',
         },
       },
-    } satisfies SecuritySchemeOauth2
+    })
     const flow = scheme.flows.clientCredentials
+    if (!flow) {
+      throw new Error('Flow is undefined')
+    }
 
     it('should handle successful client credentials flow', async () => {
       global.fetch = vi.fn().mockResolvedValueOnce({
@@ -383,14 +421,117 @@ describe('oauth2', () => {
       const [error, result] = await authorizeOauth2(flow, mockServer)
       expect(result).toBe(null)
       expect(error).toBeInstanceOf(Error)
-      expect(error!.message).toBe(
-        'Failed to get an access token. Please check your credentials.',
-      )
+      expect(error!.message).toBe('Failed to get an access token. Please check your credentials.')
+    })
+
+    it('should use custom token name when x-tokenName is specified', async () => {
+      const customFlow = {
+        ...flow,
+        'x-tokenName': 'custom_access_token',
+      } as const
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        json: () => Promise.resolve({ custom_access_token: 'custom_token_123' }),
+      })
+
+      const [error, result] = await authorizeOauth2(customFlow, mockServer)
+      expect(error).toBe(null)
+      expect(result).toBe('custom_token_123')
+    })
+
+    it('should include x-scalar-security-body parameters in token request', async () => {
+      const customFlow = {
+        ...flow,
+        'x-scalar-security-body': {
+          audience: 'https://api.example.com',
+          custom_param: 'custom_value',
+        },
+      } as const
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        json: () => Promise.resolve({ access_token: 'access_token_123' }),
+      })
+
+      const [error, result] = await authorizeOauth2(customFlow, mockServer)
+      expect(error).toBe(null)
+      expect(result).toBe('access_token_123')
+
+      expect(global.fetch).toHaveBeenCalledWith(tokenUrl, {
+        method: 'POST',
+        body: new URLSearchParams({
+          client_id: customFlow['x-scalar-client-id'],
+          scope: scope.join(' '),
+          client_secret: customFlow.clientSecret,
+          grant_type: 'client_credentials',
+          audience: 'https://api.example.com',
+          custom_param: 'custom_value',
+        }),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${secretAuth}`,
+        },
+      })
+    })
+
+    it('should handle client credentials flow with header-only credentials location', async () => {
+      const _flow = {
+        ...flow,
+        'x-scalar-credentials-location': 'header',
+      } as const
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        json: () => Promise.resolve({ access_token: 'access_token_123' }),
+      })
+
+      const [error, result] = await authorizeOauth2(_flow, mockServer)
+      expect(error).toBe(null)
+      expect(result).toBe('access_token_123')
+
+      expect(global.fetch).toHaveBeenCalledWith(tokenUrl, {
+        method: 'POST',
+        body: new URLSearchParams({
+          client_id: _flow['x-scalar-client-id'],
+          scope: scope.join(' '),
+          grant_type: 'client_credentials',
+        }),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${secretAuth}`,
+        },
+      })
+    })
+
+    it('should handle client credentials flow with body-only credentials location', async () => {
+      const _flow = {
+        ...flow,
+        'x-scalar-credentials-location': 'body',
+      } as const
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        json: () => Promise.resolve({ access_token: 'access_token_123' }),
+      })
+
+      const [error, result] = await authorizeOauth2(_flow, mockServer)
+      expect(error).toBe(null)
+      expect(result).toBe('access_token_123')
+
+      expect(global.fetch).toHaveBeenCalledWith(tokenUrl, {
+        method: 'POST',
+        body: new URLSearchParams({
+          client_id: _flow['x-scalar-client-id'],
+          scope: scope.join(' '),
+          client_secret: _flow.clientSecret,
+          grant_type: 'client_credentials',
+        }),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
     })
   })
 
   describe('Implicit Flow', () => {
-    const scheme = {
+    const scheme = securityOauthSchema.parse({
       ...baseScheme,
       flows: {
         implicit: {
@@ -401,8 +542,11 @@ describe('oauth2', () => {
           'token': '',
         },
       },
-    } satisfies SecuritySchemeOauth2
+    })
     const flow = scheme.flows.implicit
+    if (!flow) {
+      throw new Error('Flow is undefined')
+    }
 
     it('should handle successful implicit flow', async () => {
       const promise = authorizeOauth2(flow, mockServer)
@@ -425,17 +569,38 @@ describe('oauth2', () => {
 
       // Run setInterval
       vi.advanceTimersByTime(200)
-      await vi.runAllTicks()
+      vi.runAllTicks()
 
       // Resolve
       const [error, result] = await promise
       expect(error).toBe(null)
       expect(result).toBe('implicit_token_123')
     })
+
+    it('should use custom token name when x-tokenName is specified', async () => {
+      const customFlow = {
+        ...flow,
+        'x-tokenName': 'custom_access_token',
+      } as const
+
+      const promise = authorizeOauth2(customFlow, mockServer)
+
+      // Redirect with custom token name
+      mockWindow.location.href = `${customFlow['x-scalar-redirect-uri']}#custom_access_token=custom_implicit_token_123&state=${state}`
+
+      // Run setInterval
+      vi.advanceTimersByTime(200)
+      vi.runAllTicks()
+
+      // Resolve
+      const [error, result] = await promise
+      expect(error).toBe(null)
+      expect(result).toBe('custom_implicit_token_123')
+    })
   })
 
   describe('Password Grant', () => {
-    const scheme = {
+    const scheme = securityOauthSchema.parse({
       ...baseScheme,
       type: 'oauth2',
       flows: {
@@ -449,8 +614,11 @@ describe('oauth2', () => {
           token: '',
         },
       },
-    } satisfies SecuritySchemeOauth2
+    })
     const flow = scheme.flows.password
+    if (!flow) {
+      throw new Error('Flow is undefined')
+    }
 
     it('should handle successful password flow', async () => {
       // Mock fetch
@@ -482,6 +650,116 @@ describe('oauth2', () => {
         }),
         headers: {
           'Authorization': `Basic ${secretAuth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
+    })
+
+    it('should include x-scalar-security-body parameters in password flow token request', async () => {
+      const customFlow = {
+        ...flow,
+        'x-scalar-security-body': {
+          audience: 'https://api.example.com',
+          custom_param: 'custom_value',
+        },
+      } as const
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        json: () => Promise.resolve({ access_token: 'access_token_123' }),
+      })
+
+      const [error, result] = await authorizeOauth2(customFlow, mockServer)
+      expect(error).toBe(null)
+      expect(result).toBe('access_token_123')
+
+      expect(global.fetch).toHaveBeenCalledWith(tokenUrl, {
+        method: 'POST',
+        body: new URLSearchParams({
+          client_id: customFlow['x-scalar-client-id'],
+          scope: scope.join(' '),
+          client_secret: customFlow.clientSecret,
+          grant_type: 'password',
+          username: customFlow.username,
+          password: customFlow.password,
+          audience: 'https://api.example.com',
+          custom_param: 'custom_value',
+        }),
+        headers: {
+          'Authorization': `Basic ${secretAuth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
+    })
+
+    it('should handle password flow with header-only credentials location', async () => {
+      const _flow = {
+        ...flow,
+        'x-scalar-credentials-location': 'header',
+      } as const
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        json: () =>
+          Promise.resolve({
+            access_token: 'access_token_123',
+            token_type: 'Bearer',
+            expires_in: 3600,
+            refresh_token: 'refresh_token_123',
+            scope: scope.join(' '),
+          }),
+      })
+
+      const [error, result] = await authorizeOauth2(_flow, mockServer)
+      expect(error).toBe(null)
+      expect(result).toBe('access_token_123')
+
+      expect(global.fetch).toHaveBeenCalledWith(tokenUrl, {
+        method: 'POST',
+        body: new URLSearchParams({
+          client_id: _flow['x-scalar-client-id'],
+          scope: scope.join(' '),
+          grant_type: 'password',
+          username: _flow.username,
+          password: _flow.password,
+        }),
+        headers: {
+          'Authorization': `Basic ${secretAuth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
+    })
+
+    it('should handle password flow with body-only credentials location', async () => {
+      const _flow = {
+        ...flow,
+        'x-scalar-credentials-location': 'body',
+      } as const
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        json: () =>
+          Promise.resolve({
+            access_token: 'access_token_123',
+            token_type: 'Bearer',
+            expires_in: 3600,
+            refresh_token: 'refresh_token_123',
+            scope: scope.join(' '),
+          }),
+      })
+
+      const [error, result] = await authorizeOauth2(_flow, mockServer)
+      expect(error).toBe(null)
+      expect(result).toBe('access_token_123')
+
+      expect(global.fetch).toHaveBeenCalledWith(tokenUrl, {
+        method: 'POST',
+        body: new URLSearchParams({
+          client_id: _flow['x-scalar-client-id'],
+          scope: scope.join(' '),
+          client_secret: _flow.clientSecret,
+          grant_type: 'password',
+          username: _flow.username,
+          password: _flow.password,
+        }),
+        headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       })

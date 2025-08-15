@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import HttpMethod from '@/components/HttpMethod/HttpMethod.vue'
-import { PathId } from '@/routes'
-import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
 import {
   ScalarButton,
   ScalarDropdown,
@@ -14,6 +10,11 @@ import { isDefined } from '@scalar/oas-utils/helpers'
 import { useToasts } from '@scalar/use-toasts'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+
+import HttpMethod from '@/components/HttpMethod/HttpMethod.vue'
+import { PathId } from '@/routes'
+import { useWorkspace } from '@/store'
+import { useActiveEntities } from '@/store/active-entities'
 
 import CommandActionForm from './CommandActionForm.vue'
 import CommandActionInput from './CommandActionInput.vue'
@@ -60,7 +61,9 @@ const handleSubmit = () => {
     exampleName.value,
   )
 
-  if (!example) return
+  if (!example) {
+    return
+  }
 
   // Go to new request example
   push({
@@ -95,7 +98,7 @@ const visibleRequests = computed<Request[]>(() =>
         placement="bottom"
         resize>
         <ScalarButton
-          class="justify-between p-2 max-h-8 w-full gap-1 text-xs hover:bg-b-2"
+          class="hover:bg-b-2 max-h-8 w-full justify-between gap-1 p-2 text-xs"
           variant="outlined"
           @click="handleSelect(selectedRequest)">
           {{ selectedRequest.summary }}
@@ -108,7 +111,7 @@ const visibleRequests = computed<Request[]>(() =>
           </div>
         </ScalarButton>
         <template #items>
-          <div class="max-h-40 custom-scroll">
+          <div class="custom-scroll max-h-40">
             <ScalarDropdownItem
               v-for="request in visibleRequests"
               :key="request.uid"

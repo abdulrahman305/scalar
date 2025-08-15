@@ -20,9 +20,9 @@
 export default {}
 </script>
 <script setup lang="ts">
-import { useSidebarGroups } from './useSidebarGroups'
 import ScalarSidebarButton from './ScalarSidebarButton.vue'
 import type { ScalarSidebarItemProps, ScalarSidebarItemSlots } from './types'
+import { useSidebarGroups } from './useSidebarGroups'
 
 const { indent = undefined } = defineProps<ScalarSidebarItemProps>()
 // We need to expose the slots here or we get a type error :(
@@ -33,7 +33,7 @@ const { level } = useSidebarGroups()
 defineOptions({ inheritAttrs: false })
 </script>
 <template>
-  <li class="contents">
+  <li class="group/item contents">
     <ScalarSidebarButton
       v-bind="{ ...$attrs, ...$props }"
       :indent="indent ?? level">

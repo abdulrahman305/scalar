@@ -1,24 +1,13 @@
 import type { Context } from 'hono'
 
-/** File polyfill for Node 18  */
-type File = {
-  name: string
-  size: number
-  type: string
-  lastModified: number
-}
-
 /**
- * Get the body of a request, no matter if it’s JSON or text
+ * Get the body of a request, no matter if it's JSON or text
  */
 export async function getBody(c: Context) {
   const contentType = c.req.header('Content-Type')
 
   // (Multipart) form data
-  if (
-    contentType?.includes('application/x-www-form-urlencoded') ||
-    contentType?.includes('multipart/form-data')
-  ) {
+  if (contentType?.includes('application/x-www-form-urlencoded') || contentType?.includes('multipart/form-data')) {
     try {
       // TODO: This is just for debugging purposes, remove it later
       // const body = await c.req.raw.body
@@ -69,9 +58,7 @@ function transformFormData(formData: Record<string, any>) {
         sizeInBytes: value?.size,
         type: value?.type,
         // Get date time string from unix timestamp
-        lastModified: value.lastModified
-          ? new Date(value.lastModified).toISOString()
-          : undefined,
+        lastModified: value.lastModified ? new Date(value.lastModified).toISOString() : undefined,
       }
       continue
     }
@@ -85,9 +72,7 @@ function transformFormData(formData: Record<string, any>) {
             sizeInBytes: item?.size,
             type: item?.type,
             // Get date time string from unix timestamp
-            lastModified: item.lastModified
-              ? new Date(item.lastModified).toISOString()
-              : undefined,
+            lastModified: item.lastModified ? new Date(item.lastModified).toISOString() : undefined,
           }
         }
 
@@ -107,14 +92,8 @@ function transformFormData(formData: Record<string, any>) {
 }
 
 /**
- * Check if the data is a file, just a polyfill for Node 18
+ * Check if the data is a File instance
  */
-function isFile(data: any) {
-  return (
-    typeof data === 'object' &&
-    data.name !== undefined &&
-    data.size !== undefined &&
-    data.type !== undefined &&
-    data.lastModified !== undefined
-  )
+function isFile(data: unknown): data is File {
+  return data instanceof File
 }

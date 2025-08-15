@@ -10,9 +10,7 @@ describe('oasParameterSchema', () => {
       example: 10,
     }
 
-    expect(() =>
-      oasParameterSchema.parse(validParameterWithExample),
-    ).not.toThrow()
+    expect(() => oasParameterSchema.parse(validParameterWithExample)).not.toThrow()
   })
 
   it('should validate examples as a record with correct structure', () => {
@@ -52,5 +50,46 @@ describe('oasParameterSchema', () => {
     }
 
     expect(() => oasParameterSchema.parse(invalidParameter)).toThrow(z.ZodError)
+  })
+
+  it('should validate examples as an array', () => {
+    const validParameter = {
+      in: 'query',
+      name: 'galaxy',
+      examples: ['Milky Way', 'Andromeda'],
+    }
+
+    expect(() => oasParameterSchema.parse(validParameter)).not.toThrow()
+  })
+
+  it('should validate examples with a single array item', () => {
+    const validParameter = {
+      in: 'query',
+      name: 'galaxy',
+      examples: ['Milky Way'],
+    }
+
+    expect(() => oasParameterSchema.parse(validParameter)).not.toThrow()
+  })
+
+  it('should validate with an empty array of examples', () => {
+    const validParameter = {
+      in: 'query',
+      name: 'galaxy',
+      examples: [],
+    }
+
+    expect(() => oasParameterSchema.parse(validParameter)).not.toThrow()
+  })
+
+  it('should validate examples with the explode property', () => {
+    const validParameter = {
+      in: 'query',
+      name: 'galaxy',
+      examples: ['Milky Way', 'Andromeda'],
+      explode: true,
+    }
+
+    expect(() => oasParameterSchema.parse(validParameter)).not.toThrow()
   })
 })

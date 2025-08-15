@@ -1,47 +1,58 @@
 <script setup lang="ts">
-import ContextBar from '@/components/ContextBar.vue'
-import ViewLayoutSection from '@/components/ViewLayout/ViewLayoutSection.vue'
-import ResponseBody from '@/views/Request/ResponseSection/ResponseBody.vue'
-import ResponseEmpty from '@/views/Request/ResponseSection/ResponseEmpty.vue'
-import ResponseLoadingOverlay from '@/views/Request/ResponseSection/ResponseLoadingOverlay.vue'
-import ResponseMetaInformation from '@/views/Request/ResponseSection/ResponseMetaInformation.vue'
-import type { ResponseInstance } from '@scalar/oas-utils/entities/spec'
-import { computed, ref } from 'vue'
+import { ScalarErrorBoundary } from '@scalar/components'
+import type {
+  Collection,
+  Operation,
+  ResponseInstance,
+} from '@scalar/oas-utils/entities/spec'
+import type { Workspace } from '@scalar/oas-utils/entities/workspace'
+import { computed, ref, useId } from 'vue'
 
+import SectionFilter from '@/components/SectionFilter.vue'
+import ViewLayoutSection from '@/components/ViewLayout/ViewLayoutSection.vue'
+import type { SendRequestResult } from '@/libs/send-request/create-request-operation'
+import { usePluginManager } from '@/plugins'
+
+import RequestHeaders from './RequestHeaders.vue'
+import ResponseBody from './ResponseBody.vue'
+import ResponseBodyStreaming from './ResponseBodyStreaming.vue'
 import ResponseBodyVirtual from './ResponseBodyVirtual.vue'
 import ResponseCookies from './ResponseCookies.vue'
+import ResponseEmpty from './ResponseEmpty.vue'
 import ResponseHeaders from './ResponseHeaders.vue'
+import ResponseLoadingOverlay from './ResponseLoadingOverlay.vue'
+import ResponseMetaInformation from './ResponseMetaInformation.vue'
 
-const props = defineProps<{
+const { numWorkspaceRequests, response, requestResult } = defineProps<{
+  collection: Collection
+  operation: Operation
+  workspace: Workspace
+  numWorkspaceRequests: number
   response: ResponseInstance | undefined
+  requestResult: SendRequestResult | null | undefined
 }>()
+
+const pluginManager = usePluginManager()
+const responseSectionViews = pluginManager.getViewComponents('response.section')
 
 // Headers
 const responseHeaders = computed(() => {
-  const headers = props.response?.headers
+  const headers = response?.headers
 
   return headers
-    ? Object.keys(headers)
-        .map((key) => ({
-          name: key,
-          value: headers[key] ?? '',
-          required: false,
-        }))
-        .filter(
-          (item) =>
-            ![
-              'rest-api-client-content-length',
-              'X-API-Client-Content-Length',
-            ].includes(item.name),
-        )
+    ? Object.keys(headers).map((key) => ({
+        name: key,
+        value: headers[key] ?? '',
+        required: false,
+      }))
     : []
 })
 
 // Cookies
 const responseCookies = computed(
   () =>
-    props.response?.cookieHeaderKeys.flatMap((key) => {
-      const value = props.response?.headers?.[key]
+    response?.cookieHeaderKeys.flatMap((key) => {
+      const value = response?.headers?.[key]
 
       return value
         ? {
@@ -53,22 +64,37 @@ const responseCookies = computed(
     }) ?? [],
 )
 
-const sections = ['All', 'Cookies', 'Headers', 'Body']
-type ActiveSections = (typeof sections)[number]
-const activeSection = ref<ActiveSections>('All')
+const responseSections = ['Cookies', 'Headers', 'Body'] as const
+type Filter = 'All' | (typeof responseSections)[number]
+const activeFilter = ref<Filter>('All')
+
+const filters = computed<Filter[]>(() => ['All', ...responseSections])
+
+const filterIds = computed(
+  () =>
+    Object.fromEntries(
+      filters.value.map((section) => [section, useId()]),
+    ) as Record<Filter, string>,
+)
 
 /** Threshold for virtualizing response bodies in bytes */
 const VIRTUALIZATION_THRESHOLD = 200_000
 const shouldVirtualize = computed(() => {
-  if (!props.response) return false
+  if (!response || !('size' in response)) {
+    return false
+  }
 
   // Get content type from headers
   const contentType =
-    props.response.headers?.['content-type'] ||
-    props.response.headers?.['Content-Type']
+    response.headers?.['content-type'] || response.headers?.['Content-Type']
 
   // If no content type or response size is small, don't virtualize
-  if (!contentType || (props.response.size ?? 0) <= VIRTUALIZATION_THRESHOLD) {
+  if (!contentType || (response.size ?? 0) <= VIRTUALIZATION_THRESHOLD) {
+    return false
+  }
+
+  // Do not virtualize html
+  if (contentType.includes('text/html')) {
     return false
   }
 
@@ -105,18 +131,29 @@ const shouldVirtualize = computed(() => {
   // Check if content type matches any text-based type
   const isTextBased = textBasedTypes.some((type) => contentType.includes(type))
 
-  return isTextBased && (props.response.size ?? 0) > VIRTUALIZATION_THRESHOLD
+  return isTextBased && (response.size ?? 0) > VIRTUALIZATION_THRESHOLD
 })
+
+const requestHeaders = computed(
+  () =>
+    requestResult?.request.parameters.headers
+      .filter((h) => h.enabled)
+      .map((h) => ({
+        name: h.key,
+        value: h.value,
+        required: true,
+      })) ?? [],
+)
 </script>
 <template>
   <ViewLayoutSection aria-label="Response">
     <template #title>
-      <div class="flex items-center flex-1 h-8">
+      <div class="flex h-8 flex-1 items-center">
         <div
           aria-live="polite"
           class="flex items-center"
           :class="{ 'animate-response-heading': response }">
-          <span class="response-heading absolute pointer-events-none">
+          <span class="response-heading pointer-events-none absolute">
             Response
           </span>
           <ResponseMetaInformation
@@ -124,41 +161,84 @@ const shouldVirtualize = computed(() => {
             class="animate-response-children"
             :response="response" />
         </div>
-        <ContextBar
-          :activeSection="activeSection"
-          :sections="sections"
-          @setActiveSection="activeSection = $event" />
+        <SectionFilter
+          v-model="activeFilter"
+          :filterIds="filterIds"
+          :filters="filters" />
       </div>
     </template>
     <div
-      class="custom-scroll h-full relative grid justify-stretch"
+      :id="filterIds.All"
+      class="custom-scroll response-section-content relative grid h-full justify-stretch"
       :class="{
         'content-start': response,
-      }">
+      }"
+      :role="activeFilter === 'All' && response ? 'tabpanel' : 'none'">
       <template v-if="!response">
-        <ResponseEmpty />
+        <ResponseEmpty
+          :collection="collection"
+          :operation="operation"
+          :workspace="workspace"
+          :numWorkspaceRequests="numWorkspaceRequests" />
       </template>
       <template v-else>
         <ResponseCookies
-          v-if="activeSection === 'All' || activeSection === 'Cookies'"
-          :cookies="responseCookies" />
+          class="response-section-content-cookies"
+          v-if="activeFilter === 'All' || activeFilter === 'Cookies'"
+          :id="filterIds.Cookies"
+          :cookies="responseCookies"
+          :role="activeFilter === 'All' ? 'none' : 'tabpanel'" />
+        <RequestHeaders
+          class="response-section-content-headers"
+          v-if="activeFilter === 'All' || activeFilter === 'Headers'"
+          :id="filterIds.Headers"
+          :headers="requestHeaders"
+          :role="activeFilter === 'All' ? 'none' : 'tabpanel'" />
         <ResponseHeaders
-          v-if="activeSection === 'All' || activeSection === 'Headers'"
-          :headers="responseHeaders" />
+          class="response-section-content-headers"
+          v-if="activeFilter === 'All' || activeFilter === 'Headers'"
+          :id="filterIds.Headers"
+          :headers="responseHeaders"
+          :role="activeFilter === 'All' ? 'none' : 'tabpanel'" />
 
-        <template v-if="activeSection === 'All' || activeSection === 'Body'">
+        <template
+          v-for="view in responseSectionViews"
+          :key="view.component">
+          <ScalarErrorBoundary>
+            <component
+              :is="view.component"
+              v-show="activeFilter === 'All' || activeFilter === view.title"
+              v-bind="view.props ?? {}" />
+          </ScalarErrorBoundary>
+        </template>
+
+        <template v-if="activeFilter === 'All' || activeFilter === 'Body'">
+          <!-- Streaming response body -->
+          <ResponseBodyStreaming
+            v-if="'reader' in response"
+            class="response-section-content-body"
+            :id="filterIds.Body"
+            :reader="response.reader" />
+
           <!-- Virtualized Text for massive responses -->
           <ResponseBodyVirtual
-            v-if="shouldVirtualize && typeof props.response?.data === 'string'"
-            :content="props.response!.data"
-            :data="props.response?.data"
-            :headers="responseHeaders" />
-
-          <ResponseBody
-            v-else
-            :active="true"
-            :data="props.response?.data"
+            v-else-if="shouldVirtualize && typeof response?.data === 'string'"
+            :id="filterIds.Body"
+            :content="response!.data"
+            :data="response?.data"
             :headers="responseHeaders"
+            :role="activeFilter === 'All' ? 'none' : 'tabpanel'" />
+
+          <!-- Regular response body -->
+          <ResponseBody
+            class="response-section-content-body"
+            v-else
+            :id="filterIds.Body"
+            layout="client"
+            :active="true"
+            :data="response?.data"
+            :headers="responseHeaders"
+            :role="activeFilter === 'All' ? 'none' : 'tabpanel'"
             title="Body" />
         </template>
       </template>

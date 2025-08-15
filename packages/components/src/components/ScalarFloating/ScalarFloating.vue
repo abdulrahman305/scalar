@@ -9,7 +9,7 @@ import {
   size,
   useFloating,
 } from '@floating-ui/vue'
-import { type Ref, type Slot, computed, ref } from 'vue'
+import { type Ref, computed, ref } from 'vue'
 
 import { ScalarTeleport } from '../ScalarTeleport'
 import type { FloatingOptions } from './types'
@@ -26,7 +26,7 @@ const {
 
 defineSlots<{
   /** The reference element for the element in the #floating slot */
-  default(): Slot
+  default(): unknown
   /** The floating element */
   floating?(props: {
     /** The width of the reference element if `resize` is true and placement is on the y axis */
@@ -35,7 +35,7 @@ defineSlots<{
     height?: string
     /** The middleware data return by Floating UI */
     data?: MiddlewareData
-  }): Slot
+  }): unknown
 }>()
 
 defineOptions({ inheritAttrs: false })
@@ -48,11 +48,15 @@ const targetRef = computed(() => {
     // If target is a string (id), try to find it in the document
     if (typeof target === 'string') {
       const t = document.getElementById(target)
-      if (t) return t
-      else console.warn(`ScalarFloating: Target with id="${target}" not found`)
+      if (t) {
+        return t
+      }
+      console.warn(`ScalarFloating: Target with id="${target}" not found`)
     }
     // If target is an HTMLElement, return it
-    else if (target instanceof HTMLElement) return target
+    else if (target instanceof HTMLElement) {
+      return target
+    }
     // Fallback to div wrapper if no child element is provided
     return wrapperRef.value.children?.[0] || wrapperRef.value
   }

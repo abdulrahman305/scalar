@@ -1,97 +1,205 @@
 <script setup lang="ts">
-import { useConfig } from '@/hooks/useConfig'
-import type { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from '@scalar/openapi-types'
-import type { Spec } from '@scalar/types/legacy'
-import GitHubSlugger from 'github-slugger'
-import { computed, onMounted } from 'vue'
+import { useActiveEntities, useWorkspace } from '@scalar/api-client/store'
+import { RequestAuth } from '@scalar/api-client/views/Request/RequestSection/RequestAuth'
+import { ScalarErrorBoundary } from '@scalar/components'
+import { getSlugUid } from '@scalar/oas-utils/transforms'
+import type { OpenAPIV3_1 } from '@scalar/openapi-types'
+import type { ApiReferenceConfiguration } from '@scalar/types'
+import type { WorkspaceStore } from '@scalar/workspace-store/client'
+import { computed } from 'vue'
 
-import DownloadLink from '../../../features/DownloadLink/DownloadLink.vue'
-import { Badge } from '../../Badge'
-import {
-  Section,
-  SectionColumn,
-  SectionColumns,
-  SectionContainer,
-  SectionContent,
-  SectionHeader,
-} from '../../Section'
-import Description from './Description.vue'
+import { Lazy } from '@/components/Lazy'
+import { BaseUrl } from '@/features/base-url'
+import { useNavState } from '@/hooks/useNavState'
+import type { ClientOptionGroup } from '@/v2/blocks/scalar-request-example-block/types'
 
-const props = defineProps<{
-  info: Partial<
-    OpenAPIV2.InfoObject | OpenAPIV3.InfoObject | OpenAPIV3_1.InfoObject
-  >
-  parsedSpec: Spec
+import { ClientLibraries } from '../ClientLibraries'
+import IntroductionSection from './IntroductionSection.vue'
+
+const { config } = defineProps<{
+  document: OpenAPIV3_1.Document
+  config?: ApiReferenceConfiguration
+  clientOptions: ClientOptionGroup[]
+  store: WorkspaceStore
 }>()
 
-/**
- * Get the OpenAPI/Swagger specification version from the API definition.
- */
-const oasVersion = computed(
-  () => props.parsedSpec?.openapi ?? props.parsedSpec?.swagger ?? '',
-)
+const { collections, securitySchemes, servers } = useWorkspace()
+const {
+  activeCollection: _activeCollection,
+  activeEnvVariables,
+  activeEnvironment,
+  activeWorkspace,
+} = useActiveEntities()
 
-/**
- * Format the title to be displayed in the badge.
- *
- * TODO: We should move this logic to the DownloadLink component
- */
-const slugger = new GitHubSlugger()
-const filenameFromTitle = computed(() => slugger.slug(props.info?.title ?? ''))
-
-/** Format the version number to be displayed in the badge */
-const version = computed(() => {
-  // Prefix the version with “v” if the first character is a number, don’t prefix if it’s not.
-  // Don’t output anything when version is not a string.
-  return typeof props.info?.version === 'string'
-    ? props.info.version.toString().match(/^\d/)
-      ? `v${props.info.version}`
-      : props.info.version
-    : typeof props.info?.version === 'number'
-      ? `v${props.info.version}`
-      : undefined
+/** Match the collection by slug if provided */
+const activeCollection = computed(() => {
+  if (config?.slug) {
+    const collection = collections[getSlugUid(config.slug)]
+    if (collection) {
+      return collection
+    }
+  }
+  return _activeCollection.value
 })
 
-/** Trigger the onLoaded event when the component is mounted */
-const { onLoaded } = useConfig()
-onMounted(() => onLoaded?.())
+/** Ensure the server is the one selected in the collection */
+const activeServer = computed(() => {
+  if (!activeCollection.value) {
+    return undefined
+  }
+
+  if (activeCollection.value.selectedServerUid) {
+    const server = servers[activeCollection.value.selectedServerUid]
+    if (server) {
+      return server
+    }
+  }
+
+  return servers[activeCollection.value.servers[0]]
+})
+
+const introCardsSlot = computed(() =>
+  config?.layout === 'classic' ? 'after' : 'aside',
+)
+
+const { hash } = useNavState()
 </script>
 <template>
-  <SectionContainer>
-    <!-- If the #after slot is used, we need to add a gap to the section. -->
-    <Section class="introduction-section gap-12">
-      <SectionContent :loading="!info?.description && !info?.title">
-        <div class="badges">
-          <Badge v-if="version">{{ version }}</Badge>
-          <Badge v-if="oasVersion">OAS {{ oasVersion }}</Badge>
-        </div>
-        <SectionHeader
-          :level="1"
-          :loading="!info.title"
-          tight>
-          {{ info.title }}
-        </SectionHeader>
-        <DownloadLink :specTitle="filenameFromTitle" />
-        <SectionColumns>
-          <SectionColumn>
-            <Description :value="info.description" />
-          </SectionColumn>
-          <SectionColumn v-if="$slots.aside">
-            <div class="sticky-cards">
-              <slot name="aside" />
+  <Lazy
+    id="introduction-card"
+    prev
+    :isLazy="Boolean(hash) && !hash.startsWith('description')">
+    <IntroductionSection
+      :document="document"
+      :config="config">
+      <template #[introCardsSlot]>
+        <ScalarErrorBoundary>
+          <div
+            class="introduction-card"
+            :class="{ 'introduction-card-row': config?.layout === 'classic' }">
+            <div
+              v-if="activeCollection?.servers?.length"
+              class="scalar-reference-intro-server scalar-client introduction-card-item text-base leading-normal [--scalar-address-bar-height:0px]">
+              <BaseUrl
+                :collection="activeCollection"
+                :server="activeServer" />
             </div>
-          </SectionColumn>
-        </SectionColumns>
-      </SectionContent>
-      <slot name="after" />
-    </Section>
-  </SectionContainer>
+            <div
+              v-if="
+                activeCollection &&
+                activeWorkspace &&
+                Object.keys(securitySchemes ?? {}).length
+              "
+              class="scalar-reference-intro-auth scalar-client introduction-card-item leading-normal">
+              <RequestAuth
+                :collection="activeCollection"
+                :envVariables="activeEnvVariables"
+                :environment="activeEnvironment"
+                layout="reference"
+                :persistAuth="config?.persistAuth"
+                :selectedSecuritySchemeUids="
+                  activeCollection?.selectedSecuritySchemeUids ?? []
+                "
+                :server="activeServer"
+                title="Authentication"
+                :workspace="activeWorkspace" />
+            </div>
+            <ClientLibraries
+              v-if="
+                config?.hiddenClients !== true &&
+                clientOptions.length &&
+                store.workspace.activeDocument
+              "
+              :clientOptions
+              :document="store.workspace.activeDocument"
+              :selectedClient="store.workspace['x-scalar-default-client']"
+              class="introduction-card-item scalar-reference-intro-clients" />
+          </div>
+        </ScalarErrorBoundary>
+      </template>
+    </IntroductionSection>
+  </Lazy>
 </template>
+
 <style scoped>
-.sticky-cards {
+.render-loading {
+  height: calc(var(--full-height) - var(--refs-header-height));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.introduction-card {
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: calc(var(--refs-header-height) + 24px);
+}
+.introduction-card-item {
+  display: flex;
+  margin-bottom: 12px;
+  flex-direction: column;
+  justify-content: start;
+}
+.introduction-card-item:has(.description) :deep(.server-form-container) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.introduction-card-item :deep(.request-item) {
+  border-bottom: 0;
+}
+.introduction-card-title {
+  font-weight: var(--scalar-semibold);
+  font-size: var(--scalar-mini);
+  color: var(--scalar-color-3);
+}
+.introduction-card-row {
+  gap: 24px;
+}
+@media (min-width: 600px) {
+  .introduction-card-row {
+    flex-flow: row wrap;
+  }
+}
+.introduction-card-row > * {
+  flex: 1;
+}
+@media (min-width: 600px) {
+  .introduction-card-row > * {
+    min-width: min-content;
+  }
+}
+@media (max-width: 600px) {
+  .introduction-card-row > * {
+    max-width: 100%;
+  }
+}
+@container (max-width: 900px) {
+  .introduction-card-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0px;
+  }
+}
+.introduction-card :deep(.security-scheme-label) {
+  text-transform: uppercase;
+  font-weight: var(--scalar-semibold);
+}
+
+.references-classic
+  .introduction-card-row
+  :deep(.scalar-card:nth-of-type(2) .scalar-card-header) {
+  display: none;
+}
+.references-classic
+  .introduction-card-row
+  :deep(.scalar-card:nth-of-type(2) .scalar-card-header) {
+  display: none;
+}
+.references-classic
+  .introduction-card-row
+  :deep(
+    .scalar-card:nth-of-type(2)
+      .scalar-card-header.scalar-card--borderless
+      + .scalar-card-content
+  ) {
+  margin-top: 0;
 }
 </style>

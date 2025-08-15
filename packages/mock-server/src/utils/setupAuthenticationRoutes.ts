@@ -1,21 +1,17 @@
-import { respondWithAuthorizePage } from '@/routes/respondWithAuthorizePage'
-import { respondWithToken } from '@/routes/respondWithToken'
 import type { OpenAPI, OpenAPIV3, OpenAPIV3_1 } from '@scalar/openapi-types'
 import type { Hono } from 'hono'
+
+import { respondWithAuthorizePage } from '@/routes/respondWithAuthorizePage'
+import { respondWithToken } from '@/routes/respondWithToken'
 
 import { getOpenAuthTokenUrls, getPathFromUrl } from './getOpenAuthTokenUrls'
 
 /**
  * Helper function to set up authentication routes for OAuth 2.0 flows
  */
-export function setupAuthenticationRoutes(
-  app: Hono,
-  schema?: OpenAPI.Document,
-) {
-  const securitySchemes: Record<
-    string,
-    OpenAPIV3.SecuritySchemeObject | OpenAPIV3_1.SecuritySchemeObject
-  > = schema?.components?.securitySchemes || {}
+export function setupAuthenticationRoutes(app: Hono, schema?: OpenAPI.Document) {
+  const securitySchemes: Record<string, OpenAPIV3.SecuritySchemeObject | OpenAPIV3_1.SecuritySchemeObject> =
+    schema?.components?.securitySchemes || {}
 
   // Set up authentication routes for OAuth 2.0 flows
   getOpenAuthTokenUrls(schema).forEach((tokenUrl) => {
@@ -48,18 +44,15 @@ export function setupAuthenticationRoutes(
   Object.entries(securitySchemes).forEach(([_, scheme]) => {
     if (scheme.type === 'oauth2') {
       if (scheme.flows?.authorizationCode) {
-        const authorizeRoute =
-          scheme.flows.authorizationCode.authorizationUrl ?? '/oauth/authorize'
-        const tokenRoute =
-          scheme.flows.authorizationCode.tokenUrl ?? '/oauth/token'
+        const authorizeRoute = scheme.flows.authorizationCode.authorizationUrl ?? '/oauth/authorize'
+        const tokenRoute = scheme.flows.authorizationCode.tokenUrl ?? '/oauth/token'
 
         authorizeUrls.add(getPathFromUrl(authorizeRoute))
         tokenUrls.add(tokenRoute)
       }
 
       if (scheme.flows?.implicit) {
-        const authorizeRoute =
-          scheme.flows.implicit.authorizationUrl ?? '/oauth/authorize'
+        const authorizeRoute = scheme.flows.implicit.authorizationUrl ?? '/oauth/authorize'
         authorizeUrls.add(getPathFromUrl(authorizeRoute))
       }
 
@@ -69,16 +62,13 @@ export function setupAuthenticationRoutes(
       }
 
       if (scheme.flows?.clientCredentials) {
-        const tokenRoute =
-          scheme.flows.clientCredentials.tokenUrl ?? '/oauth/token'
+        const tokenRoute = scheme.flows.clientCredentials.tokenUrl ?? '/oauth/token'
         tokenUrls.add(tokenRoute)
       }
     } else if (scheme.type === 'openIdConnect') {
       // Handle OpenID Connect configuration
       if (scheme.openIdConnectUrl) {
-        const configPath = getPathFromUrl(
-          scheme.openIdConnectUrl ?? '/.well-known/openid-configuration',
-        )
+        const configPath = getPathFromUrl(scheme.openIdConnectUrl ?? '/.well-known/openid-configuration')
 
         // Add route for OpenID Connect configuration
         app.get(configPath, (c) => {
@@ -104,9 +94,7 @@ export function setupAuthenticationRoutes(
 
   // Set up unique authorization routes
   authorizeUrls.forEach((authorizeUrl) => {
-    app.get(authorizeUrl, (c) =>
-      respondWithAuthorizePage(c, schema?.info?.title),
-    )
+    app.get(authorizeUrl, (c) => respondWithAuthorizePage(c, schema?.info?.title))
   })
 
   // Set up unique token routes

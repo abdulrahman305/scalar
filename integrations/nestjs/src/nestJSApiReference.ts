@@ -1,14 +1,14 @@
-import type { ReferenceConfiguration } from '@scalar/types/legacy'
+import type { ServerResponse } from 'node:http'
+import type { ApiReferenceConfiguration } from '@scalar/types/api-reference'
 import type { Request, Response } from 'express'
 import type { FastifyRequest } from 'fastify'
-import type { ServerResponse } from 'http'
 
-export type NestJSReferenceConfiguration = ReferenceConfiguration & {
+export type NestJSReferenceConfiguration = Partial<ApiReferenceConfiguration> & {
   withFastify?: boolean
   cdn?: string
 }
 
-export type ApiReferenceOptions = ReferenceConfiguration & {
+export type ApiReferenceOptions = Partial<ApiReferenceConfiguration> & {
   cdn?: string
 }
 
@@ -97,13 +97,11 @@ export const ApiReference = (options: ApiReferenceOptions) => {
     <script
       id="api-reference"
       type="application/json"
-      data-configuration="${JSON.stringify(configuration)
-        .split('"')
-        .join('&quot;')}">${
-        configuration.spec?.content
-          ? typeof configuration.spec?.content === 'function'
-            ? JSON.stringify(configuration.spec?.content())
-            : JSON.stringify(configuration.spec?.content)
+      data-configuration="${JSON.stringify(configuration).split('"').join('&quot;')}">${
+        configuration.content
+          ? typeof configuration.content === 'function'
+            ? JSON.stringify(configuration.content())
+            : JSON.stringify(configuration.content)
           : ''
       }</script>
     <script src="${configuration.cdn || 'https://cdn.jsdelivr.net/npm/@scalar/api-reference'}"></script>
@@ -118,7 +116,7 @@ export function apiReference(options: NestJSReferenceConfiguration) {
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Scalar API Reference</title>
+        <title>${options.title || 'Scalar API Reference'}</title>
         <meta charset="utf-8" />
         <meta
           name="viewport"
@@ -134,14 +132,14 @@ export function apiReference(options: NestJSReferenceConfiguration) {
   `
 
   if (options.withFastify) {
-    return (req: FastifyRequest, res: ServerResponse) => {
+    return (_req: FastifyRequest, res: ServerResponse) => {
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.write(content)
       res.end()
     }
   }
 
-  return (req: Request, res: Response) => {
+  return (_req: Request, res: Response) => {
     res.send(content)
   }
 }

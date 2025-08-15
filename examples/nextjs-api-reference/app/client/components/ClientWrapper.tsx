@@ -1,16 +1,20 @@
 'use client'
 
 import { ApiClientModalProvider } from '@scalar/api-client-react'
-import '@scalar/api-client-react/style.css'
-import React, { PropsWithChildren } from 'react'
+import type { OpenClientPayload } from '@scalar/api-client-react'
 
-export const ClientWrapper = ({ children }: PropsWithChildren) => {
+import '@scalar/api-client-react/style.css'
+import type { PropsWithChildren } from 'react'
+
+export const ClientWrapper = ({
+  children,
+  initialRequest,
+}: PropsWithChildren<{ initialRequest?: OpenClientPayload }>) => {
   return (
     <ApiClientModalProvider
+      initialRequest={initialRequest}
       configuration={{
-        spec: {
-          url: 'https://cdn.jsdelivr.net/npm/@scalar/galaxy/dist/latest.json',
-        },
+        url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
       }}>
       {children}
     </ApiClientModalProvider>

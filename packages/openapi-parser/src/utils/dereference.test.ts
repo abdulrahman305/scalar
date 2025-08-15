@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { dereference } from './dereference.ts'
+import { dereference } from './dereference'
 
 describe('dereference', async () => {
   it('dereferences an OpenAPI 3.1.0 file', async () => {
@@ -87,7 +87,7 @@ describe('dereference', async () => {
     expect(result.version).toBe('2.0')
   })
 
-  it('doesn’t return version 4.0', async () => {
+  it(`doesn't return version 4.0`, async () => {
     const result = await dereference(`{
       "openapi": "4.0",
       "info": {
@@ -145,20 +145,12 @@ describe('dereference', async () => {
     expect(result.errors).toStrictEqual([])
 
     // Original
-    expect(
-      result.specification.paths['/test'].get.responses['200'].content[
-        'application/json'
-      ].schema,
-    ).toEqual({
+    expect(result.specification.paths['/test'].get.responses['200'].content['application/json'].schema).toEqual({
       $ref: '#/components/schemas/Test',
     })
 
     // Resolved references
-    expect(
-      result.schema.paths['/test'].get.responses['200'].content[
-        'application/json'
-      ].schema,
-    ).toEqual({
+    expect(result.schema.paths['/test'].get.responses['200'].content['application/json'].schema).toEqual({
       type: 'object',
       properties: {
         id: {
@@ -188,9 +180,7 @@ describe('dereference', async () => {
           throwOnError: true,
         },
       )
-    }).rejects.toThrowError(
-      'Can’t resolve reference: #/components/requestBodies/DoesNotExist',
-    )
+    }).rejects.toThrowError("Can't resolve reference: #/components/requestBodies/DoesNotExist")
   })
 
   it('resolves external file references', async () => {

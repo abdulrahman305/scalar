@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import CodeInput from '@/components/CodeInput/CodeInput.vue'
-import type { VueClassProp } from '@/types/vue'
 import { ScalarIconButton } from '@scalar/components'
+import type { Environment } from '@scalar/oas-utils/entities/environment'
+import type { Workspace } from '@scalar/oas-utils/entities/workspace'
 import { computed, ref } from 'vue'
+
+import CodeInput from '@/components/CodeInput/CodeInput.vue'
+import type { EnvVariable } from '@/store/active-entities'
+import type { VueClassProp } from '@/types/vue'
 
 import DataTableCell from './DataTableCell.vue'
 import DataTableInputSelect from './DataTableInputSelect.vue'
@@ -21,8 +25,18 @@ const props = withDefaults(
     enum?: string[]
     min?: number
     max?: number
+    environment: Environment
+    envVariables: EnvVariable[]
+    workspace: Workspace
+    description?: string | undefined
+    lineWrapping?: boolean
   }>(),
-  { canAddCustomEnumValue: true, required: false, readOnly: false },
+  {
+    canAddCustomEnumValue: true,
+    required: false,
+    readOnly: false,
+    lineWrapping: false,
+  },
 )
 
 const emit = defineEmits<{
@@ -36,6 +50,7 @@ defineOptions({ inheritAttrs: false })
 
 const mask = ref(true)
 const interactingWithDropdown = ref(false)
+const codeInput = ref<InstanceType<typeof CodeInput> | null>(null)
 
 const handleBlur = () => {
   if (!interactingWithDropdown.value) {
@@ -44,23 +59,28 @@ const handleBlur = () => {
 }
 
 const inputType = computed(() =>
-  props.type === 'password'
-    ? mask.value
-      ? 'password'
-      : 'text'
-    : (props.type ?? 'text'),
+  props.type === 'password' ? 'text' : (props.type ?? 'text'),
 )
+
+// If not an enum nor read only, focus the code input
+const handleLabelClick = () => {
+  if (!props.enum?.length && !props.readOnly) {
+    codeInput.value?.focus()
+  }
+}
 </script>
 <template>
   <DataTableCell
-    class="relative row"
+    class="relative flex"
     :class="containerClass">
     <div
       v-if="$slots.default"
-      class="text-c-1 flex items-center pl-3 pr-0">
+      class="text-c-1 flex items-center pr-0 pl-3"
+      :for="id ?? ''"
+      @click="handleLabelClick">
       <slot />:
     </div>
-    <div class="row-1 overflow-x-auto">
+    <div class="relative flex min-w-0 flex-1">
       <template v-if="props.enum && props.enum.length">
         <DataTableInputSelect
           :canAddCustomValue="props.canAddCustomEnumValue"
@@ -73,7 +93,8 @@ const inputType = computed(() =>
           v-if="mask && type === 'password'"
           v-bind="id ? { ...$attrs, id: id } : $attrs"
           autocomplete="off"
-          class="border-none text-c-1 disabled:text-c-2 min-w-0 w-full peer px-2 py-1.25 -outline-offset-2"
+          class="text-c-1 disabled:text-c-2 peer w-full min-w-0 border-none px-2 py-1.25 -outline-offset-1"
+          :class="{ 'scalar-password-input': type === 'password' }"
           data-1p-ignore
           :readOnly="readOnly"
           spellcheck="false"
@@ -89,9 +110,19 @@ const inputType = computed(() =>
           v-else
           v-bind="$attrs"
           :id="id"
-          class="border-none text-c-1 disabled:text-c-2 min-w-0 w-full peer"
+          ref="codeInput"
+          class="text-c-1 disabled:text-c-2 peer w-full min-w-0 border-none -outline-offset-1"
+          :class="[
+            type === 'password' && description && 'pr-12',
+            description && 'pr-8',
+            type === 'password' && 'scalar-password-input',
+          ]"
+          :description="description"
           disableCloseBrackets
           disableTabIndent
+          :envVariables="envVariables"
+          :environment="environment"
+          :lineWrapping="Boolean(lineWrapping)"
           :max="max"
           :min="min"
           :modelValue="modelValue ?? ''"
@@ -99,25 +130,21 @@ const inputType = computed(() =>
           :required="Boolean(required)"
           spellcheck="false"
           :type="inputType"
+          :workspace="workspace"
           @blur="handleBlur"
           @focus="emit('inputFocus')"
           @update:modelValue="emit('update:modelValue', $event)" />
-        <div
-          v-if="required"
-          class="scalar-input-required absolute centered-y right-2 pt-px text-xxs text-c-3 bg-b-1 shadow-[-8px_0_4px_var(--scalar-background-1)] opacity-100 duration-150 transition-opacity peer-has-[:focus-visible]:opacity-0">
-          Required
-        </div>
       </template>
     </div>
     <div
       v-if="$slots.warning"
-      class="absolute centered-y right-7 text-orange text-xs">
+      class="centered-y text-orange absolute right-7 text-xs">
       <slot name="warning" />
     </div>
     <slot name="icon" />
     <ScalarIconButton
       v-if="type === 'password'"
-      class="-ml-.5 mr-0.75 h-6 w-6 self-center p-1.5"
+      class="-ml-.5 mr-1.25 h-6 w-6 self-center p-1.25"
       :icon="mask ? 'Show' : 'Hide'"
       :label="mask ? 'Show Password' : 'Hide Password'"
       @click="mask = !mask" />
@@ -133,11 +160,12 @@ const inputType = computed(() =>
   background-color: transparent;
   display: flex;
   font-family: var(--scalar-font);
-  font-size: var(--scalar-mini);
-  padding: 6px 8px;
+  font-size: var(--scalar-small);
+  padding: 5px 8px;
+  width: 100%;
 }
 :deep(.cm-content):has(.cm-pill) {
-  padding: 4px 3px;
+  padding: 5px 8px;
 }
 :deep(.cm-content .cm-pill:not(:last-of-type)) {
   margin-right: 0.5px;
@@ -146,7 +174,10 @@ const inputType = computed(() =>
   margin-left: 0.5px;
 }
 :deep(.cm-line) {
+  overflow: hidden;
   padding: 0;
+  text-overflow: ellipsis;
+  word-break: break-word;
 }
 .required::after {
   content: 'Required';
@@ -154,5 +185,11 @@ const inputType = computed(() =>
 /* Tailwind placeholder is busted */
 input::placeholder {
   color: var(--scalar-color-3);
+}
+/* we want our inputs to look like a password input but not be one */
+.scalar-password-input {
+  text-security: disc;
+  -webkit-text-security: disc;
+  -moz-text-security: disc;
 }
 </style>

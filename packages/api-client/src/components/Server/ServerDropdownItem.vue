@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import ServerVariablesForm from '@/components/Server/ServerVariablesForm.vue'
-import { useWorkspace } from '@/store/store'
 import { ScalarListboxCheckbox, ScalarMarkdown } from '@scalar/components'
 import type {
   Collection,
@@ -9,13 +7,19 @@ import type {
 } from '@scalar/oas-utils/entities/spec'
 import { computed, useId } from 'vue'
 
+import ServerVariablesForm from '@/components/Server/ServerVariablesForm.vue'
+import type { ServerVariables } from '@/components/Server/types'
+import { useWorkspace } from '@/store/store'
+
 const props = defineProps<{
   collection: Collection
   operation: Operation | undefined
   server: Server | undefined
-  serverOption: { id: string; label: string }
+  serverOption: {
+    id: Server['uid']
+    label: string
+  }
   type: 'collection' | 'request'
-  layout: 'client' | 'reference'
 }>()
 
 const emit = defineEmits<{
@@ -26,16 +30,34 @@ const formId = useId()
 const { collectionMutators, requestMutators, servers } = useWorkspace()
 
 /** Update the currently selected server on the collection or request */
-const updateSelectedServer = (serverUid: string, event?: Event) => {
-  if (hasVariables(serverUid) && props.layout !== 'reference') {
+const updateSelectedServer = (serverUid: Server['uid'], event?: Event) => {
+  if (hasVariables(serverUid)) {
     event?.stopPropagation()
+  }
+
+  // Handle selected server deselection
+  if (isSelectedServer.value) {
+    // Clear selected server if selected
+    if (props.operation?.servers?.length) {
+      requestMutators.edit(props.operation.uid, 'selectedServerUid', null)
+    }
+    if (props.type === 'collection') {
+      collectionMutators.edit(
+        props.collection.uid,
+        'selectedServerUid',
+        undefined,
+      )
+    } else if (props.type === 'request' && props.operation) {
+      requestMutators.edit(props.operation.uid, 'selectedServerUid', null)
+    }
+    return
   }
 
   // Set selected server on Collection
   if (props.type === 'collection' && props.collection) {
     // Clear the selected server on the request so that the collection can be updated
     if (props.operation?.servers?.length) {
-      requestMutators.edit(props.operation.uid, 'selectedServerUid', '')
+      requestMutators.edit(props.operation.uid, 'selectedServerUid', null)
     }
     collectionMutators.edit(
       props.collection.uid,
@@ -50,12 +72,26 @@ const updateSelectedServer = (serverUid: string, event?: Event) => {
 }
 
 /** Set server checkbox in the dropdown */
-const isSelectedServer = computed(
-  () => props.server?.uid === props.serverOption.id,
-)
+const isSelectedServer = computed(() => {
+  if (props.type === 'collection') {
+    // Check selected collection unless operation level server is selected
+    return (
+      props.collection.selectedServerUid === props.serverOption.id &&
+      !props.operation?.selectedServerUid
+    )
+  }
+
+  if (props.type === 'request' && props.operation) {
+    return props.operation.selectedServerUid === props.serverOption.id
+  }
+
+  return false
+})
 
 const hasVariables = (serverUid: string) => {
-  if (!serverUid) return false
+  if (!serverUid) {
+    return false
+  }
 
   const server = servers[serverUid]
 
@@ -72,32 +108,32 @@ const updateServerVariable = (key: string, value: string) => {
 </script>
 <template>
   <div
-    class="min-h-fit rounded flex flex-col border group/item"
+    class="group/item flex min-h-fit flex-col rounded border"
     :class="{ 'border-transparent': !isSelectedServer }">
     <button
       v-bind="isExpanded ? { 'aria-controls': formId } : {}"
       :aria-expanded="isExpanded"
-      class="cursor-pointer rounded flex items-center gap-1.5 min-h-8 px-1.5"
+      class="flex min-h-8 cursor-pointer items-center gap-1.5 rounded px-1.5"
       :class="isSelectedServer ? 'text-c-1 bg-b-2' : 'hover:bg-b-2'"
       type="button"
       @click="(e) => updateSelectedServer(serverOption.id, e)">
       <ScalarListboxCheckbox :selected="isSelectedServer" />
-      <span class="whitespace-nowrap text-ellipsis overflow-hidden">
+      <span class="overflow-hidden text-ellipsis whitespace-nowrap">
         {{ serverOption.label }}
       </span>
     </button>
     <!-- Server variables -->
     <div
-      v-if="isExpanded && props.layout !== 'reference'"
+      v-if="isExpanded"
       :id="formId"
-      class="bg-b-2 border-t divide divide-y *:pl-4 rounded-b"
+      class="bg-b-2 divide divide-y rounded-b border-t *:pl-4"
       @click.stop>
       <ServerVariablesForm
-        :variables="server?.variables"
+        :variables="server?.variables as ServerVariables"
         @update:variable="updateServerVariable" />
       <!-- Description -->
       <div v-if="server?.description">
-        <div class="description px-3 py-1.5 text-c-3">
+        <div class="description text-c-3 px-3 py-1.5">
           <ScalarMarkdown :value="server.description" />
         </div>
       </div>

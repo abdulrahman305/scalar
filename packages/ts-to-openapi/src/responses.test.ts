@@ -1,27 +1,23 @@
 // @ts-nocheck
 // TODO remove this when we come back to this file
-import {
-  type ReturnStatement,
-  SyntaxKind,
-  isArrowFunction,
-  isCallExpression,
-  isVariableStatement,
-} from 'typescript'
+import { type ReturnStatement, SyntaxKind, isArrowFunction, isCallExpression, isVariableStatement } from 'typescript'
 import { describe, expect, it } from 'vitest'
 
 import { generateResponses, getReturnStatements } from './responses'
 import { program } from './test-setup'
 
-const sourceFile = program.getSourceFile(
-  __dirname + '/fixtures/test-responses.ts',
-)
+const sourceFile = program.getSourceFile(__dirname + '/fixtures/test-responses.ts')
 
 // First we get to the body
 const getNode = sourceFile?.statements[0]
-if (!getNode || !isVariableStatement(getNode)) throw 'Not a variable statement'
+if (!getNode || !isVariableStatement(getNode)) {
+  throw 'Not a variable statement'
+}
 
 const initializer = getNode.declarationList.declarations[0].initializer
-if (!initializer || !isArrowFunction(initializer)) throw 'Not an arrow function'
+if (!initializer || !isArrowFunction(initializer)) {
+  throw 'Not an arrow function'
+}
 
 // Test return statements
 describe('getReturnStatements', () => {
@@ -31,7 +27,9 @@ describe('getReturnStatements', () => {
     const statement = generator.next().value as ReturnStatement
     expect(statement.kind).toEqual(SyntaxKind.ReturnStatement)
 
-    if (!statement.expression || !isCallExpression(statement.expression)) return
+    if (!statement.expression || !isCallExpression(statement.expression)) {
+      return
+    }
     expect(statement.expression.arguments.length).toEqual(2)
   })
   it('should get another return statement', () =>
@@ -42,10 +40,7 @@ describe('getReturnStatements', () => {
 
 // Test response objects
 describe('createResponseSchemas', () => {
-  const responses = generateResponses(
-    initializer.body,
-    program.getTypeChecker(),
-  )
+  const responses = generateResponses(initializer.body, program.getTypeChecker())
 
   it('should return a 200 status with string payload', () =>
     expect(responses['200']).toEqual({

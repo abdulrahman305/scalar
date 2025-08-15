@@ -1,7 +1,7 @@
+import { readFileSync } from 'node:fs'
 import { ApiReference } from '@scalar/nextjs-api-reference'
-import type { ReferenceConfiguration } from '@scalar/types/legacy'
+import type { ApiReferenceConfiguration } from '@scalar/types/api-reference'
 import { sync } from 'fast-glob'
-import { readFileSync } from 'fs'
 import type { NextRequest } from 'next/server'
 import type { OpenAPIV3_1 } from 'openapi-types'
 import {
@@ -24,7 +24,7 @@ export type OpenAPIConfig = {
    * @default 'app/api'
    */
   apiDirectory?: string
-} & ReferenceConfiguration
+} & Partial<ApiReferenceConfiguration>
 
 // TODO switch to watcher
 // @see https://github.com/microsoft/TypeScript-wiki/blob/main/Using-the-Compiler-API.md#writing-an-incremental-program-watcher
@@ -35,13 +35,7 @@ const compilerHost: CompilerHost = {
   getDefaultLibFileName: () => '',
   getNewLine: () => '\n',
   getSourceFile: (filename) =>
-    createSourceFile(
-      filename,
-      readFileSync(filename).toString(),
-      ScriptTarget.Latest,
-      false,
-      ScriptKind.TS,
-    ),
+    createSourceFile(filename, readFileSync(filename).toString(), ScriptTarget.Latest, false, ScriptKind.TS),
   jsDocParsingMode: JSDocParsingMode.ParseAll,
   readFile: () => undefined,
   useCaseSensitiveFileNames: () => true,
@@ -96,8 +90,9 @@ export const OpenAPI = (config: OpenAPIConfig = {}) => {
 
       // Grab the path from the fileName
       const rawPath = fileName
-        .replace(/^app|\/route\.ts$/g, '')
+        .replace(/^(?:src\/)?app|\/route\.ts$/g, '')
         .replace(/\[/g, '{')
+        .replace(/\/\(\w+\)/g, '')
         .replace(/]/g, '}')
       const path = rawPath.startsWith('/') ? rawPath : '/' + rawPath
 
@@ -115,13 +110,10 @@ export const OpenAPI = (config: OpenAPIConfig = {}) => {
         return Response.json(spec)
       }
       // References
-      else {
-        return await ApiReference({
-          spec: {
-            url: req.nextUrl.pathname + '/schema.json',
-          },
-        })()
-      }
+
+      return await ApiReference({
+        url: req.nextUrl.pathname + '/schema.json',
+      })()
     },
   }
 }

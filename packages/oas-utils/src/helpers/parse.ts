@@ -8,14 +8,13 @@ export const yaml = {
   /** Parse and throw if the return value is not an object */
   parse: (val: string) => {
     const yamlObject = parse(val)
-    if (typeof yamlObject !== 'object') throw Error('Invalid YAML object')
+    if (typeof yamlObject !== 'object') {
+      throw Error('Invalid YAML object')
+    }
     return yamlObject as UnknownObject
   },
   /** Parse and return a fallback on failure */
-  parseSafe<T extends PrimitiveOrObject>(
-    val: string,
-    fallback: T | ((err: any) => T),
-  ): UnknownObject | T {
+  parseSafe<T extends PrimitiveOrObject>(val: string, fallback: T | ((err: any) => T)): UnknownObject | T {
     try {
       return yaml.parse(val)
     } catch (err: any) {
@@ -30,14 +29,13 @@ export const json = {
   /** Parse and throw if the return value is not an object */
   parse: (val: string): UnknownObject => {
     const jsonObject = JSON.parse(val)
-    if (typeof jsonObject !== 'object') throw Error('Invalid JSON object')
+    if (typeof jsonObject !== 'object') {
+      throw Error('Invalid JSON object')
+    }
     return jsonObject
   },
   /** Parse and return a fallback on failure */
-  parseSafe<T extends PrimitiveOrObject>(
-    val: string,
-    fallback: T | ((err: any) => T),
-  ): UnknownObject | T {
+  parseSafe<T extends PrimitiveOrObject>(val: string, fallback: T | ((err: any) => T)): UnknownObject | T {
     try {
       return json.parse(val)
     } catch (err) {
@@ -51,7 +49,9 @@ export const json = {
  * Check if value is a valid JSON string
  */
 export const isJsonString = (value?: any) => {
-  if (typeof value !== 'string') return false
+  if (typeof value !== 'string') {
+    return false
+  }
 
   return !!json.parseSafe(value, false)
 }
@@ -68,7 +68,9 @@ export const transformToJson = (value: string) => {
 export function formatJsonOrYamlString(value: string) {
   // If we don't start with a bracket assume yaml
   const trimmed = value.trim()
-  if (trimmed[0] !== '{' && trimmed[0] !== '[') return value
+  if (trimmed[0] !== '{' && trimmed[0] !== '[') {
+    return value
+  }
 
   try {
     // JSON
@@ -80,16 +82,18 @@ export function formatJsonOrYamlString(value: string) {
 }
 
 /** Parse JSON or YAML into an object */
-export const parseJsonOrYaml = (
-  value: string | UnknownObject,
-): UnknownObject => {
-  if (typeof value !== 'string') return value
+export const parseJsonOrYaml = (value: string | UnknownObject): UnknownObject => {
+  if (typeof value !== 'string') {
+    return value
+  }
 
   const jsonObject = json.parseSafe(value, null)
-  if (jsonObject) return jsonObject
+  if (jsonObject) {
+    return jsonObject
+  }
 
   // Value is probably supposed to be JSON. Throw
-  if (value.length > 0 && ['{', '['].includes(value[0])) {
+  if (value.length > 0 && ['{', '['].includes(value[0] ?? '')) {
     throw Error('Invalid JSON or YAML')
   }
 

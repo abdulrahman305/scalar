@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { traverse } from './traverse.ts'
+import { traverse } from './traverse'
 
 describe('traverse', () => {
   it('applies transform function to a flat object', () => {
@@ -48,10 +48,7 @@ describe('traverse', () => {
       return Object.fromEntries(
         Object.entries(schema).map(([key, value]) => {
           if (Array.isArray(value)) {
-            return [
-              key,
-              value.map((v: any) => (typeof v === 'number' ? v * 2 : v)),
-            ]
+            return [key, value.map((v: any) => (typeof v === 'number' ? v * 2 : v))]
           }
 
           if (typeof value !== 'number') {

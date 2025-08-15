@@ -1,7 +1,8 @@
 <script lang="ts">
-import type { Component } from 'vue'
+import { useBindCx } from '@scalar/use-hooks/useBindCx'
+import { type Component, computed } from 'vue'
 
-import { useBindCx } from '../../hooks/useBindCx'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type ScalarColorModeToggle from './ScalarColorModeToggle.vue'
 
 /**
@@ -27,11 +28,16 @@ const { is = 'button', mode = 'light' } = defineProps<{
 
 defineOptions({ inheritAttrs: false })
 const { cx } = useBindCx()
+
+const ariaLabel = computed<string>(() =>
+  mode === 'dark' ? 'Set light mode' : 'Set dark mode',
+)
 </script>
 <template>
   <!-- Icon -->
   <component
     :is="is"
+    :aria-label="ariaLabel"
     :class="`toggle-icon-${mode}`"
     :type="is === 'button' ? 'button' : undefined"
     v-bind="cx('size-3 flex items-center justify-center text-c-1')">

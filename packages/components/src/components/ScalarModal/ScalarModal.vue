@@ -1,76 +1,60 @@
 <script setup lang="ts">
-import { ScalarIconButton } from '../ScalarIconButton'
-import {
-  Dialog,
-  DialogDescription,
-  DialogPanel,
-  DialogTitle,
-} from '@headlessui/vue'
-import { cva, cx } from '../../cva'
-
-import { reactive } from 'vue'
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue'
+import { cva, cx } from '@scalar/use-hooks/useBindCx'
 import type { VariantProps } from 'cva'
+import { reactive } from 'vue'
+
+import { ScalarIconButton } from '../ScalarIconButton'
 
 type ModalVariants = VariantProps<typeof modal>
 
-withDefaults(
-  defineProps<{
-    state: ReturnType<typeof useModal>
-    title?: string
-    bodyClass?: string
-    maxWidth?: string
-    size?: ModalVariants['size']
-    variant?: ModalVariants['variant']
-  }>(),
-  {
-    alignment: 'top',
-    size: 'md',
-  },
-)
+const { size = 'md' } = defineProps<{
+  state: ReturnType<typeof useModal>
+  title?: string
+  bodyClass?: string
+  maxWidth?: string
+  size?: ModalVariants['size']
+  variant?: ModalVariants['variant']
+}>()
 
 const modal = cva({
   base: [
     'scalar-modal',
-    'col relative mx-auto mb-0 rounded-lg bg-b-1 p-0 text-left leading-snug text-c-1 opacity-0 md:w-[calc(100vw-16px)] lg:w-[calc(100vw-32px)]',
+    'flex flex-col relative mb-0 rounded-lg bg-b-1 p-0 text-left leading-snug text-c-1 opacity-0 w-[calc(100vw-12px)] md:w-[calc(100vw-16px)] lg:w-[calc(100vw-32px)]',
   ].join(' '),
   variants: {
     size: {
-      xxs: 'mt-20 max-w-screen-xxs',
-      xs: 'mt-20 max-w-screen-xs',
-      sm: 'mt-20 max-w-screen-sm',
-      md: 'mt-20 max-w-screen-md',
-      lg: 'm-auto max-w-screen-lg',
-      xl: 'm-auto max-w-screen-xl',
-      full: 'full-size-styles mt-0 lg:w-full',
+      xxs: 'mt-[20svh] max-h-[60svh] max-w-[360px]',
+      xs: 'mt-[20svh] max-h-[60svh] max-w-[480px]',
+      sm: 'mt-[20svh] max-h-[60svh] max-w-[540px]',
+      md: 'mt-[20svh] max-h-[60svh] max-w-[640px]',
+      lg: 'm-auto max-h-[80svh] max-w-[800px]',
+      xl: 'm-auto max-h-[90svh] max-w-[1000px]',
+      full: 'full-size-styles max-h-dvh mt-0 lg:w-full',
     },
     variant: {
       form: 'scalar-modal-form',
-      history: 'scalar-modal-history bg-b-1',
-      search: 'scalar-modal-search',
+      search: 'scalar-modal-search mt-[15svh] max-h-[60svh] max-w-[540px]',
       error: 'scalar-modal-error',
     },
   },
 })
 const body = cva({
-  base: [
-    'scalar-modal-body',
-    'relative max-h-[calc(100dvh-240px)] rounded-lg rounded-t-none border-t-1/2 bg-b-1 p-3',
-  ].join(' '),
+  base: ['scalar-modal-body', 'relative flex-1 min-h-0 p-3'].join(' '),
   variants: {
     variant: {
       form: 'overflow-visible',
-      history: 'pt-3',
-      search: 'col !m-0 max-h-[440px] overflow-hidden p-0',
+      search: 'flex flex-col !m-0 overflow-hidden p-0',
       error: 'overflow-y-scroll',
     },
     size: {
-      xxs: 'max-h-[calc(100dvh-240px)]',
-      xs: 'max-h-[calc(100dvh-240px)]',
-      sm: 'max-h-[calc(100dvh-240px)]',
-      md: 'max-h-[calc(100dvh-240px)]',
-      lg: 'max-h-[calc(100dvh-180px)]',
-      xl: 'm-0 max-h-[calc(100dvh-120px)] p-0',
-      full: 'max-h-dvh rounded-none',
+      xxs: '',
+      xs: '',
+      sm: '',
+      md: '',
+      lg: '',
+      xl: 'm-0 p-0',
+      full: ' rounded-none',
     },
   },
 })
@@ -99,7 +83,7 @@ export function useModal() {
           size === 'full' ? 'scalar-modal-layout-full' : 'scalar-modal-layout',
           'fixed left-0 top-0 flex items-start justify-center',
           'z-[1001] h-[100dvh] w-[100dvw]',
-          'bg-backdrop opacity-0 dark:bg-backdropdark',
+          'bg-backdrop opacity-0 dark:bg-backdrop-dark',
           size === 'full' && 'flex',
         )
       ">
@@ -108,8 +92,7 @@ export function useModal() {
         :style="{ maxWidth }">
         <DialogTitle
           v-if="title"
-          class="scalar-modal-header m-0 -mb-1 rounded-lg p-3 text-left text-sm font-medium text-c-1"
-          :class="{ 'pb-0 pt-6': variant === 'history' }">
+          class="scalar-modal-header m-0 -mb-1 rounded-lg pt-3 px-3 text-left text-sm font-medium text-c-1">
           {{ title }}
         </DialogTitle>
         <div
@@ -117,11 +100,11 @@ export function useModal() {
           :class="bodyClass">
           <slot />
         </div>
-        <DialogDescription
+        <div
           v-else
           :class="cx(body({ size, variant }), bodyClass)">
           <slot />
-        </DialogDescription>
+        </div>
       </DialogPanel>
       <div
         v-if="size === 'full'"
@@ -136,30 +119,20 @@ export function useModal() {
   </Dialog>
 </template>
 <style scoped>
+@reference '../../style.css';
+
 .scalar-modal-layout {
   animation: fadein-layout ease-in-out 0.3s forwards;
 }
 .scalar-modal {
   animation: fadein-modal ease-in-out 0.3s forwards;
   animation-delay: 0.1s;
-  position: fixed;
-  left: 0;
-  top: 0;
-  right: 0;
   box-shadow: var(--scalar-shadow-2);
   transform: translate3d(0, 10px, 0);
 }
 .scalar-modal-layout-full {
   opacity: 1 !important;
   background: transparent !important;
-}
-.dark-mode .scalar-modal {
-  background-color: color-mix(in srgb, var(--scalar-background-1), black);
-}
-.scalar-modal.scalar-modal-search {
-  max-width: 540px;
-  max-height: 440px;
-  background-color: transparent;
 }
 .modal-content-search .modal-body {
   padding: 0;
@@ -168,10 +141,14 @@ export function useModal() {
   flex-direction: column;
   max-height: 440px;
 }
-@media (max-width: 1280px) {
-  .scalar-modal {
-    max-height: calc(100% - 56px);
-    top: 28px;
+/*
+ * Allow the modal to fill more space on
+ * very short (or very zoomed in) screens
+ */
+@variant zoomed {
+  .scalar-modal-layout .scalar-modal {
+    margin-top: 5svh;
+    max-height: 90svh;
   }
 }
 @keyframes fadein-layout {
@@ -205,7 +182,7 @@ export function useModal() {
   box-shadow: none !important;
   border-right: var(--scalar-border-width) solid var(--scalar-border-color);
 }
-@screen md {
+@variant md {
   .full-size-styles {
     width: 50dvw !important;
   }

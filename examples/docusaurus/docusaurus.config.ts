@@ -37,15 +37,13 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+          editUrl: 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+          editUrl: 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
         },
         theme: {
           customCss: './src/css/custom.css',
@@ -58,13 +56,12 @@ const config: Config = {
     [
       '@scalar/docusaurus',
       {
-        id: 'json-url',
-        label: 'json-url',
-        route: '/json-url',
+        id: 'json-url-cdn',
+        label: 'json-url-cdn',
+        route: '/json-url-cdn',
+        cdn: 'https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.28.11',
         configuration: {
-          spec: {
-            url: 'https://cdn.jsdelivr.net/npm/@scalar/galaxy/dist/latest.json',
-          },
+          url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
         },
       } as ScalarOptions,
     ],
@@ -75,9 +72,7 @@ const config: Config = {
         label: 'yaml-url',
         route: '/yaml-url',
         configuration: {
-          spec: {
-            url: 'https://cdn.jsdelivr.net/npm/@scalar/galaxy/dist/latest.yaml',
-          },
+          url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=yaml',
         },
       } as ScalarOptions,
     ],
@@ -88,8 +83,7 @@ const config: Config = {
         label: 'json-string',
         route: '/json-string',
         configuration: {
-          spec: {
-            content: `{
+          content: `{
   "openapi": "3.1.0",
   "info": {
     "title": "JSON Docs",
@@ -97,7 +91,6 @@ const config: Config = {
   },
   "paths": {}
 }`,
-          },
         },
       } as ScalarOptions,
     ],
@@ -108,14 +101,12 @@ const config: Config = {
         label: 'yaml-string',
         route: '/yaml-string',
         configuration: {
-          spec: {
-            content: `openapi: 3.1.0
+          content: `openapi: 3.1.0
 info:
   title: YAML Docs
   version: 1.0.0
 paths: {}
 `,
-          },
         },
       } as ScalarOptions,
     ],

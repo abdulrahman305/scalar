@@ -2,65 +2,43 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
-    <IsAotCompatible>true</IsAotCompatible>
+    <Title>Scalar.AspNetCore</Title>
+    <Description>Generate beautiful interactive API documentation from OpenAPI/Swagger documents.</Description>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
     <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Microsoft.AspNetCore.Http.Generated</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
   <PropertyGroup>
-    <Title>Scalar</Title>
-    <Authors>Scalar</Authors>
-    <Description>Generate beautiful interactive API documentation from OpenAPI/Swagger documents.</Description>
-    <LicenseUrl>https://github.com/scalar/scalar/blob/main/LICENSE</LicenseUrl>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/scalar/scalar</RepositoryUrl>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <PackageTags>Scalar;OpenAPI</PackageTags>
-    <PackageProjectUrl>https://scalar.com</PackageProjectUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageIcon>icon.png</PackageIcon>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Please checkout https://github.com/scalar/scalar/blob/main/integrations/aspnetcore/CHANGELOG.md</PackageReleaseNotes>
+    <StaticAssetsLogicalNamePrefix>ScalarStaticAssets</StaticAssetsLogicalNamePrefix>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>
-  
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <InternalsVisibleTo Include="$(AssemblyName).Microsoft" />
+    <InternalsVisibleTo Include="$(AssemblyName).Swashbuckle" />
+    <InternalsVisibleTo Include="$(AssemblyName).Benchmarks" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetEscapades.EnumGenerators" Version="1.0.0-beta12" PrivateAssets="all" ExcludeAssets="runtime" NoWarn="NU5104" />
+    <PackageReference Include="NetEscapades.EnumGenerators" Version="1.0.0-beta14" PrivateAssets="all" ExcludeAssets="runtime" NoWarn="NU5104" />
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="$(AssemblyName).Tests" />
-    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="StaticAssets/*">
-      <LogicalName>ScalarStaticAssets.%(Filename)%(Extension)</LogicalName>
+    <!-- Include compressed files for Release -->
+    <!-- Import .gz files without extension so the original filename is used "scalar.js.gz" -> "scalar.js" -->
+    <EmbeddedResource Include="StaticAssets/*.gz" Condition="'$(Configuration)' == 'Release'">
+      <LogicalName>$(StaticAssetsLogicalNamePrefix).%(Filename)</LogicalName>
     </EmbeddedResource>
-  </ItemGroup>
-  
-  <ItemGroup>
-    <None Include="..\..\icon.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\..\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
+
+    <!-- Include uncompressed files for Debug -->
+    <EmbeddedResource Include="StaticAssets/*.js" Exclude="StaticAssets/*test.js" Condition="'$(Configuration)' == 'Debug'">
+      <LogicalName>$(StaticAssetsLogicalNamePrefix).%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

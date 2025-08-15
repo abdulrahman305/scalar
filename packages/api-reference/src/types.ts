@@ -1,37 +1,48 @@
-import type { HarRequest } from '@scalar/snippetz/types'
-import type { ThemeId } from '@scalar/themes'
-import type {
-  ContentType,
-  ReferenceConfiguration,
-  Spec,
-} from '@scalar/types/legacy'
-import type { Slot } from 'vue'
+import type { AnyApiReferenceConfiguration, ApiReferenceConfiguration } from '@scalar/types/api-reference'
+import type { OpenAPIV3_1 } from '@scalar/types/legacy'
+import type { WorkspaceStore } from '@scalar/workspace-store/client'
 
-export type { ReferenceConfiguration }
+export type { ApiReferenceConfiguration }
 
 export type ReferenceProps = {
-  configuration?: ReferenceConfiguration
+  configuration?: AnyApiReferenceConfiguration
 }
 
+/**
+ * Before the configuration is parsed, we can use the broader types.
+ */
 export type ReferenceLayoutProps = {
-  configuration: ReferenceConfiguration
-  parsedSpec: Spec
-  rawSpec: string
+  configuration: Partial<ApiReferenceConfiguration>
+  /**
+   *
+   * The OpenAPI 3.1 document, but all $ref's are resolved already.
+   *
+   * @remark You need to add the `originalDocument`, too.
+   *
+   * @example
+   *
+   * import { upgrade, dereference } from '@scalar/openapi-parser'
+   *
+   * const { specification: upgradedDocument } = upgrade(originalDocument)
+   * const { schema: dereferencedDocument } = await dereference(upgradedDocument)
+   */
+  dereferencedDocument?: OpenAPIV3_1.Document
+  /**
+   * The raw OpenAPI document. Doesn't have to be OpenAPI 3.1.
+   */
+  originalDocument?: string
   isDark: boolean
-}
-
-export type PathRouting = {
-  basePath: string
+  /**
+   * @deprecated Use `originalDocument` instead.
+   */
+  rawSpec?: string
+  /**
+   * @deprecated this is just temporary until we switch to the new store, we prop drill it down
+   */
+  store: WorkspaceStore
 }
 
 export type GettingStartedExamples = 'Petstore' | 'CoinMarketCap'
-
-export type Parameter = {
-  name: string
-  required: boolean
-  displayType: string
-  description: string
-}
 
 export type ContentProperties = {
   [key: string]: {
@@ -52,43 +63,6 @@ export type ContentSchema = {
     properties: ContentProperties
   }
 }
-
-export type Content = {
-  [key in ContentType]: ContentSchema
-}
-
-export type Contact = {
-  email: string
-}
-
-export type License = {
-  name: string
-  url: string
-}
-
-export type Info = {
-  title: string
-  description?: string
-  termsOfService?: string
-  contact?: Contact
-  license?: License
-  version?: string
-}
-
-export type HarRequestWithPath = HarRequest & {
-  path: string
-}
-
-export type ReferenceLayoutType = 'modern' | 'classic'
-
-/** Slots required for standalone reference components */
-export type ReferenceSlot = 'footer'
-
-export type ReferenceSlots = {
-  // None of our slots should have any slot props
-  [x in ReferenceSlot]: Slot<Record<string, never>>
-}
-
 /** Slots required for reference base / layout component */
 export type ReferenceLayoutSlot =
   | 'header'
@@ -103,15 +77,10 @@ export type ReferenceLayoutSlots = {
   [x in ReferenceLayoutSlot]: (props: ReferenceSlotProps) => any
 }
 
-export type ReferenceSlotProps = {
-  spec: Spec
-  breadcrumb: string
+export type DocumentSelectorSlot = {
+  'document-selector': any
 }
 
-export type ReferenceLayoutEvents = {
-  (e: 'changeTheme', value: ThemeId): void
-  (e: 'updateContent', value: string): void
-  (e: 'loadSwaggerFile'): void
-  (e: 'linkSwaggerFile'): void
-  (e: 'toggleDarkMode'): void
+export type ReferenceSlotProps = {
+  breadcrumb: string
 }

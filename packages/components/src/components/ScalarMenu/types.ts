@@ -1,7 +1,4 @@
 import type { ScalarListboxOption } from '../..'
-import type ScalarMenu from './ScalarMenu.vue'
-import type ScalarMenuButton from './ScalarMenuButton.vue'
-import type ScalarMenuTeamPicker from './ScalarMenuTeamPicker.vue'
 
 /**
  * A team option for the ScalarMenuTeamPicker component
@@ -19,15 +16,15 @@ export type ScalarMenuTeamOption = ScalarListboxOption & {
 export type ScalarMenuButtonSlots = {
   /**
    * Overrides the logo in the menu button
-   * @default <ScalarIcon icon="Logo" />
+   * @default The Scalar logo
    * @example <img class="h-full aspect-square bg-b-3 rounded" :src="..." />
    */
-  logo?: () => any
+  logo?(): unknown
   /**
    * Overrides the screen reader label in the menu button
    * @default open ? 'Close Menu' : 'Open Menu'
    */
-  label?: () => any
+  label?(): unknown
 }
 
 /**

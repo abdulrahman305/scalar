@@ -35,9 +35,7 @@ import { getSchemaFromNode } from './node'
  *
  * @see https://stackoverflow.com/a/76551960
  */
-export function* getReturnStatements(
-  node: Node,
-): Generator<ReturnStatement | Expression> {
+export function* getReturnStatements(node: Node): Generator<ReturnStatement | Expression> {
   // Got the return statement
   if (isReturnStatement(node)) {
     yield node
@@ -50,12 +48,7 @@ export function* getReturnStatements(
     if (node.elseStatement) {
       yield* getReturnStatements(node.elseStatement)
     }
-  } else if (
-    isForStatement(node) ||
-    isForOfStatement(node) ||
-    isForInStatement(node) ||
-    isWhileStatement(node)
-  ) {
+  } else if (isForStatement(node) || isForOfStatement(node) || isForInStatement(node) || isWhileStatement(node)) {
     yield* getReturnStatements(node.statement)
   } else if (isSwitchStatement(node)) {
     for (const clause of node.caseBlock.clauses) {
@@ -94,11 +87,10 @@ export function* getReturnStatements(
  * - grab jsDoc
  * - pass in a predicate as this if statement is meant for next
  */
-export const generateResponses = (
-  node: Node | undefined,
-  typeChecker: TypeChecker,
-): OpenAPIV3_1.ResponsesObject => {
-  if (!node) return {}
+export const generateResponses = (node: Node | undefined, typeChecker: TypeChecker): OpenAPIV3_1.ResponsesObject => {
+  if (!node) {
+    return {}
+  }
 
   const generator = getReturnStatements(node)
   const statements = Array.from(generator)
@@ -116,21 +108,16 @@ export const generateResponses = (
       isIdentifier(statement.expression.expression.expression) &&
       // we will probably pass comparator in
       (statement.expression.expression.expression.escapedText === 'Response' ||
-        statement.expression.expression.expression.escapedText ===
-          'NextResponse')
+        statement.expression.expression.expression.escapedText === 'NextResponse')
     ) {
       const [payload, options] = statement.expression.arguments
 
       // Grab payload and options schemas
       const schema = getSchemaFromNode(payload, typeChecker)
-      const optionsSchema = options
-        ? getSchemaFromNode(options, typeChecker)
-        : null
-      const status =
-        (optionsSchema?.properties?.status as OpenAPIV3_1.SchemaObject)
-          ?.example ?? 200
+      const optionsSchema = options ? getSchemaFromNode(options, typeChecker) : null
+      const status = (optionsSchema?.properties?.status as OpenAPIV3_1.SchemaObject)?.example ?? 200
 
-      if (status)
+      if (status) {
         return {
           ...prev,
           [String(status)]: {
@@ -145,6 +132,7 @@ export const generateResponses = (
             },
           },
         }
+      }
     }
     return {
       ...prev,

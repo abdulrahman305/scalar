@@ -1,1 +1,1 @@
-export * from './load.ts'
+export { load, type LoadPlugin, type LoadOptions } from './load'

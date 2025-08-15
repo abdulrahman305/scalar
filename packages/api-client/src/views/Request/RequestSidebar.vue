@@ -1,35 +1,16 @@
 <script setup lang="ts">
-import Rabbit from '@/assets/rabbit.ascii?raw'
-import RabbitJump from '@/assets/rabbitjump.ascii?raw'
-import { Sidebar } from '@/components'
-import EnvironmentSelector from '@/components/EnvironmentSelector/EnvironmentSelector.vue'
-import HttpMethod from '@/components/HttpMethod/HttpMethod.vue'
-import ScalarAsciiArt from '@/components/ScalarAsciiArt.vue'
-import { useSearch } from '@/components/Search/useSearch'
-import SidebarButton from '@/components/Sidebar/SidebarButton.vue'
-import SidebarToggle from '@/components/Sidebar/SidebarToggle.vue'
-import { useLayout, useSidebar } from '@/hooks'
-import type { HotKeyEvent } from '@/libs'
-import { PathId } from '@/routes'
-import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
-import { createInitialRequest } from '@/store/requests'
-import RequestSidebarItemMenu from '@/views/Request/RequestSidebarItemMenu.vue'
-import { dragHandlerFactory } from '@/views/Request/handle-drag'
-import type { SidebarItem, SidebarMenuItem } from '@/views/Request/types'
 import {
   ScalarButton,
   ScalarIcon,
-  ScalarSearchInput,
   ScalarSearchResultItem,
   ScalarSearchResultList,
+  ScalarSidebarSearchInput,
 } from '@scalar/components'
-import { LibraryIcon } from '@scalar/icons'
+import { LibraryIcon } from '@scalar/icons/library'
 import type { Collection } from '@scalar/oas-utils/entities/spec'
 import { useToasts } from '@scalar/use-toasts'
 import {
   computed,
-  nextTick,
   onBeforeUnmount,
   onMounted,
   reactive,
@@ -39,24 +20,45 @@ import {
 } from 'vue'
 import { useRouter } from 'vue-router'
 
+import Rabbit from '@/assets/rabbit.ascii?raw'
+import RabbitJump from '@/assets/rabbitjump.ascii?raw'
+import { Sidebar } from '@/components'
+import EnvironmentSelector from '@/components/EnvironmentSelector/EnvironmentSelector.vue'
+import HttpMethod from '@/components/HttpMethod/HttpMethod.vue'
+import ScalarAsciiArt from '@/components/ScalarAsciiArt.vue'
+import { useSearch } from '@/components/Search/useSearch'
+import SidebarButton from '@/components/Sidebar/SidebarButton.vue'
+import { useLayout } from '@/hooks/useLayout'
+import { useSidebar } from '@/hooks/useSidebar'
+import type { HotKeyEvent } from '@/libs'
+import { PathId } from '@/routes'
+import { useWorkspace } from '@/store'
+import { useActiveEntities } from '@/store/active-entities'
+import { createInitialRequest } from '@/store/requests'
+import { dragHandlerFactory } from '@/views/Request/handle-drag'
+import RequestSidebarItemMenu from '@/views/Request/RequestSidebarItemMenu.vue'
+import type { SidebarItem, SidebarMenuItem } from '@/views/Request/types'
+
+import { WorkspaceDropdown } from './components'
 import { isGettingStarted } from './RequestSection/helpers/getting-started'
 import RequestSidebarItem from './RequestSidebarItem.vue'
-import { WorkspaceDropdown } from './components'
-
-const props = defineProps<{
-  isSidebarOpen: boolean
-}>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', v: boolean): void
-  (e: 'update:isSidebarOpen', v: boolean): void
   (e: 'newTab', { name, uid }: { name: string; uid: string }): void
   (e: 'clearDrafts'): void
 }>()
+
+const {
+  collapsedSidebarFolders,
+  isSidebarOpen,
+  setCollapsedSidebarFolder,
+  toggleSidebarOpen,
+} = useSidebar()
 const { layout } = useLayout()
 
 const workspaceContext = useWorkspace()
 const {
+  activeCollection,
   activeWorkspaceCollections,
   activeRequest,
   activeWorkspaceRequests,
@@ -69,11 +71,10 @@ const { handleDragEnd, isDroppable } = dragHandlerFactory(
   activeWorkspace,
   workspaceContext,
 )
-const { collapsedSidebarFolders, setCollapsedSidebarFolder } = useSidebar()
 const { replace } = useRouter()
 const openCommandPaletteImport = () => {
   events.commandPalette.emit({
-    commandName: 'Import from OpenAPI/Swagger/Postman',
+    commandName: 'Import from OpenAPI/Swagger/Postman/cURL',
   })
 }
 const searchResultsId = useId()
@@ -86,7 +87,9 @@ const isSearchVisible = ref(false)
 watch(
   activeRequest,
   (request) => {
-    if (!request) return
+    if (!request) {
+      return
+    }
 
     // Ensure the sidebar folders are open
     findRequestParents(request).forEach((uid: string) =>
@@ -108,12 +111,19 @@ const {
   selectSearchResult,
 } = useSearch()
 
+const searchToggleRef = ref<HTMLButtonElement>()
+
 /** Handle hotkey events from the bus */
 const handleHotKey = (event?: HotKeyEvent) => {
-  if (!event) return
-
-  if (event.toggleSidebar) emit('update:isSidebarOpen', props.isSidebarOpen)
-  if (event.focusRequestSearch) searchInputRef.value?.focus()
+  if (!event) {
+    return
+  }
+  if (event.toggleSidebar) {
+    toggleSidebarOpen()
+  }
+  if (event.focusRequestSearch) {
+    searchInputRef.value?.focus()
+  }
 }
 
 onMounted(() => events.hotKeys.on(handleHotKey))
@@ -153,7 +163,9 @@ watch(
         activeWorkspaceCollections.value[index]
       ) {
         const currentCollection = activeWorkspaceCollections.value[index]
-        if (!currentCollection) return
+        if (!currentCollection) {
+          return
+        }
 
         const message = `${currentCollection.info?.title}: Watch Mode ${newWatchMode ? 'enabled' : 'disabled'}`
         toast(message, 'info')
@@ -162,10 +174,27 @@ watch(
   },
 )
 
-const selectedResultId = computed(() => {
-  const result =
-    searchResultsWithPlaceholderResults.value[selectedSearchResult.value]
-  return result?.item?.id ? `#search-input-${result.item.id}` : undefined
+/** Screen reader label for the search input */
+const srLabel = computed<string>(() => {
+  const results = searchResultsWithPlaceholderResults.value
+  if (!results.length) {
+    return 'No results found'
+  }
+
+  const result = results[selectedSearchResult.value]?.item
+  if (!result) {
+    return 'No result selected'
+  }
+
+  const resultsFoundLabel = searchText.value.length
+    ? `${results.length} result${results.length === 1 ? '' : 's'} found, `
+    : ''
+
+  const selectedResultDescription = `, HTTP Method ${result.httpVerb}, Path ${result.path}`
+
+  const selectedResultLabel = `${result.title} ${selectedResultDescription}`
+
+  return `${resultsFoundLabel}Selected: ${selectedResultLabel}`
 })
 
 const handleClearDrafts = () => {
@@ -214,48 +243,51 @@ const handleClearDrafts = () => {
   }
 }
 
-const toggleSearch = () => {
+watch(isSearchVisible, (isVisible) => {
   // If we're hiding the search, clear the text
-  if (!isSearchVisible.value) {
+  if (!isVisible) {
     searchText.value = ''
   }
+})
 
-  // If we're showing the search, focus it
-  if (isSearchVisible.value) {
-    nextTick(() => {
-      searchInputRef.value?.focus()
-    })
-  }
-
-  // Simply toggle the visibility
-  isSearchVisible.value = !isSearchVisible.value
-}
-
-const showGettingStarted = computed(() => {
-  return isGettingStarted(
+const showGettingStarted = computed(() =>
+  isGettingStarted(
     activeWorkspaceCollections.value,
     activeWorkspaceRequests.value,
     requests,
-  )
+  ),
+)
+
+/** We ensure in modal mode we only show the current requests collection */
+const collections = computed(() => {
+  if (layout === 'modal' && activeCollection.value) {
+    return [activeCollection.value]
+  }
+  return activeWorkspaceCollections.value
 })
+
+/** Hide the search input if the text is empty */
+function handleBlur(e: FocusEvent) {
+  // We have to check the blur did not come from the search toggle button
+  // otherwise the search will show again form the click event
+  if (!searchText.value && e.relatedTarget !== searchToggleRef.value) {
+    isSearchVisible.value = false
+  }
+}
 </script>
 <template>
   <Sidebar
     v-show="isSidebarOpen"
-    :class="[isSidebarOpen ? 'sidebar-active-width' : '']"
-    :isSidebarOpen="isSidebarOpen"
-    @update:isSidebarOpen="$emit('update:isSidebarOpen', $event)">
+    :class="[isSidebarOpen ? 'sidebar-active-width' : '']">
     <template
       v-if="layout !== 'modal'"
-      #header>
-    </template>
+      #header />
     <template #content>
-      <div class="flex items-center h-12 px-3 top-0 bg-b-1 sticky z-20">
-        <SidebarToggle
-          class="xl:hidden"
-          :class="[{ '!flex': layout === 'modal' }]"
-          :modelValue="isSidebarOpen"
-          @update:modelValue="$emit('update:isSidebarOpen', $event)" />
+      <div class="bg-b-1 sticky top-0 z-20 flex h-12 items-center px-3">
+        <!-- Holds space for the sidebar toggle -->
+        <div
+          class="size-8"
+          :class="{ 'xl:hidden': layout !== 'modal' }" />
         <WorkspaceDropdown v-if="layout !== 'modal'" />
         <span
           v-if="layout !== 'modal'"
@@ -264,31 +296,37 @@ const showGettingStarted = computed(() => {
         </span>
         <EnvironmentSelector v-if="layout !== 'modal'" />
         <button
+          ref="searchToggleRef"
+          :aria-pressed="isSearchVisible"
           class="ml-auto"
           type="button"
-          @click="toggleSearch">
+          @click="isSearchVisible = !isSearchVisible">
+          <span class="sr-only">
+            {{ isSearchVisible ? 'Hide' : 'Show' }} search
+          </span>
           <ScalarIcon
-            class="text-c-3 text-sm hover:bg-b-2 p-1.75 rounded-lg max-w-8 max-h-8"
+            class="text-c-3 hover:bg-b-2 max-h-8 max-w-8 rounded-lg p-1.75 text-sm"
             icon="Search" />
         </button>
       </div>
       <div
-        v-show="isSearchVisible"
-        class="search-button-fade sticky px-3 py-2.5 z-10 pt-0 top-12 focus-within:z-20"
+        v-if="isSearchVisible"
+        class="search-button-fade sticky top-12 z-10 px-3 py-2.5 pt-0 focus-within:z-20"
         role="search">
-        <ScalarSearchInput
+        <ScalarSidebarSearchInput
           ref="searchInputRef"
           v-model="searchText"
-          :aria-activedescendant="selectedResultId"
+          autofocus
           :aria-controls="searchResultsId"
-          sidebar
+          :label="srLabel"
           @input="fuseSearch"
           @keydown.down.stop="navigateSearchResults('down')"
           @keydown.enter.stop="selectSearchResult()"
-          @keydown.up.stop="navigateSearchResults('up')" />
+          @keydown.up.stop="navigateSearchResults('up')"
+          @blur="handleBlur" />
       </div>
       <div
-        class="gap-1/2 flex flex-1 flex-col overflow-visible overflow-y-auto px-3 pb-3 pt-0"
+        class="gap-1/2 flex flex-1 flex-col overflow-visible overflow-y-auto px-3 pt-0 pb-3"
         :class="[
           {
             'pb-14': layout !== 'modal',
@@ -310,7 +348,7 @@ const showGettingStarted = computed(() => {
               :id="`#search-input-${entry.item.id}`"
               :key="entry.refIndex"
               :ref="(el) => (searchResultRefs[index] = el as HTMLElement)"
-              :active="selectedSearchResult === index"
+              :selected="selectedSearchResult === index"
               class="px-2"
               :href="entry.item.link"
               @click.prevent="onSearchResultClick(entry)"
@@ -328,9 +366,9 @@ const showGettingStarted = computed(() => {
         <nav
           v-else
           class="contents">
-          <!-- Collections -->
+          <!-- Collection -->
           <RequestSidebarItem
-            v-for="collection in activeWorkspaceCollections"
+            v-for="collection in collections"
             :key="collection.uid"
             :isDraggable="
               layout !== 'modal' && collection.info?.title !== 'Drafts'
@@ -350,7 +388,7 @@ const showGettingStarted = computed(() => {
                 thickness="2.25" />
               <LibraryIcon
                 v-else
-                class="min-w-3.5 text-sidebar-c-2 size-3.5 stroke-2 group-hover:hidden"
+                class="text-sidebar-c-2 size-3.5 min-w-3.5 stroke-2 group-hover:hidden"
                 :src="
                   collection['x-scalar-icon'] || 'interface-content-folder'
                 " />
@@ -359,7 +397,7 @@ const showGettingStarted = computed(() => {
                   'rotate-90': collapsedSidebarFolders[collection.uid],
                 }">
                 <ScalarIcon
-                  class="text-c-3 hidden text-sm group-hover:block"
+                  class="text-c-3 hover:text-c-1 hidden text-sm group-hover:block"
                   icon="ChevronRight"
                   size="md" />
               </div>
@@ -373,16 +411,18 @@ const showGettingStarted = computed(() => {
         :class="{
           'empty-sidebar-item': showGettingStarted,
         }">
-        <div class="empty-sidebar-item-content px-2.5 py-2.5">
-          <div class="w-[60px] h-[68px] m-auto rabbit-ascii mt-2 relative">
+        <div
+          v-if="showGettingStarted"
+          class="empty-sidebar-item-content px-2.5 py-2.5">
+          <div class="rabbit-ascii relative m-auto mt-2 h-[68px] w-[60px]">
             <ScalarAsciiArt
               :art="Rabbit"
-              class="font-bold rabbitsit" />
+              class="rabbitsit font-bold" />
             <ScalarAsciiArt
               :art="RabbitJump"
-              class="font-bold absolute top-0 left-0 rabbitjump" />
+              class="rabbitjump absolute top-0 left-0 font-bold" />
           </div>
-          <div class="text-center text-balance text-sm mb-2 mt-2">
+          <div class="mt-2 mb-2 text-center text-sm text-balance">
             <b class="font-medium">Let's Get Started</b>
             <p class="mt-2">
               Create request, folder, collection or import from OpenAPI/Postman
@@ -391,7 +431,7 @@ const showGettingStarted = computed(() => {
         </div>
         <ScalarButton
           v-if="layout !== 'modal'"
-          class="mb-1.5 w-full h-fit hidden opacity-0 p-1.5"
+          class="mb-1.5 hidden h-fit w-full p-1.5 opacity-0"
           :class="{
             'flex opacity-100': showGettingStarted,
           }"
@@ -402,7 +442,7 @@ const showGettingStarted = computed(() => {
           v-if="layout !== 'modal'"
           :click="events.commandPalette.emit"
           hotkey="K">
-          <template #title>Add Item</template>
+          <template #title> Add Item </template>
         </SidebarButton>
       </div>
     </template>

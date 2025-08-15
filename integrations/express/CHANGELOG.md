@@ -1,5 +1,339 @@
 # @scalar/express-api-reference
 
+## 0.8.14
+
+### Patch Changes
+
+- Updated dependencies [7dfbe9e]
+  - @scalar/core@0.3.12
+
+## 0.8.13
+
+### Patch Changes
+
+- 7031d9c: fix(api-reference): reference theme and style fixes
+  - @scalar/core@0.3.11
+
+## 0.8.12
+
+### Patch Changes
+
+- @scalar/core@0.3.10
+
+## 0.8.11
+
+### Patch Changes
+
+- @scalar/core@0.3.9
+
+## 0.8.10
+
+### Patch Changes
+
+- @scalar/core@0.3.8
+
+## 0.8.9
+
+### Patch Changes
+
+- Updated dependencies [66347d4]
+  - @scalar/core@0.3.7
+
+## 0.8.8
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+- Updated dependencies [2d7f995]
+  - @scalar/core@0.3.6
+
+## 0.8.7
+
+### Patch Changes
+
+- @scalar/core@0.3.5
+
+## 0.8.6
+
+### Patch Changes
+
+- @scalar/core@0.3.4
+
+## 0.8.5
+
+### Patch Changes
+
+- 161733e: docs: new README
+
+## 0.8.4
+
+### Patch Changes
+
+- @scalar/core@0.3.3
+
+## 0.8.3
+
+### Patch Changes
+
+- @scalar/core@0.3.2
+
+## 0.8.2
+
+### Patch Changes
+
+- a90046a: chore: move to esbuild for integration packages
+
+## 0.8.1
+
+### Patch Changes
+
+- @scalar/core@0.3.1
+
+## 0.8.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- Updated dependencies [483ca93]
+  - @scalar/core@0.3.0
+
+## 0.7.6
+
+### Patch Changes
+
+- @scalar/core@0.2.16
+
+## 0.7.5
+
+### Patch Changes
+
+- @scalar/core@0.2.15
+
+## 0.7.4
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+- Updated dependencies [8c7bad8]
+  - @scalar/core@0.2.14
+
+## 0.7.3
+
+### Patch Changes
+
+- @scalar/core@0.2.13
+
+## 0.7.2
+
+### Patch Changes
+
+- @scalar/core@0.2.12
+
+## 0.7.1
+
+### Patch Changes
+
+- @scalar/core@0.2.11
+
+## 0.7.0
+
+### Minor Changes
+
+- 98f25a1: chore: upgrade to Express 5
+
+### Patch Changes
+
+- @scalar/core@0.2.10
+
+## 0.6.9
+
+### Patch Changes
+
+- @scalar/core@0.2.9
+
+## 0.6.8
+
+### Patch Changes
+
+- @scalar/core@0.2.8
+
+## 0.6.7
+
+### Patch Changes
+
+- @scalar/core@0.2.7
+
+## 0.6.6
+
+### Patch Changes
+
+- @scalar/core@0.2.6
+
+## 0.6.5
+
+### Patch Changes
+
+- @scalar/core@0.2.5
+
+## 0.6.4
+
+### Patch Changes
+
+- @scalar/core@0.2.4
+
+## 0.6.3
+
+### Patch Changes
+
+- b502cf1: fix(express): restore express middleware return value type
+  - @scalar/core@0.2.3
+
+## 0.6.2
+
+### Patch Changes
+
+- Updated dependencies [7a8965c]
+  - @scalar/core@0.2.2
+
+## 0.6.1
+
+### Patch Changes
+
+- @scalar/core@0.2.1
+
+## 0.6.0
+
+### Minor Changes
+
+- 01f2610: feat: use new JS API
+
+### Patch Changes
+
+- Updated dependencies [01f2610]
+  - @scalar/core@0.2.0
+
+## 0.5.0
+
+### Minor Changes
+
+- 5f9a8a2: feat!: remove the spec prefix, make content and url top-level attributes
+
+### Patch Changes
+
+- @scalar/core@0.1.3
+
+## 0.4.194
+
+### Patch Changes
+
+- @scalar/core@0.1.2
+
+## 0.4.193
+
+### Patch Changes
+
+- @scalar/core@0.1.1
+
+## 0.4.192
+
+### Patch Changes
+
+- bab7990: feat: use new @scalar/core to keep the dependency list short
+- Updated dependencies [bab7990]
+  - @scalar/core@0.1.0
+
+## 0.4.191
+
+### Patch Changes
+
+- @scalar/api-reference@1.25.129
+
+## 0.4.190
+
+### Patch Changes
+
+- 12f1c67: fix: added types to fastify and express dockerfiles
+- 989ad08: fix: include all packages in dockerfile
+- Updated dependencies [89d8b75]
+- Updated dependencies [479a2ef]
+- Updated dependencies [b93b22f]
+- Updated dependencies [89d8b75]
+  - @scalar/api-reference@1.25.128
+
+## 0.4.189
+
+### Patch Changes
+
+- @scalar/api-reference@1.25.127
+
+## 0.4.188
+
+### Patch Changes
+
+- @scalar/api-reference@1.25.126
+
+## 0.4.187
+
+### Patch Changes
+
+- @scalar/api-reference@1.25.125
+
+## 0.4.186
+
+### Patch Changes
+
+- Updated dependencies [4db5161]
+  - @scalar/api-reference@1.25.124
+  - @scalar/types@0.0.36
+
+## 0.4.185
+
+### Patch Changes
+
+- 01882e5: fix: cloudbuild not running latest integrations
+- 43031e7: feat: new lib/html-rendering in @scalar/api-reference
+- Updated dependencies [50388ea]
+- Updated dependencies [43031e7]
+- Updated dependencies [946a5df]
+- Updated dependencies [b22f554]
+- Updated dependencies [c10bbf5]
+- Updated dependencies [0ba190a]
+- Updated dependencies [4f7b767]
+- Updated dependencies [78f0cdf]
+- Updated dependencies [bd70ab6]
+- Updated dependencies [577602f]
+- Updated dependencies [875ee2c]
+- Updated dependencies [cf14cbb]
+- Updated dependencies [e55bfd2]
+  - @scalar/api-reference@1.25.123
+  - @scalar/types@0.0.35
+
+## 0.4.184
+
+### Patch Changes
+
+- @scalar/types@0.0.34
+
+## 0.4.183
+
+### Patch Changes
+
+- ac49fdb: fix: package.json points to cjs file
+
+## 0.4.182
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+- d6d50e8: feat: render embedded content only once
+- 1223c1f: chore: code style
+- Updated dependencies [54fdfcb]
+- Updated dependencies [fa6afe8]
+  - @scalar/types@0.0.33
+
 ## 0.4.181
 
 ### Patch Changes

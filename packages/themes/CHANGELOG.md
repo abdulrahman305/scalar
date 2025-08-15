@@ -1,5 +1,355 @@
 # @scalar/themes
 
+## 0.13.12
+
+### Patch Changes
+
+- 952f471: fix(themes): don't style <a> in reset only in markdown
+- 3c1e3e3: fix: removes a level line height from reset
+- Updated dependencies [ccf875a]
+- Updated dependencies [94d6d0c]
+  - @scalar/types@0.2.11
+
+## 0.13.11
+
+### Patch Changes
+
+- fb62e1b: feat: adds global base style for anchor tag
+- Updated dependencies [fb62e1b]
+  - @scalar/types@0.2.10
+
+## 0.13.10
+
+### Patch Changes
+
+- 8a67f4f: fix(api-reference): classic layout improvements
+- Updated dependencies [591562f]
+  - @scalar/types@0.2.9
+
+## 0.13.9
+
+### Patch Changes
+
+- 661c7e9: feat(themes): updates dark/light mode accent on default theme
+- Updated dependencies [c10e191]
+  - @scalar/types@0.2.8
+
+## 0.13.8
+
+### Patch Changes
+
+- 3fdc2f2: feat(api-reference): unify inconsistent font styles across scalar client and ref, and improve consistency"
+- Updated dependencies [ad2e3e6]
+  - @scalar/types@0.2.7
+
+## 0.13.7
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+- Updated dependencies [2d7f995]
+  - @scalar/types@0.2.6
+
+## 0.13.6
+
+### Patch Changes
+
+- @scalar/types@0.2.5
+
+## 0.13.5
+
+### Patch Changes
+
+- 4bbbb32: feat(components): add sidebar sections
+- Updated dependencies [1468280]
+  - @scalar/types@0.2.4
+
+## 0.13.4
+
+### Patch Changes
+
+- ca18c0b: feat(api-reference): update and modernize sidebar design
+
+## 0.13.3
+
+### Patch Changes
+
+- Updated dependencies [221e35f]
+  - @scalar/types@0.2.3
+
+## 0.13.2
+
+### Patch Changes
+
+- ba84a3c: fix(themes): add alert color
+- 358eb63: fix(api-reference): fix markdown styles pt2
+  - @scalar/types@0.2.2
+
+## 0.13.1
+
+### Patch Changes
+
+- 85877aa: fix: handle none theme
+
+## 0.13.0
+
+### Minor Changes
+
+- cad6277: feat(themes)!: migrate to tailwind v4
+
+### Patch Changes
+
+- @scalar/types@0.2.1
+
+## 0.12.1
+
+### Patch Changes
+
+- Updated dependencies [4440949]
+  - @scalar/types@0.2.1
+
+## 0.12.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- 5613e40: feat(components): scalar tooltip overhaul
+- Updated dependencies [483ca93]
+  - @scalar/types@0.2.0
+
+## 0.11.3
+
+### Patch Changes
+
+- Updated dependencies [be8a6ec]
+  - @scalar/types@0.1.16
+
+## 0.11.2
+
+### Patch Changes
+
+- 90b773e: feat: updates heading variables
+- Updated dependencies [f711ab5]
+- Updated dependencies [0222ad4]
+- Updated dependencies [cb9428c]
+- Updated dependencies [67aa0f4]
+  - @scalar/types@0.1.15
+
+## 0.11.1
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+- 2157fb4: add font exports back
+- Updated dependencies [8c7bad8]
+  - @scalar/types@0.1.14
+
+## 0.11.0
+
+### Minor Changes
+
+- e8457cb: Unify themes across scalar. Cleanup interface and remove CJS build.
+
+### Patch Changes
+
+- Updated dependencies [e8457cb]
+  - @scalar/types@0.1.13
+
+## 0.10.4
+
+### Patch Changes
+
+- Updated dependencies [62c4ce3]
+  - @scalar/types@0.1.12
+
+## 0.10.3
+
+### Patch Changes
+
+- Updated dependencies [eb4854d]
+  - @scalar/types@0.1.11
+
+## 0.10.2
+
+### Patch Changes
+
+- @scalar/types@0.1.10
+
+## 0.10.1
+
+### Patch Changes
+
+- Updated dependencies [17e7d02]
+  - @scalar/types@0.1.9
+
+## 0.10.0
+
+### Minor Changes
+
+- feaa314: feat(themes): add laserwave theme
+
+### Patch Changes
+
+- Updated dependencies [feaa314]
+  - @scalar/types@0.1.8
+
+## 0.9.86
+
+### Patch Changes
+
+- Updated dependencies [9def02e]
+- Updated dependencies [3745d77]
+  - @scalar/types@0.1.7
+
+## 0.9.85
+
+### Patch Changes
+
+- 8720ae7: fix(themes): update font size 1 to be 21px
+
+## 0.9.84
+
+### Patch Changes
+
+- Updated dependencies [3783345]
+  - @scalar/types@0.1.6
+
+## 0.9.83
+
+### Patch Changes
+
+- Updated dependencies [e09dab3]
+- Updated dependencies [04e27a1]
+  - @scalar/types@0.1.5
+
+## 0.9.82
+
+### Patch Changes
+
+- Updated dependencies [8efedf3]
+- Updated dependencies [82a4ba8]
+- Updated dependencies [57feba6]
+  - @scalar/types@0.1.4
+
+## 0.9.81
+
+### Patch Changes
+
+- Updated dependencies [543a16c]
+- Updated dependencies [57e96a0]
+  - @scalar/types@0.1.3
+
+## 0.9.80
+
+### Patch Changes
+
+- Updated dependencies [7a8965c]
+- Updated dependencies [49dffff]
+  - @scalar/types@0.1.2
+
+## 0.9.79
+
+### Patch Changes
+
+- Updated dependencies [39c0f47]
+  - @scalar/types@0.1.1
+
+## 0.9.78
+
+### Patch Changes
+
+- 1437882: feat(components): create ScalarTextInput and ScalarTextArea
+- e00fa7e: feat(api-reference): add p3 color support to default scalar theme
+- 632978d: fix(themes): hide summary caret in reset
+
+## 0.9.77
+
+### Patch Changes
+
+- Updated dependencies [5f9a8a2]
+  - @scalar/types@0.1.0
+
+## 0.9.76
+
+### Patch Changes
+
+- Updated dependencies [fc6a45e]
+  - @scalar/types@0.0.41
+
+## 0.9.75
+
+### Patch Changes
+
+- Updated dependencies [4d03e0f]
+  - @scalar/types@0.0.40
+
+## 0.9.74
+
+### Patch Changes
+
+- Updated dependencies [bab7990]
+- Updated dependencies [2c621d4]
+  - @scalar/types@0.0.39
+
+## 0.9.73
+
+### Patch Changes
+
+- Updated dependencies [7f1a40e]
+  - @scalar/types@0.0.38
+
+## 0.9.72
+
+### Patch Changes
+
+- 89d8b75: feat: new ApiReferenceConfiguration type
+- Updated dependencies [89d8b75]
+- Updated dependencies [8a04b8d]
+  - @scalar/types@0.0.37
+
+## 0.9.71
+
+### Patch Changes
+
+- 0d4520f: fix(themes): improve how we handle zoomed in screens
+
+## 0.9.70
+
+### Patch Changes
+
+- Updated dependencies [4db5161]
+  - @scalar/types@0.0.36
+
+## 0.9.69
+
+### Patch Changes
+
+- c9a8fd8: feat(components): add sidebar nesting indicator lines
+- 9251b22: feat(themes): add font-sans for default scalar font
+- 8d9a2c0: feat: updates danger variable + add background alert variable
+- Updated dependencies [946a5df]
+- Updated dependencies [cf14cbb]
+  - @scalar/types@0.0.35
+
+## 0.9.68
+
+### Patch Changes
+
+- e47a698: feat: updates danger variable + add background alert variable
+  - @scalar/types@0.0.34
+
+## 0.9.67
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+- Updated dependencies [54fdfcb]
+- Updated dependencies [fa6afe8]
+  - @scalar/types@0.0.33
+
 ## 0.9.66
 
 ### Patch Changes

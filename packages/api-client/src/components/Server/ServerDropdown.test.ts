@@ -1,41 +1,22 @@
-import { useLayout } from '@/hooks/useLayout'
 import { useWorkspace } from '@/store/store'
+import { mockUseLayout } from '@/vitest.setup'
 import { PopoverPanel } from '@headlessui/vue'
-import {
-  collectionSchema,
-  requestSchema,
-  serverSchema,
-} from '@scalar/oas-utils/entities/spec'
+import { collectionSchema, requestSchema, serverSchema } from '@scalar/oas-utils/entities/spec'
 import { mount } from '@vue/test-utils'
-import {
-  type Mock,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest'
-
+import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ServerDropdown from './ServerDropdown.vue'
 import ServerDropdownItem from './ServerDropdownItem.vue'
-
 // Mock the useWorkspace composable
 vi.mock('@/store/store', () => ({
   useWorkspace: vi.fn(),
 }))
-
-// Mock the useLayout hook
-vi.mock('@/hooks/useLayout', () => ({
-  useLayout: vi.fn(),
-}))
-const mockUseLayout = useLayout as Mock<[], ReturnType<typeof useLayout>>
 
 describe('ServerDropdown', () => {
   const defaultProps = {
     collection: collectionSchema.parse({
       uid: 'collection-1',
       servers: ['server-1', 'server-2'],
+      selectedServerUid: 'server-1',
     }),
     layout: 'reference',
     server: serverSchema.parse({
@@ -77,7 +58,7 @@ describe('ServerDropdown', () => {
     })
 
     // Mock the useLayout hook
-    mockUseLayout.mockReturnValue({
+    vi.mocked(mockUseLayout).mockReturnValue({
       layout: 'web',
     })
   })
@@ -85,7 +66,6 @@ describe('ServerDropdown', () => {
   afterEach(() => {
     // clean up
     document.body.innerHTML = ''
-    vi.clearAllMocks()
   })
 
   it('renders the server URL correctly', () => {
@@ -100,10 +80,10 @@ describe('ServerDropdown', () => {
     const wrapper = mount(ServerDropdown, {
       props: {
         ...defaultProps,
-        server: {
+        server: serverSchema.parse({
           uid: 'server-1',
           url: 'https://scalar.com/',
-        },
+        }),
       },
     })
 
@@ -152,7 +132,7 @@ describe('ServerDropdown', () => {
   })
 
   it('shows "Add Server" button when not in modal client layout', async () => {
-    mockUseLayout.mockReturnValue({
+    vi.mocked(mockUseLayout).mockReturnValue({
       layout: 'web',
     })
     const wrapper = mount(ServerDropdown, {
@@ -170,7 +150,7 @@ describe('ServerDropdown', () => {
   })
 
   it('does not show "Add Server" button in the modal client layout', async () => {
-    mockUseLayout.mockReturnValue({
+    vi.mocked(mockUseLayout).mockReturnValue({
       layout: 'modal',
     })
 
@@ -231,11 +211,7 @@ describe('ServerDropdown', () => {
       ?.trigger('click')
 
     const workspace = useWorkspace()
-    expect(workspace.collectionMutators.edit).toHaveBeenCalledWith(
-      'collection-1',
-      'selectedServerUid',
-      'server-2',
-    )
+    expect(workspace.collectionMutators.edit).toHaveBeenCalledWith('collection-1', 'selectedServerUid', 'server-2')
   })
 
   it('updates server variables correctly', async () => {
@@ -243,13 +219,13 @@ describe('ServerDropdown', () => {
       props: {
         ...defaultProps,
         layout: 'client',
-        server: {
+        server: serverSchema.parse({
           uid: 'server-1',
           url: 'https://scalar.com',
           variables: {
             version: { default: 'v1' },
           },
-        },
+        }),
       },
     })
 
@@ -259,19 +235,46 @@ describe('ServerDropdown', () => {
       .at(0)
     await dropdownButton?.trigger('click')
 
-    wrapper
-      .findAllComponents(ServerDropdownItem)
-      .at(0)
-      ?.find('input')
-      ?.setValue('v2')
+    wrapper.findAllComponents(ServerDropdownItem).at(0)?.find('input')?.setValue('v2')
 
     const workspace = useWorkspace()
-    expect(workspace.serverMutators.edit).toHaveBeenCalledWith(
-      'server-1',
-      'variables',
-      {
-        version: { default: 'v2' },
+    expect(workspace.serverMutators.edit).toHaveBeenCalledWith('server-1', 'variables', {
+      version: { default: 'v2' },
+    })
+  })
+
+  it('deselects the server when clicking on the selected server', async () => {
+    const wrapper = mount(ServerDropdown, {
+      props: defaultProps,
+    })
+
+    const dropdownButton = wrapper
+      .findAll('button')
+      .filter((node) => node.text() === 'Server: https://scalar.com')
+      .at(0)
+    await dropdownButton?.trigger('click')
+
+    await wrapper
+      .findAllComponents(ServerDropdownItem)
+      .filter((node) => node.text() === 'https://scalar.com')
+      .at(0)
+      ?.find('button')
+      ?.trigger('click')
+
+    const workspace = useWorkspace()
+    expect(workspace.collectionMutators.edit).toHaveBeenCalledWith('collection-1', 'selectedServerUid', undefined)
+
+    // New wrapper with updated props to get the after deselection state
+    const updatedWrapper = mount(ServerDropdown, {
+      props: {
+        ...defaultProps,
+        collection: {
+          ...defaultProps.collection,
+          selectedServerUid: undefined,
+        },
       },
-    )
+    })
+
+    expect(updatedWrapper.find('button').html()).toContain('Add Server')
   })
 })

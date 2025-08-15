@@ -1,4 +1,4 @@
-import { makeUrlAbsolute } from '@scalar/oas-utils/helpers'
+import { makeUrlAbsolute } from '@scalar/helpers/url/make-url-absolute'
 import { parse } from 'yaml'
 
 /**
@@ -29,17 +29,12 @@ export async function resolve(
     }
 
     // https://*.yaml
-    if (
-      value?.toLowerCase().endsWith('.yaml') ||
-      value?.toLowerCase().endsWith('.yml')
-    ) {
+    if (value?.toLowerCase().endsWith('.yaml') || value?.toLowerCase().endsWith('.yml')) {
       return value
     }
 
     // https://sandbox.scalar.com
-    const sandboxUrl = value.match(
-      /https:\/\/sandbox\.scalar\.com\/(p|e)\/([a-zA-Z0-9]+)/,
-    )
+    const sandboxUrl = value.match(/https:\/\/sandbox\.scalar\.com\/(p|e)\/([a-zA-Z0-9]+)/)
 
     if (sandboxUrl?.[2]) {
       return `https://sandbox.scalar.com/files/${sandboxUrl[2]}/openapi.yaml`
@@ -112,7 +107,17 @@ export async function resolve(
 
         // Relative or absolute URL
         if (urlOrPathOrDocument) {
-          return makeUrlAbsolute(urlOrPathOrDocument, forwardedHost || value)
+          return makeUrlAbsolute(urlOrPathOrDocument, {
+            baseUrl: forwardedHost || value,
+          })
+        }
+
+        // Check for configuration attribute URL
+        const configUrl = getConfigurationAttributeUrl(content)
+        if (configUrl) {
+          return makeUrlAbsolute(configUrl, {
+            baseUrl: forwardedHost || value,
+          })
         }
 
         // Check for embedded OpenAPI document
@@ -164,18 +169,14 @@ function parseHtml(html?: string) {
   }
 
   // &amp;quot;url&amp;quot;:&amp;quot;MY_CUSTOM_URL&amp;quot;
-  const doubleEncodedConfigurationUrl = html.match(
-    /&amp;quot;url&amp;quot;:&amp;quot;([^;]+)&amp;quot;/,
-  )
+  const doubleEncodedConfigurationUrl = html.match(/&amp;quot;url&amp;quot;:&amp;quot;([^;]+)&amp;quot;/)
 
   if (doubleEncodedConfigurationUrl?.[1]) {
     return doubleEncodedConfigurationUrl[1]
   }
 
   // &amp;quot;url&amp;quot;:&amp;quot;MY_CUSTOM_URL&amp;quot;
-  const encodedConfigurationUrl = html.match(
-    /&quot;url&quot;:&quot;([^;]+)&quot;/,
-  )
+  const encodedConfigurationUrl = html.match(/&quot;url&quot;:&quot;([^;]+)&quot;/)
   if (encodedConfigurationUrl?.[1]) {
     return encodedConfigurationUrl[1]
   }
@@ -194,18 +195,14 @@ function parseHtml(html?: string) {
   }
 
   // Check for OpenAPI URLs in the HTML
-  const linkMatch = html.match(
-    /<a[^>]*href=["']([^"']+\.(?:yaml|yml|json))["'][^>]*>/i,
-  )
+  const linkMatch = html.match(/<a[^>]*href=["']([^"']+\.(?:yaml|yml|json))["'][^>]*>/i)
 
   if (linkMatch?.[1]) {
     return linkMatch[1]
   }
 
   // Check for URLs in escaped JS objects
-  const escapedJsonMatch = html.match(
-    /\\"spec\\":\{.*?\\"url\\":\\"([^"\\]+)\\"/,
-  )
+  const escapedJsonMatch = html.match(/\\"spec\\":\{.*?\\"url\\":\\"([^"\\]+)\\"/)
 
   if (escapedJsonMatch?.[1]) {
     return escapedJsonMatch[1]
@@ -230,7 +227,9 @@ export function getContentOfScriptTag(html: string): string | undefined {
   for (const pattern of patterns) {
     const match = html.match(pattern)
 
-    if (match?.[1]) return match[1].trim()
+    if (match?.[1]) {
+      return match[1].trim()
+    }
   }
 
   return undefined
@@ -277,6 +276,10 @@ export function getConfigurationAttribute(html: string): string | undefined {
     /<script[^>]*id="api-reference"[^>]*data-configuration=["]([^"]+)["][^>]*>(.*?)<\/script>/s,
     // Single quotes
     /<script[^>]*id='api-reference'[^>]*data-configuration=[']([^']+)['][^>]*>(.*?)<\/script>/s,
+    // Mix quote single first
+    /<script[^>]*id='api-reference'[^>]*data-configuration=["]([^"]+)["][^>]*>(.*?)<\/script>/s,
+    // Mix quote double first
+    /<script[^>]*id="api-reference"[^>]*data-configuration=[']([^']+)['][^>]*>(.*?)<\/script>/s,
   ]
 
   for (const pattern of patterns) {
@@ -290,31 +293,43 @@ export function getConfigurationAttribute(html: string): string | undefined {
   return undefined
 }
 
+/** Grab the URL from the configuration data attribute */
+export const getConfigurationAttributeUrl = (html: string): string | undefined => {
+  const configString = getConfigurationAttribute(html)
+  if (!configString) {
+    return undefined
+  }
+
+  const config = JSON.parse(decodeHtmlEntities(configString))
+  return config.url || config.spec?.url
+}
+
 /**
  * Parse embedded OpenAPI document from HTML
  */
 function parseEmbeddedOpenApi(html: string): object | undefined {
   const configString = getConfigurationAttribute(html)
-
-  if (!configString) return undefined
+  if (!configString) {
+    return undefined
+  }
 
   try {
     const config = JSON.parse(decodeHtmlEntities(configString))
 
+    // Handle the old spec format while we transition to the new one
+    const content = config.content || config.spec?.content
+
     // Handle both direct JSON content and YAML content
-    if (config.spec?.content) {
+    if (content) {
       // If content is a string, assume it's YAML
-      if (typeof config.spec.content === 'string') {
-        return parse(config.spec.content)
+      if (typeof content === 'string') {
+        return parse(content)
       }
       // If content is an object, return it directly
-      return config.spec.content
+      return content
     }
   } catch (error) {
-    console.error(
-      '[@scalar/import] Failed to parse embedded OpenAPI document:',
-      error,
-    )
+    console.error('[@scalar/import] Failed to parse embedded OpenAPI document:', error)
   }
 
   return undefined
@@ -333,10 +348,7 @@ function decodeHtmlEntities(text: string): string {
   } as const
 
   const updatedText = text
-    .replace(
-      new RegExp(Object.keys(entities).join('|'), 'g'),
-      (match) => entities[match as keyof typeof entities],
-    )
+    .replace(new RegExp(Object.keys(entities).join('|'), 'g'), (match) => entities[match as keyof typeof entities])
     .replace(/\n/g, '\\n')
     .trim()
 
@@ -352,8 +364,7 @@ function decodeHtmlEntities(text: string): string {
  * Transform GitHub URLs to raw file URLs, preserving the branch information
  */
 function transformGitHubUrl(url: string): string | undefined {
-  const githubRegex =
-    /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)$/
+  const githubRegex = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)$/
   const match = url.match(githubRegex)
 
   if (match) {

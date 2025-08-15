@@ -1,6 +1,6 @@
-import { operationSchema } from '@/entities/spec/operation'
 import { describe, expect, it } from 'vitest'
 
+import { operationSchema } from './operation'
 import {
   convertExampleToXScalar,
   createExampleFromRequest,
@@ -233,6 +233,78 @@ describe('createParamInstance', () => {
       value: '',
     })
   })
+
+  it('works with content examples', () => {
+    const result = createParamInstance({
+      in: 'query',
+      name: 'foo',
+      required: false,
+      deprecated: false,
+      content: {
+        'application/json': {
+          schema: { type: 'integer', maximum: 50 },
+          examples: {
+            zero: { value: 0 },
+            max: { value: 50 },
+          },
+        },
+      },
+    })
+
+    expect(result).toEqual({
+      key: 'foo',
+      value: '0',
+      enabled: false,
+      description: undefined,
+      required: false,
+    })
+  })
+
+  it('works with content example', () => {
+    const result = createParamInstance({
+      in: 'query',
+      name: 'foo',
+      required: false,
+      deprecated: false,
+      content: {
+        'application/json': {
+          schema: { type: 'integer' },
+          example: 42,
+        },
+      },
+    })
+
+    expect(result).toEqual({
+      key: 'foo',
+      value: '42',
+      enabled: false,
+      description: undefined,
+      required: false,
+    })
+  })
+
+  it('works with parameter example', () => {
+    const result = createParamInstance({
+      in: 'query',
+      name: 'foo',
+      required: false,
+      deprecated: false,
+      example: 42,
+      schema: {
+        type: 'integer',
+        example: 1,
+      },
+    })
+
+    expect(result).toEqual({
+      key: 'foo',
+      value: '42',
+      enabled: false,
+      description: undefined,
+      required: false,
+      type: 'integer',
+    })
+  })
 })
 
 describe('parameterArrayToObject', () => {
@@ -300,8 +372,8 @@ describe('convertExampleToXScalar', () => {
             { key: 'field1', value: 'value1', enabled: true },
             {
               key: 'file1',
-              value: 'test.txt',
-              file: new Blob(['test content'], { type: 'text/plain' }),
+              value: 'ignore this',
+              file: new File(['test content'], 'test.txt', { type: 'text/plain' }),
               enabled: true,
             },
           ],
@@ -460,9 +532,7 @@ describe('createExampleFromRequest', () => {
             required: true,
           },
         ],
-        headers: [
-          { key: 'Content-Type', value: 'application/testing', enabled: true },
-        ],
+        headers: [{ key: 'Content-Type', value: 'application/testing', enabled: true }],
         query: [],
         cookies: [],
       },
@@ -524,19 +594,89 @@ describe('createExampleFromRequest', () => {
         formData: {
           encoding: 'form-data',
           value: [
-            { key: 'image', value: '', enabled: true },
-            { key: 'additionalImages[0]', value: '', enabled: true },
-            { key: 'metadata[caption]', value: '', enabled: true },
-            { key: 'metadata[tags][0]', value: '', enabled: true },
+            { key: 'image', value: 'BINARY', file: expect.any(File), enabled: true },
+            { key: 'additionalImages', value: 'BINARY', file: expect.any(File), enabled: true },
+            { key: 'metadata', value: '{"caption":"","tags":[""]}', enabled: true },
           ],
         },
       },
       parameters: {
-        headers: [
-          { key: 'Accept', value: '*/*', enabled: true },
-          { key: 'Content-Type', value: 'multipart/form-data', enabled: true },
-        ],
+        headers: [{ key: 'Accept', value: '*/*', enabled: true }],
         path: [],
+        query: [],
+        cookies: [],
+      },
+    })
+  })
+})
+
+describe('createExampleFromRequest with default body when Content-Type header is exists', () => {
+  it.each([
+    { contentType: 'application/json', defaultBody: { activeBody: 'raw', raw: { encoding: 'json', value: '{}' } } },
+    { contentType: 'application/xml', defaultBody: { activeBody: 'raw', raw: { encoding: 'xml', value: '' } } },
+    { contentType: 'application/octet-stream', defaultBody: { activeBody: 'binary', binary: undefined } },
+    {
+      contentType: 'application/x-www-form-urlencoded',
+      defaultBody: { activeBody: 'formData', formData: { encoding: 'urlencoded', value: [] } },
+    },
+    {
+      contentType: 'multipart/form-data',
+      defaultBody: { activeBody: 'formData', formData: { encoding: 'form-data', value: [] } },
+    },
+  ] as const)('when Content-Type header is $contentType', ({ contentType, defaultBody }) => {
+    const operation = operationSchema.parse({
+      uid: 'request-1',
+      path: '/test',
+      parameters: [
+        {
+          in: 'header',
+          name: 'Content-Type',
+          required: true,
+          deprecated: false,
+          schema: { type: 'string', default: contentType },
+        },
+      ],
+    })
+
+    const result = createExampleFromRequest(operation, 'Test Example')
+
+    expect(result).toMatchObject({
+      requestUid: 'request-1',
+      name: 'Test Example',
+      body: defaultBody,
+      parameters: {
+        headers: [{ key: 'Content-Type', value: contentType, enabled: true }],
+        query: [],
+        cookies: [],
+      },
+    })
+  })
+
+  it('when Content-Type header is not exists', () => {
+    const operation = operationSchema.parse({
+      uid: 'request-1',
+      path: '/test',
+      parameters: [
+        {
+          in: 'header',
+          name: 'Content-Type',
+          required: true,
+          deprecated: false,
+          schema: { type: 'string' },
+        },
+      ],
+    })
+
+    const result = createExampleFromRequest(operation, 'Test Example')
+
+    expect(result).toMatchObject({
+      requestUid: 'request-1',
+      name: 'Test Example',
+      body: {
+        activeBody: 'raw',
+      },
+      parameters: {
+        headers: [{ key: 'Content-Type', value: '', enabled: true }],
         query: [],
         cookies: [],
       },

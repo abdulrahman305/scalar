@@ -1,27 +1,25 @@
-import type { Cookie as Ck } from '@/entities/cookie'
-import type { Environment as E } from '@/entities/environment'
-import type {
-  Collection as Co,
-  Request as R,
-  RequestExample as RE,
-  Server as S,
-  SecurityScheme as SS,
-  Tag as T,
-} from '@/entities/spec'
-import type { Workspace as W } from '@/entities/workspace'
+import type { Cookie } from '@/entities/cookie/cookie'
+import type { Environment } from '@/entities/environment/environment'
+import type { Collection } from '@/entities/spec/collection'
+import type { RequestExample } from '@/entities/spec/request-examples'
+import type { Request } from '@/entities/spec/requests'
+import type { Server } from '@/entities/spec/server'
+import type { Tag } from '@/entities/spec/spec-objects'
+import type { Workspace } from '@/entities/workspace/workspace'
+import type { SecurityScheme } from '@scalar/types/entities'
 
-export namespace v_2_5_0 {
-  export type Cookie = Ck
-  export type Environment = E
-  export type Collection = Co
-  export type Request = R
-  export type RequestExample = RE
-  export type SecurityScheme = SS
-  export type Server = S
-  export type Tag = T
-  export type Workspace = W
+export type v_2_5_0 = {
+  Cookie: Cookie
+  Environment: Environment
+  Collection: Collection
+  Request: Request
+  RequestExample: RequestExample
+  SecurityScheme: SecurityScheme
+  Server: Server
+  Tag: Tag
+  Workspace: Workspace
 
-  export type DataRecord = {
+  DataRecord: {
     collections: Record<string, Collection>
     cookies: Record<string, Cookie>
     environments: Record<string, Environment>
@@ -33,7 +31,7 @@ export namespace v_2_5_0 {
     workspaces: Record<string, Workspace>
   }
 
-  export type DataArray = {
+  DataArray: {
     collections: Collection[]
     cookies: Cookie[]
     environments: Environment[]

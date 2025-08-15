@@ -1,18 +1,17 @@
 /**
  * This file is copied from @uiw/codemirror-themes.
- * We’ve had issues with the import (something to do with CJS/ESM).
+ * We've had issues with the import (something to do with CJS/ESM).
  *
  * @see https://github.com/uiwjs/react-codemirror
  * @see https://github.com/scalar/scalar/issues/4222
  */
-import {
-  HighlightStyle,
-  type TagStyle,
-  syntaxHighlighting,
-} from '@codemirror/language'
+import { HighlightStyle, type TagStyle, syntaxHighlighting } from '@codemirror/language'
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import type { StyleSpec } from 'style-mod'
+
+type StyleSpec = {
+  [propOrSelector: string]: string | number | StyleSpec | null
+}
 
 export type CreateThemeOptions = {
   /**
@@ -61,11 +60,7 @@ export type Settings = {
 /**
  * Creates a CodeMirror theme from a set of options.
  */
-export const createCodeMirrorTheme = ({
-  theme,
-  settings = {},
-  styles = [],
-}: CreateThemeOptions): Extension => {
+export const createCodeMirrorTheme = ({ theme, settings = {}, styles = [] }: CreateThemeOptions): Extension => {
   const themeOptions: Record<string, StyleSpec> = {
     '.cm-gutters': {},
   }
@@ -91,13 +86,13 @@ export const createCodeMirrorTheme = ({
       fontFamily: settings.fontFamily,
     }
   }
-  if (settings.gutterBackground) {
+  if (settings.gutterBackground && themeOptions['.cm-gutters']) {
     themeOptions['.cm-gutters'].backgroundColor = settings.gutterBackground
   }
-  if (settings.gutterForeground) {
+  if (settings.gutterForeground && themeOptions['.cm-gutters']) {
     themeOptions['.cm-gutters'].color = settings.gutterForeground
   }
-  if (settings.gutterBorder) {
+  if (settings.gutterBorder && themeOptions['.cm-gutters']) {
     themeOptions['.cm-gutters'].borderRightColor = settings.gutterBorder
   }
 

@@ -1,140 +1,184 @@
 <script setup lang="ts">
-import { Schema } from '@/components/Content/Schema'
 import { ScalarMarkdown } from '@scalar/components'
-import type { ContentType, RequestBody } from '@scalar/types/legacy'
+import type { OpenAPIV3_1 } from '@scalar/openapi-types'
 import { computed, ref } from 'vue'
 
-const { requestBody } = defineProps<{ requestBody?: RequestBody }>()
+import { Schema } from '@/components/Content/Schema'
+
+import ContentTypeSelect from './ContentTypeSelect.vue'
+
+/**
+ * The maximum number of properties to show in the request body schema.
+ */
+const MAX_VISIBLE_PROPERTIES = 12
+
+const { requestBody, schemas } = defineProps<{
+  breadcrumb?: string[]
+  requestBody?: OpenAPIV3_1.OperationObject['requestBody']
+  schemas?: Record<string, OpenAPIV3_1.SchemaObject> | unknown
+}>()
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
 
 const availableContentTypes = computed(() =>
   Object.keys(requestBody?.content ?? {}),
 )
 
-const selectedContentType = ref<ContentType>('application/json')
+const selectedContentType = ref<string>('application/json')
 
 if (requestBody?.content) {
   if (availableContentTypes.value.length > 0) {
-    selectedContentType.value = availableContentTypes.value[0] as ContentType
+    selectedContentType.value = availableContentTypes.value[0]
   }
+}
+
+/**
+ * Splits schema properties into visible and collapsed sections when there are more than 12 properties.
+ * Returns null for schemas with fewer properties or non-object schemas.
+ */
+const partitionedSchema = computed(() => {
+  const schema = requestBody?.content?.[selectedContentType.value]?.schema
+
+  // Early return if not an object schema
+  if (schema?.type !== 'object' || !schema.properties) {
+    return null
+  }
+
+  const propertyEntries = Object.entries(schema.properties)
+  if (propertyEntries.length <= MAX_VISIBLE_PROPERTIES) {
+    return null
+  }
+
+  // Destructure everything except properties
+  const { properties, ...schemaMetadata } = schema
+
+  return {
+    visibleProperties: {
+      ...schemaMetadata,
+      properties: Object.fromEntries(
+        propertyEntries.slice(0, MAX_VISIBLE_PROPERTIES),
+      ),
+    },
+    collapsedProperties: {
+      ...schemaMetadata,
+      properties: Object.fromEntries(
+        propertyEntries.slice(MAX_VISIBLE_PROPERTIES),
+      ),
+    },
+  }
+})
+
+const handleDiscriminatorChange = (type: string) => {
+  emit('update:modelValue', type)
 }
 </script>
 <template>
-  <div v-if="requestBody">
-    <div class="request-body-title">
-      <slot name="title" />
-      <div
-        class="request-body-title-select"
-        :class="{
-          'request-body-title-no-select': availableContentTypes.length <= 1,
-        }">
-        <span>{{ selectedContentType }}</span>
-        <select
-          v-if="requestBody && availableContentTypes.length > 1"
-          v-model="selectedContentType">
-          <option
-            v-for="(_, key) in requestBody?.content"
-            :key="key"
-            :value="key">
-            {{ key }}
-          </option>
-        </select>
-      </div>
+  <div
+    v-if="requestBody"
+    class="request-body">
+    <div class="request-body-header">
+      <span class="request-body-title">
+        <slot name="title" />
+        <div
+          v-if="requestBody.required"
+          class="request-body-required">
+          required
+        </div>
+      </span>
+      <ContentTypeSelect
+        :defaultValue="selectedContentType"
+        :requestBody="requestBody"
+        @selectContentType="
+          ({ contentType }) => (selectedContentType = contentType)
+        " />
       <div
         v-if="requestBody.description"
         class="request-body-description">
         <ScalarMarkdown :value="requestBody.description" />
       </div>
     </div>
+
+    <!-- For over 12 properties we want to show 12 and collapse the rest -->
     <div
-      v-if="requestBody.content?.[selectedContentType]"
+      v-if="partitionedSchema"
       class="request-body-schema">
       <Schema
         compact
+        name="Request Body"
         noncollapsible
-        :value="requestBody.content?.[selectedContentType]?.schema" />
+        :breadcrumb
+        :schemas="schemas"
+        :value="partitionedSchema.visibleProperties"
+        @update:modelValue="handleDiscriminatorChange" />
+
+      <Schema
+        additionalProperties
+        compact
+        name="Request Body"
+        :breadcrumb
+        :schemas="schemas"
+        :value="partitionedSchema.collapsedProperties" />
+    </div>
+
+    <!-- Show em all 12 and under -->
+    <div
+      v-else-if="requestBody.content?.[selectedContentType]"
+      class="request-body-schema">
+      <Schema
+        :breadcrumb
+        compact
+        name="Request Body"
+        noncollapsible
+        :schemas="schemas"
+        :value="requestBody.content?.[selectedContentType]?.schema"
+        @update:modelValue="handleDiscriminatorChange" />
     </div>
   </div>
 </template>
 
 <style scoped>
-.request-body-title {
+.request-body {
+  margin-top: 24px;
+}
+.request-body-header {
   display: flex;
   align-items: center;
-  font-size: var(--scalar-font-size-2);
-  font-weight: var(--scalar-semibold);
-  color: var(--scalar-color-1);
-  line-height: 1.45;
-  margin-top: 24px;
+  justify-content: space-between;
   padding-bottom: 12px;
   border-bottom: var(--scalar-border-width) solid var(--scalar-border-color);
   flex-flow: wrap;
 }
-.request-body-title-select {
-  position: relative;
-  height: fit-content;
-  margin-left: auto;
-  font-weight: var(--scalar-regular);
+.request-body-title {
   display: flex;
   align-items: center;
-  color: var(--scalar-color-3);
-  font-size: var(--scalar-micro);
-  background: var(--scalar-background-2);
-  padding: 2px 6px;
-  border-radius: 12px;
-  border: var(--scalar-border-width) solid var(--scalar-border-color);
-}
-
-.request-body-title-no-select.request-body-title-select {
-  pointer-events: none;
-}
-.request-body-title-no-select {
-  border: none;
-}
-.request-body-title-no-select.request-body-title-select:after {
-  display: none;
-}
-.request-body-title-select span {
-  display: flex;
-  align-items: center;
-}
-.request-body-title-select:after {
-  content: '';
-  width: 6px;
-  height: 6px;
-  transform: rotate(45deg) translate3d(0, -3px, 0);
-  display: block;
-  margin-left: 6px;
-  box-shadow: 1px 1px 0 currentColor;
-  margin-right: 5px;
-}
-.request-body-title-select select {
-  border: none;
-  outline: none;
-  cursor: pointer;
-  background: var(--scalar-background-3);
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  appearance: none;
-}
-.request-body-title-select:hover {
+  gap: 8px;
+  font-size: var(--scalar-font-size-2);
+  font-weight: var(--scalar-semibold);
   color: var(--scalar-color-1);
+}
+.request-body-required {
+  font-size: var(--scalar-micro);
+  color: var(--scalar-color-orange);
+  font-weight: normal;
 }
 .request-body-description {
   margin-top: 6px;
   font-size: var(--scalar-small);
   width: 100%;
 }
+
+.request-body-header
+  + .request-body-schema:has(> .schema-card > .schema-card-description),
+.request-body-header
+  + .request-body-schema:has(
+    > .schema-card > .schema-properties > * > .property--level-0
+  ) {
+  /** Add a bit of space between the heading border and the schema description or properties */
+  padding-top: 8px;
+}
 .request-body-description :deep(.markdown) * {
   color: var(--scalar-color-2) !important;
-}
-@media (max-width: 460px) {
-  .request-body-title-select {
-    margin-left: auto;
-    padding-right: 3px;
-  }
 }
 </style>

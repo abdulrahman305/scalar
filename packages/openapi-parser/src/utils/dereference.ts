@@ -1,15 +1,8 @@
-import type {
-  AnyApiDefinitionFormat,
-  DereferenceResult,
-  Filesystem,
-} from '../types/index.ts'
-import { details } from './details.ts'
-import { getEntrypoint } from './getEntrypoint.ts'
-import { makeFilesystem } from './makeFilesystem.ts'
-import {
-  type ResolveReferencesOptions,
-  resolveReferences,
-} from './resolveReferences.ts'
+import type { AnyApiDefinitionFormat, DereferenceResult, Filesystem } from '@/types/index'
+import { details } from './details'
+import { getEntrypoint } from './get-entrypoint'
+import { makeFilesystem } from './make-filesystem'
+import { type ResolveReferencesOptions, resolveReferences } from './resolve-references'
 
 export type DereferenceOptions = ResolveReferencesOptions
 

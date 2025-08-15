@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_OPENAPI_VERSION, DEFAULT_TITLE, sanitize } from './sanitize.ts'
+import { DEFAULT_OPENAPI_VERSION, DEFAULT_TITLE, sanitize } from './sanitize'
 
 describe('sanitize', () => {
   describe('required properties', () => {
@@ -17,7 +17,7 @@ describe('sanitize', () => {
       })
     })
 
-    it('doesn’t overwrite existing properties', () => {
+    it(`doesn't overwrite existing properties`, () => {
       const result = sanitize({
         openapi: '3.0.0',
         info: {
@@ -34,14 +34,12 @@ describe('sanitize', () => {
       })
     })
 
-    it('throws an error when it’s a swagger document', () => {
+    it("throws an error when it's a swagger document", () => {
       expect(() =>
         sanitize({
           swagger: '2.0',
         }),
-      ).toThrow(
-        'Swagger 2.0 documents are not supported. Please upgrade to OpenAPI 3.x.',
-      )
+      ).toThrow('Swagger 2.0 documents are not supported. Please upgrade to OpenAPI 3.x.')
     })
   })
 
@@ -98,8 +96,7 @@ describe('sanitize', () => {
             },
             openIdConnect: {
               type: 'OPENIDCONNECT',
-              openIdConnectUrl:
-                'https://example.com/.well-known/openid-configuration',
+              openIdConnectUrl: 'https://example.com/.well-known/openid-configuration',
             },
           },
         },
@@ -131,8 +128,7 @@ describe('sanitize', () => {
         },
         openIdConnect: {
           type: 'openIdConnect',
-          openIdConnectUrl:
-            'https://example.com/.well-known/openid-configuration',
+          openIdConnectUrl: 'https://example.com/.well-known/openid-configuration',
         },
       })
     })
@@ -155,10 +151,7 @@ describe('sanitize', () => {
         },
       })
 
-      expect(
-        result.components?.securitySchemes?.oauth2.flows.authorizationCode
-          .scopes,
-      ).toStrictEqual({
+      expect(result.components?.securitySchemes?.oauth2.flows.authorizationCode.scopes).toStrictEqual({
         'read:data': '',
         'write:data': '',
       })

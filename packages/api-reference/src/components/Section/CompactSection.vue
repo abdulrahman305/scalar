@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ScalarIcon } from '@scalar/components'
+import { scrollToId } from '@scalar/helpers/dom/scroll-to-id'
+import { ScalarIconCaretRight } from '@scalar/icons'
 import { nextTick, ref, watch } from 'vue'
 
-import { scrollToId } from '../../helpers'
-import { useNavState } from '../../hooks'
-import Anchor from '../Anchor/Anchor.vue'
-import Section from './Section.vue'
+import { Anchor } from '@/components/Anchor'
+import { Section } from '@/components/Section'
+import { useNavState } from '@/hooks/useNavState'
 
 const props = defineProps<{
   id: string
@@ -28,26 +28,28 @@ watch(
 )
 </script>
 <template>
-  <div
-    :aria-expanded="open"
-    class="collapsible-section">
-    <div
+  <div class="collapsible-section">
+    <button
       :id="id"
+      :aria-controls="id"
+      :aria-expanded="open"
       class="collapsible-section-trigger"
       :class="{ 'collapsible-section-trigger-open': open }"
+      type="button"
       @click="open = !open">
-      <ScalarIcon
-        :icon="open ? 'ChevronDown' : 'ChevronRight'"
-        size="md"
-        thickness="1.5" />
+      <ScalarIconCaretRight
+        weight="bold"
+        class="size-3 transition-transform duration-100"
+        :class="{ 'rotate-90': open }" />
       <Anchor
         :id="id"
         class="collapsible-section-header">
         <slot name="heading" />
       </Anchor>
-    </div>
+    </button>
     <Section
       v-if="open"
+      :id="id"
       class="collapsible-section-content"
       :label="label">
       <slot />
@@ -71,13 +73,6 @@ watch(
   z-index: 1;
   position: relative;
 }
-.collapsible-section .collapsible-section-trigger:after {
-  content: '';
-  height: 10px;
-  width: 100%;
-  position: absolute;
-  bottom: 0;
-}
 .collapsible-section-trigger svg {
   color: var(--scalar-color-3);
   position: absolute;
@@ -93,5 +88,8 @@ watch(
   padding: 0;
   margin: 0;
   scroll-margin-top: 140px;
+}
+.collapsible-section:not(:last-child) .collapsible-section-content {
+  margin-bottom: 10px;
 }
 </style>

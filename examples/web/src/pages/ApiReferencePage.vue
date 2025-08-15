@@ -1,73 +1,88 @@
 <script setup lang="ts">
 import {
   ApiReferenceLayout,
-  type ReferenceConfiguration,
-  useReactiveSpec,
+  type ApiReferenceConfiguration,
 } from '@scalar/api-reference'
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useColorMode } from '@scalar/use-hooks/useColorMode'
+import { createWorkspaceStore } from '@scalar/workspace-store/client'
+import { computed, reactive, ref, watch } from 'vue'
 
 import DevReferencesOptions from '../components/DevReferencesOptions.vue'
 import DevToolbar from '../components/DevToolbar.vue'
 import MonacoEditor from '../components/MonacoEditor.vue'
 import SlotPlaceholder from '../components/SlotPlaceholder.vue'
 
-const content = ref('')
+const DEFAULT_CONTENT = {
+  openapi: '3.1.0',
+  info: {
+    title: 'Hello World',
+    version: '1.0.0',
+  },
+  paths: {
+    '/': {
+      get: {
+        summary: 'Get the root path',
+        description: 'Returns a simple message',
+        responses: {
+          200: {
+            description: 'OK',
+          },
+        },
+      },
+    },
+  },
+}
 
-const configuration = reactive<ReferenceConfiguration>({
+const content = ref(JSON.stringify(DEFAULT_CONTENT, null, 2))
+
+const configuration = reactive<Partial<ApiReferenceConfiguration>>({
   theme: 'default',
   proxyUrl: import.meta.env.VITE_REQUEST_PROXY_URL,
-  isEditable: false,
+  isEditable: true,
   showSidebar: true,
   layout: 'modern',
-  spec: { content },
-  // authentication: {
-  //   // The OpenAPI file has keys for all security schemes:
-  //   // Which one should be used by default?
-  //   preferredSecurityScheme: 'my_custom_security_scheme',
-  //   // The `my_custom_security_scheme` security scheme is of type `apiKey`, so prefill the token:
-  //   apiKey: {
-  //     token: 'super-secret-token',
-  //   },
-  // },
+  content: DEFAULT_CONTENT,
 })
-
-onMounted(() => {
-  content.value = window.localStorage?.getItem('api-reference-content') ?? ''
-})
-
-watch(
-  content,
-  () => window.localStorage?.setItem('api-reference-content', content.value),
-  { deep: true },
-)
 
 const configProxy = computed({
   get: () => configuration,
   set: (v) => Object.assign(configuration, v),
 })
 
+const { toggleColorMode, isDarkMode } = useColorMode({
+  initialColorMode: configuration.darkMode ? 'dark' : undefined,
+  overrideColorMode: configuration.forceDarkModeState,
+})
+
 watch(
   () => configuration.darkMode,
   (isDark) => {
-    document.body.classList.toggle('dark-mode', isDark)
+    document.body.classList.toggle('dark-mode', Boolean(isDark))
     document.body.classList.toggle('light-mode', !isDark)
   },
 )
 
-const { parsedSpec } = useReactiveSpec({
-  proxyUrl: () => configuration.proxyUrl ?? configuration.proxy ?? '',
-  specConfig: () => ({
-    content: content.value,
-  }),
+const store = createWorkspaceStore()
+await store.addDocument({
+  name: 'default',
+  document: JSON.parse(content.value),
+})
+
+// Keep the content in sync
+// TODO: YAML support
+watch(content, (v) => {
+  configuration.content = JSON.parse(v)
+  store.replaceDocument('default', JSON.parse(v))
 })
 </script>
 <template>
   <ApiReferenceLayout
+    :store="store"
+    :isDark="isDarkMode"
+    @toggleDarkMode="() => toggleColorMode()"
     :configuration="configuration"
-    :parsedSpec="parsedSpec"
-    :rawSpec="content"
     @changeTheme="configuration.theme = $event.id"
-    @updateContent="(v) => (content = v)">
+    @updateContent="(v: string) => (content = v)">
     <template #header>
       <DevToolbar>
         <DevReferencesOptions v-model="configProxy" />

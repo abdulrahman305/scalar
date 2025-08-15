@@ -1,11 +1,15 @@
 <script lang="ts">
+import type { Collection } from '@scalar/oas-utils/entities/spec'
+
+import { importCurlCommand } from '@/libs/importers/curl'
+import { PathId } from '@/routes'
 import { useWorkspace } from '@/store'
 import { useActiveEntities } from '@/store/active-entities'
 
 import CommandPaletteCollection from './CommandPaletteCollection.vue'
 import CommandPaletteExample from './CommandPaletteExample.vue'
 import CommandPaletteImport from './CommandPaletteImport.vue'
-import CommandPaletteRequest from './CommandPaletteRequest.vue'
+import CommandPaletteImportCurl from './CommandPaletteImportCurl.vue'
 import CommandPaletteServer from './CommandPaletteServer.vue'
 import CommandPaletteTag from './CommandPaletteTag.vue'
 import CommandPaletteWorkspace from './CommandPaletteWorkspace.vue'
@@ -20,13 +24,14 @@ export default {
 }
 
 export const PaletteComponents = {
-  'Import from OpenAPI/Swagger/Postman': CommandPaletteImport,
-  'Create Request': CommandPaletteRequest,
+  'Import from OpenAPI/Swagger/Postman/cURL': CommandPaletteImport,
+  'Create Request': '',
   'Create Workspace': CommandPaletteWorkspace,
   'Add Tag': CommandPaletteTag,
   'Add Server': CommandPaletteServer,
   'Create Collection': CommandPaletteCollection,
   'Add Example': CommandPaletteExample,
+  'Import from cURL': CommandPaletteImportCurl,
 } as const
 
 /** Infer the types from the commands  */
@@ -41,13 +46,19 @@ export type CommandPaletteEvent = {
 </script>
 
 <script setup lang="ts">
-import { ScalarIcon, useModal } from '@scalar/components'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue'
+import { ScalarIcon, useModal } from '@scalar/components'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ROUTES } from '@/constants' // Import the ROUTES
 
+import { ROUTES } from '@/constants'
 import type { HotKeyEvent } from '@/libs'
+
+const modalState = useModal()
+const router = useRouter()
+const { activeWorkspace, activeWorkspaceCollections, activeCollection } =
+  useActiveEntities()
+const { events, requestMutators } = useWorkspace()
 
 /** Available Commands for the Command Palette */
 const availableCommands = [
@@ -55,20 +66,20 @@ const availableCommands = [
     label: '',
     commands: [
       {
+        name: 'Import from OpenAPI/Swagger/Postman/cURL',
+        icon: 'Import',
+      },
+      {
         name: 'Create Request',
         icon: 'ExternalLink',
       },
       {
-        name: 'Import from OpenAPI/Swagger/Postman',
-        icon: 'Import',
+        name: 'Create Collection',
+        icon: 'Collection',
       },
       {
         name: 'Add Tag',
         icon: 'Folder',
-      },
-      {
-        name: 'Create Collection',
-        icon: 'Collection',
       },
       {
         name: 'Add Example',
@@ -90,30 +101,43 @@ const availableCommands = [
       {
         name: 'Add Environment',
         icon: 'Brackets',
-        path: 'environment.default',
+        path: {
+          name: 'environment.default',
+          params: {
+            [PathId.Workspace]: activeWorkspace?.value?.uid ?? 'default',
+          },
+          query: { openEnvironmentModal: 'true' },
+        },
       },
       {
         name: 'Add Cookie',
         icon: 'Cookie',
-        path: 'cookies.default',
+        path: {
+          name: 'cookies.default',
+          params: {
+            [PathId.Workspace]: activeWorkspace?.value?.uid ?? 'default',
+          },
+          query: { openCookieModal: 'true' },
+        },
       },
     ],
   },
   {
     label: 'Pages',
     commands: ROUTES.map((route) => ({
-      name: route.prettyName,
+      name: route.displayName,
       icon: route.icon,
-      path: `${route.name}.default`,
+      path: router.resolve({
+        ...route.to,
+        params: {
+          [PathId.Workspace]: activeWorkspace?.value?.uid ?? 'default',
+        },
+      }).href,
     })),
   },
 ] as const
-type Command = (typeof availableCommands)[number]['commands'][number]
 
-const modalState = useModal()
-const { push } = useRouter()
-const { activeWorkspace } = useActiveEntities()
-const { events } = useWorkspace()
+type Command = (typeof availableCommands)[number]['commands'][number]
 
 /** Additional metadata for the command palettes */
 const metaData = ref<Record<string, any> | undefined>()
@@ -153,20 +177,40 @@ const backHandler = (event: KeyboardEvent) => {
 const executeCommand = (
   command: (typeof availableCommands)[number]['commands'][number],
 ) => {
-  // Route to the page
   if ('path' in command) {
-    push({
-      name: command.path,
-      params: {
-        workspace: activeWorkspace.value?.uid,
-      },
-    })
-
+    router.push(command.path)
     closeHandler()
-  }
+  } else if (command.name === 'Create Request') {
+    const draftsCollection = activeWorkspaceCollections.value.find(
+      (collection: Collection) => collection.info?.title === 'Drafts',
+    )
 
-  // Open respective command palette
-  else activeCommand.value = command.name
+    if (draftsCollection) {
+      const newRequest = requestMutators.add({}, draftsCollection.uid)
+
+      if (newRequest) {
+        router.push({
+          name: 'request',
+          params: {
+            workspace: activeWorkspace.value?.uid,
+            request: newRequest.uid,
+          },
+        })
+
+        closeHandler()
+
+        nextTick(() => {
+          events.hotKeys.emit({
+            focusAddressBar: new KeyboardEvent('keydown', { key: 'l' }),
+          })
+        })
+      }
+    } else {
+      closeHandler()
+    }
+  } else {
+    activeCommand.value = command.name
+  }
 }
 
 const commandInputRef = ref<HTMLInputElement | null>()
@@ -203,9 +247,41 @@ const handleArrowKey = (direction: 'up' | 'down', ev: KeyboardEvent) => {
   selectedSearchResult.value =
     (selectedSearchResult.value + offset + length) % length
 
-  commandRefs.value[selectedSearchResult.value]?.scrollIntoView({
-    behavior: 'smooth',
-    block: 'nearest',
+  nextTick(() => {
+    const container = commandInputRef.value?.closest('.custom-scroll')
+    if (!container) return
+
+    // Scroll to the top if the first command is selected
+    if (selectedSearchResult.value === 0) {
+      container.scrollTop = 0
+      return
+    }
+
+    // Scroll to the selected command
+    const commandElement = commandRefs.value[selectedSearchResult.value]
+    if (!commandElement) return
+
+    // Set the height of the sticky header and the bottom margin
+    const stickyHeaderHeight =
+      (container.querySelector('.sticky')?.clientHeight || 0) + 16
+    const bottomMargin = 6
+
+    // Get the top and bottom of the command element
+    const elementTop = commandElement.offsetTop
+    const elementBottom = elementTop + commandElement.clientHeight
+
+    // Get the top and bottom of the viewport
+    const viewportTop = container.scrollTop + stickyHeaderHeight
+    const viewportBottom =
+      container.scrollTop + container.clientHeight - bottomMargin
+
+    // Scroll to the command if it's not in the viewport
+    if (elementTop < viewportTop) {
+      container.scrollTop = elementTop - stickyHeaderHeight
+    } else if (elementBottom > viewportBottom) {
+      container.scrollTop =
+        elementBottom - container.clientHeight + bottomMargin
+    }
   })
 }
 
@@ -228,6 +304,20 @@ const handleHotKey = (event?: HotKeyEvent) => {
   if (event?.closeModal) closeHandler()
 }
 
+const handleInput = (value: string) => {
+  if (value.trim().toLowerCase().startsWith('curl')) {
+    events.commandPalette.emit({
+      commandName: 'Import from cURL',
+      metaData: {
+        parsedCurl: importCurlCommand(value),
+        collectionUid: activeCollection.value?.uid,
+      },
+    })
+    return
+  }
+  commandQuery.value = value
+}
+
 onMounted(() => {
   events.commandPalette.on(openCommandPalette)
   events.hotKeys.on(handleHotKey)
@@ -247,9 +337,9 @@ onBeforeUnmount(() => {
       <!-- Default palette (command list) -->
       <div
         v-if="!activeCommand"
-        class="flex-1 min-h-0 max-h-[50dvh] p-1.5 custom-scroll rounded-lg">
+        class="custom-scroll max-h-[50dvh] min-h-0 flex-1 rounded-lg p-1.5">
         <div
-          class="bg-b-2 border border-transparent flex items-center rounded-md sticky top-0 pl-2 shadow-[0_-8px_0_8px_var(--scalar-background-1),0_0_8px_8px_var(--scalar-background-1)] focus-within:bg-b-1 focus-within:border-b-3">
+          class="bg-b-2 focus-within:bg-b-1 sticky top-0 flex items-center rounded-md border border-transparent pl-2 shadow-[0_-8px_0_8px_var(--scalar-background-1),0_0_8px_8px_var(--scalar-background-1)] focus-within:border-(--scalar-background-3)">
           <label for="commandmenu">
             <ScalarIcon
               class="text-c-2 mr-2.5"
@@ -260,12 +350,13 @@ onBeforeUnmount(() => {
           <input
             id="commandmenu"
             ref="commandInputRef"
-            v-model="commandQuery"
             autocomplete="off"
             autofocus
-            class="w-full rounded bg-none border-none py-1.5 text-sm focus:outline-none"
+            class="w-full rounded border-none bg-none py-1.5 text-sm focus:outline-none"
             placeholder="Search commands..."
             type="text"
+            :value="commandQuery"
+            @input="handleInput(($event.target as HTMLInputElement).value)"
             @keydown.down.stop="handleArrowKey('down', $event)"
             @keydown.enter.stop="handleSelect"
             @keydown.up.stop="handleArrowKey('up', $event)" />
@@ -279,20 +370,25 @@ onBeforeUnmount(() => {
                 command.name.toLowerCase().includes(commandQuery.toLowerCase()),
               ).length > 0
             "
-            class="text-c-3 font-medium text-xs px-2 mb-1 mt-2">
+            class="text-c-3 mt-2 mb-1 px-2 text-xs font-medium">
             {{ group.label }}
           </div>
           <div
-            v-for="(command, index) in group.commands.filter((command) =>
+            v-for="command in group.commands.filter((command) =>
               command.name.toLowerCase().includes(commandQuery.toLowerCase()),
             )"
             :key="command.name"
             :ref="
               (el) => {
-                if (el) commandRefs[index] = el as HTMLElement
+                if (el) {
+                  const index = searchResultsWithPlaceholderResults.findIndex(
+                    (c) => c.name === command.name,
+                  )
+                  if (index !== -1) commandRefs[index] = el as HTMLElement
+                }
               }
             "
-            class="commandmenu-item text-sm flex items-center py-1.5 px-2 rounded hover:bg-b-2 cursor-pointer"
+            class="commandmenu-item hover:bg-b-2 flex cursor-pointer items-center rounded px-2 py-1.5 text-sm"
             :class="{
               'bg-b-2': command.name === selectedCommand?.name,
             }"
@@ -307,7 +403,7 @@ onBeforeUnmount(() => {
         </template>
         <div
           v-if="!searchResultsWithPlaceholderResults.length"
-          class="text-c-3 text-center text-sm p-2 pt-3">
+          class="text-c-3 p-2 pt-3 text-center text-sm">
           No commands found
         </div>
       </div>
@@ -316,7 +412,7 @@ onBeforeUnmount(() => {
         v-else
         class="flex-1 p-1.5">
         <button
-          class="absolute p-0.75 hover:bg-b-3 rounded text-c-3 active:text-c-1 mr-1.5 my-1.25 z-1"
+          class="hover:bg-b-3 text-c-3 active:text-c-1 absolute z-1 mt-[0.5px] rounded p-1.5"
           type="button"
           @click="activeCommand = null">
           <ScalarIcon

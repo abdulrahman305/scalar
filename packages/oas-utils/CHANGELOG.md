@@ -1,5 +1,640 @@
 # @scalar/oas-utils
 
+## 0.4.19
+
+### Patch Changes
+
+- 3de82ac: fix: uses document url even if it's relative
+- Updated dependencies [0d502cb]
+- Updated dependencies [0afc40c]
+- Updated dependencies [128af48]
+  - @scalar/workspace-store@0.13.0
+  - @scalar/helpers@0.0.7
+  - @scalar/object-utils@1.2.3
+  - @scalar/openapi-types@0.3.7
+  - @scalar/themes@0.13.12
+  - @scalar/types@0.2.11
+
+## 0.4.18
+
+### Patch Changes
+
+- 46bfd2f: fix: show path parameter values in request examples
+
+## 0.4.17
+
+### Patch Changes
+
+- 46ebe6e: fix: use schema to example generator for request example request body
+- Updated dependencies [952bde2]
+- Updated dependencies [5301a80]
+- Updated dependencies [ae8d1b9]
+- Updated dependencies [8199955]
+- Updated dependencies [2888e18]
+  - @scalar/workspace-store@0.12.0
+
+## 0.4.16
+
+### Patch Changes
+
+- 94d6d0c: fix: remove old ssr state and update nuxt for workspace store
+- b957a2c: feat: do not use first item of oneOf if it is `type: null`
+- Updated dependencies [ccf875a]
+- Updated dependencies [9924c47]
+- Updated dependencies [94d6d0c]
+- Updated dependencies [952f471]
+- Updated dependencies [a0c92d9]
+- Updated dependencies [c0d6793]
+- Updated dependencies [3c1e3e3]
+- Updated dependencies [f3d0216]
+- Updated dependencies [a5534e6]
+- Updated dependencies [6b6c72c]
+  - @scalar/openapi-types@0.3.7
+  - @scalar/types@0.2.11
+  - @scalar/workspace-store@0.11.0
+  - @scalar/themes@0.13.12
+  - @scalar/helpers@0.0.7
+  - @scalar/object-utils@1.2.3
+
+## 0.4.15
+
+### Patch Changes
+
+- Updated dependencies [fb62e1b]
+- Updated dependencies [fb62e1b]
+  - @scalar/types@0.2.10
+  - @scalar/themes@0.13.11
+  - @scalar/workspace-store@0.10.2
+
+## 0.4.14
+
+### Patch Changes
+
+- Updated dependencies [591562f]
+- Updated dependencies [3f2ea8a]
+- Updated dependencies [828c894]
+- Updated dependencies [b5bcce7]
+- Updated dependencies [8a67f4f]
+  - @scalar/openapi-types@0.3.6
+  - @scalar/types@0.2.9
+  - @scalar/workspace-store@0.10.1
+  - @scalar/themes@0.13.10
+
+## 0.4.13
+
+### Patch Changes
+
+- 71958fd: fix: include port in server URL
+- Updated dependencies [a85480e]
+- Updated dependencies [8b9c48e]
+  - @scalar/workspace-store@0.10.0
+
+## 0.4.12
+
+### Patch Changes
+
+- c826b3e: fix: uses relative document URL as server URL
+- 80acf84: feat: add code sample block wrapper with global state
+- Updated dependencies [a0cadac]
+- Updated dependencies [c10e191]
+- Updated dependencies [661c7e9]
+- Updated dependencies [80acf84]
+  - @scalar/workspace-store@0.9.0
+  - @scalar/types@0.2.8
+  - @scalar/themes@0.13.9
+
+## 0.4.11
+
+### Patch Changes
+
+- 58287f8: refactor: create request examples without transformed operation
+- 74fdc0e: feat: use documentUrl as fallback server
+- Updated dependencies [d56f354]
+- Updated dependencies [b6ac5b9]
+- Updated dependencies [dbc09b9]
+- Updated dependencies [ad2e3e6]
+- Updated dependencies [20939a8]
+- Updated dependencies [909cf33]
+- Updated dependencies [3fdc2f2]
+- Updated dependencies [f8ef4ab]
+  - @scalar/workspace-store@0.8.0
+  - @scalar/types@0.2.7
+  - @scalar/themes@0.13.8
+
+## 0.4.10
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+- Updated dependencies [2d7f995]
+  - @scalar/openapi-types@0.3.5
+  - @scalar/object-utils@1.2.2
+  - @scalar/helpers@0.0.6
+  - @scalar/themes@0.13.7
+  - @scalar/types@0.2.6
+  - @scalar/workspace-store@0.7.1
+
+## 0.4.9
+
+### Patch Changes
+
+- 23b150b: fix: operation to har helper with real world usecases
+- Updated dependencies [533469b]
+- Updated dependencies [a05d638]
+- Updated dependencies [8d8e427]
+- Updated dependencies [23b150b]
+- Updated dependencies [dbbdd70]
+- Updated dependencies [23b150b]
+  - @scalar/openapi-types@0.3.4
+  - @scalar/workspace-store@0.7.0
+  - @scalar/helpers@0.0.5
+  - @scalar/types@0.2.5
+  - @scalar/themes@0.13.6
+
+## 0.4.8
+
+### Patch Changes
+
+- Updated dependencies [4bbbb32]
+- Updated dependencies [1468280]
+  - @scalar/themes@0.13.5
+  - @scalar/types@0.2.4
+
+## 0.4.7
+
+### Patch Changes
+
+- Updated dependencies [ca18c0b]
+  - @scalar/themes@0.13.4
+
+## 0.4.6
+
+### Patch Changes
+
+- 979139e: fix: doesn’t create example data for schemas where items in an array don’t have a type
+- aaf90bf: fix: complex auth at the operation level
+
+## 0.4.5
+
+### Patch Changes
+
+- 2974dd6: feat: add new helper to convert openapi operations to HAR requests
+- 221e35f: feat: added webhooks
+- Updated dependencies [221e35f]
+  - @scalar/openapi-types@0.3.3
+  - @scalar/helpers@0.0.4
+  - @scalar/types@0.2.3
+  - @scalar/themes@0.13.3
+  - @scalar/object-utils@1.2.1
+
+## 0.4.4
+
+### Patch Changes
+
+- Updated dependencies [8bc9f20]
+  - @scalar/helpers@0.0.3
+
+## 0.4.3
+
+### Patch Changes
+
+- 8165b3b: feat(helpers): added new helpers package
+- Updated dependencies [ba84a3c]
+- Updated dependencies [8165b3b]
+- Updated dependencies [358eb63]
+- Updated dependencies [05c22c7]
+  - @scalar/themes@0.13.2
+  - @scalar/helpers@0.0.2
+  - @scalar/openapi-types@0.3.2
+  - @scalar/object-utils@1.2.1
+  - @scalar/types@0.2.2
+
+## 0.4.2
+
+### Patch Changes
+
+- 7ca47ab: fix: add ssr safe alias for local storage
+
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [85877aa]
+  - @scalar/themes@0.13.1
+
+## 0.4.0
+
+### Minor Changes
+
+- 1e87feb: refactor!: use dereferenced documents as a content source
+
+### Patch Changes
+
+- cad6277: feat(themes)!: migrate to tailwind v4
+- Updated dependencies [cad6277]
+  - @scalar/themes@0.13.0
+  - @scalar/object-utils@1.2.1
+  - @scalar/openapi-types@0.3.1
+  - @scalar/types@0.2.1
+
+## 0.3.2
+
+### Patch Changes
+
+- 151ef09: fix(oas-utils): do not add content-type for multipart requests
+- 442c0a3: feat: added support for callbacks
+
+## 0.3.1
+
+### Patch Changes
+
+- 4440949: chore: bumping packages
+- Updated dependencies [4440949]
+  - @scalar/object-utils@1.2.1
+  - @scalar/openapi-types@0.3.1
+  - @scalar/types@0.2.1
+  - @scalar/themes@0.12.1
+
+## 0.3.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- 30bab1d: support unexploded serialization of array query params
+- Updated dependencies [5613e40]
+- Updated dependencies [483ca93]
+  - @scalar/themes@0.12.0
+  - @scalar/openapi-types@0.3.0
+  - @scalar/object-utils@1.2.0
+  - @scalar/types@0.2.0
+
+## 0.2.144
+
+### Patch Changes
+
+- Updated dependencies [be8a6ec]
+  - @scalar/types@0.1.16
+  - @scalar/themes@0.11.3
+
+## 0.2.143
+
+### Patch Changes
+
+- 67aa0f4: fix: render correct queries with form data
+- Updated dependencies [f711ab5]
+- Updated dependencies [90b773e]
+- Updated dependencies [0222ad4]
+- Updated dependencies [cb9428c]
+- Updated dependencies [67aa0f4]
+  - @scalar/types@0.1.15
+  - @scalar/themes@0.11.2
+  - @scalar/openapi-types@0.2.3
+
+## 0.2.142
+
+### Patch Changes
+
+- cd6cf24: chore: export getServersFromOpenapi function
+
+## 0.2.141
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+- Updated dependencies [8c7bad8]
+- Updated dependencies [2157fb4]
+  - @scalar/openapi-types@0.2.2
+  - @scalar/object-utils@1.1.14
+  - @scalar/themes@0.11.1
+  - @scalar/types@0.1.14
+
+## 0.2.140
+
+### Patch Changes
+
+- e8457cb: Unify themes across scalar. Cleanup interface and remove CJS build.
+- Updated dependencies [e8457cb]
+  - @scalar/themes@0.11.0
+  - @scalar/types@0.1.13
+
+## 0.2.139
+
+### Patch Changes
+
+- d2f27f4: feat: improves request examples entity example defaulting
+
+## 0.2.138
+
+### Patch Changes
+
+- 5d24800: feat: add a few security scheme helpers
+
+## 0.2.137
+
+### Patch Changes
+
+- Updated dependencies [62c4ce3]
+  - @scalar/types@0.1.12
+  - @scalar/themes@0.10.4
+  - @scalar/object-utils@1.1.13
+  - @scalar/openapi-types@0.2.1
+
+## 0.2.136
+
+### Patch Changes
+
+- eb4854d: fix: falsy values in auth config reactivity
+- Updated dependencies [eb4854d]
+  - @scalar/types@0.1.11
+  - @scalar/themes@0.10.3
+
+## 0.2.135
+
+### Patch Changes
+
+- fa8ed84: feat: custom OpenAPI extension to add SDK setup instructions
+- fa8ed84: fix: omitUndefinedValues transforms arrays to objects
+- 8d54857: feat: omit deprecated fields from examples
+- Updated dependencies [fa8ed84]
+  - @scalar/openapi-types@0.2.1
+  - @scalar/types@0.1.10
+  - @scalar/themes@0.10.2
+
+## 0.2.134
+
+### Patch Changes
+
+- Updated dependencies [17e7d02]
+  - @scalar/types@0.1.9
+  - @scalar/themes@0.10.1
+
+## 0.2.133
+
+### Patch Changes
+
+- e489824: feat: added support for streaming text response
+
+## 0.2.132
+
+### Patch Changes
+
+- c5047ee: fix: hotfix to revert the external reference commit
+
+## 0.2.131
+
+### Patch Changes
+
+- 4abe4f8: feat: external $ref’s (absolute and relative URLs)
+- Updated dependencies [feaa314]
+- Updated dependencies [feaa314]
+  - @scalar/themes@0.10.0
+  - @scalar/types@0.1.8
+
+## 0.2.130
+
+### Patch Changes
+
+- Updated dependencies [9def02e]
+- Updated dependencies [3745d77]
+  - @scalar/types@0.1.7
+  - @scalar/themes@0.9.86
+
+## 0.2.129
+
+### Patch Changes
+
+- Updated dependencies [8720ae7]
+  - @scalar/themes@0.9.85
+
+## 0.2.128
+
+### Patch Changes
+
+- 18b1be9: fix: omitUndefinedValues (Zod helper) doesn’t handle Arrays
+
+## 0.2.127
+
+### Patch Changes
+
+- bf961b1: feat: show custom code examples in the API client
+- a176b7e: feat: distinguishes collection and operation servers in import spec
+
+## 0.2.126
+
+### Patch Changes
+
+- a571d36: refactor: use central helper fetchDocument to fetch OpenAPI documents
+- Updated dependencies [3783345]
+  - @scalar/types@0.1.6
+  - @scalar/themes@0.9.84
+
+## 0.2.125
+
+### Patch Changes
+
+- e62e677: feat: make zod remove undefined values recursively
+- 04e27a1: feat: support x-default-scopes
+- 846d015: fix: add cap on horizontal expententially expanding bodys
+- Updated dependencies [e62e677]
+- Updated dependencies [e09dab3]
+- Updated dependencies [82f16a5]
+- Updated dependencies [04e27a1]
+  - @scalar/openapi-types@0.2.0
+  - @scalar/types@0.1.5
+  - @scalar/themes@0.9.83
+
+## 0.2.124
+
+### Patch Changes
+
+- 0de80ae: feat: added auth to collection page
+
+## 0.2.123
+
+### Patch Changes
+
+- 52f6f4c: chore: updated oas-utils to use stricter node tsconfig
+- Updated dependencies [8efedf3]
+- Updated dependencies [82a4ba8]
+- Updated dependencies [57feba6]
+  - @scalar/types@0.1.4
+  - @scalar/themes@0.9.82
+
+## 0.2.122
+
+### Patch Changes
+
+- Updated dependencies [543a16c]
+- Updated dependencies [57e96a0]
+  - @scalar/types@0.1.3
+  - @scalar/themes@0.9.81
+
+## 0.2.121
+
+### Patch Changes
+
+- 0f13162: chore: enable more Biome flags, apply linter fixes
+- 0212daa: fix(api-client): client not being set without scope
+- Updated dependencies [7a8965c]
+- Updated dependencies [49dffff]
+  - @scalar/types@0.1.2
+  - @scalar/themes@0.9.80
+
+## 0.2.120
+
+### Patch Changes
+
+- cd75eeb: fix: update collection in multi doc
+- Updated dependencies [39c0f47]
+  - @scalar/types@0.1.1
+  - @scalar/themes@0.9.79
+
+## 0.2.119
+
+### Patch Changes
+
+- Updated dependencies [1437882]
+- Updated dependencies [e00fa7e]
+- Updated dependencies [632978d]
+  - @scalar/themes@0.9.78
+
+## 0.2.118
+
+### Patch Changes
+
+- Updated dependencies [5f9a8a2]
+  - @scalar/types@0.1.0
+  - @scalar/themes@0.9.77
+
+## 0.2.117
+
+### Patch Changes
+
+- Updated dependencies [fc6a45e]
+  - @scalar/types@0.0.41
+  - @scalar/themes@0.9.76
+
+## 0.2.116
+
+### Patch Changes
+
+- ab98841: fix: allow null as a security scheme scope
+- db9ebbc: fix: change order of turbo cache
+
+## 0.2.115
+
+### Patch Changes
+
+- Updated dependencies [4d03e0f]
+  - @scalar/types@0.0.40
+  - @scalar/themes@0.9.75
+
+## 0.2.114
+
+### Patch Changes
+
+- fb22645: fix: auth selected security scheme undefined
+
+## 0.2.113
+
+### Patch Changes
+
+- a31973c: feat: add ScalarStabilitySchema
+- Updated dependencies [bab7990]
+- Updated dependencies [2c621d4]
+  - @scalar/types@0.0.39
+  - @scalar/themes@0.9.74
+
+## 0.2.112
+
+### Patch Changes
+
+- Updated dependencies [7f1a40e]
+  - @scalar/types@0.0.38
+  - @scalar/themes@0.9.73
+
+## 0.2.111
+
+### Patch Changes
+
+- 89d8b75: feat: new ApiReferenceConfiguration type
+- 8a04b8d: fix: mime type transformation issue
+- 1459ce7: fix: adds parameter examples array support
+- 8a04b8d: fix: adds vendor specific mime type support
+- Updated dependencies [89d8b75]
+- Updated dependencies [8a04b8d]
+  - @scalar/themes@0.9.72
+  - @scalar/types@0.0.37
+  - @scalar/object-utils@1.1.13
+  - @scalar/openapi-types@0.1.9
+
+## 0.2.110
+
+### Patch Changes
+
+- Updated dependencies [0d4520f]
+  - @scalar/themes@0.9.71
+
+## 0.2.109
+
+### Patch Changes
+
+- 4db5161: feat: allow multiple tokens for bearer auth
+- Updated dependencies [4db5161]
+  - @scalar/types@0.0.36
+  - @scalar/themes@0.9.70
+
+## 0.2.108
+
+### Patch Changes
+
+- 9fc97da: feat: better deal with incomplete info objects
+- 12088f1: feat: Set example request body if Content-Type header exists
+- Updated dependencies [c9a8fd8]
+- Updated dependencies [946a5df]
+- Updated dependencies [c10bbf5]
+- Updated dependencies [cf14cbb]
+- Updated dependencies [9251b22]
+- Updated dependencies [8d9a2c0]
+  - @scalar/themes@0.9.69
+  - @scalar/types@0.0.35
+  - @scalar/openapi-types@0.1.9
+  - @scalar/object-utils@1.1.13
+
+## 0.2.107
+
+### Patch Changes
+
+- e350f23: chore: code style
+- 738d21c: chore: add brand to uids
+- Updated dependencies [e350f23]
+- Updated dependencies [e47a698]
+  - @scalar/openapi-types@0.1.8
+  - @scalar/themes@0.9.68
+  - @scalar/object-utils@1.1.13
+  - @scalar/types@0.0.34
+
+## 0.2.106
+
+### Patch Changes
+
+- ed92564: feat: allow preferredSecurityScheme to pre-select a scheme not in the requirements
+
+## 0.2.105
+
+### Patch Changes
+
+- 54fdfcb: chore: remove spec wording
+- Updated dependencies [54fdfcb]
+- Updated dependencies [fa6afe8]
+  - @scalar/types@0.0.33
+  - @scalar/object-utils@1.1.13
+  - @scalar/themes@0.9.67
+  - @scalar/openapi-types@0.1.7
+
 ## 0.2.104
 
 ### Patch Changes

@@ -1,6 +1,5 @@
-import { requests } from '@/httpsnippet-lite/esm/targets/python/requests/client'
-import type { Plugin } from '@/types'
-import { convertWithHttpSnippetLite } from '@/utils/convertWithHttpSnippetLite'
+import type { Plugin } from '@scalar/types/snippetz'
+import { requestsLikeGenerate } from '@/plugins/python/requestsLike'
 
 /**
  * python/requests
@@ -9,8 +8,7 @@ export const pythonRequests: Plugin = {
   target: 'python',
   client: 'requests',
   title: 'Requests',
-  generate(request) {
-    // TODO: Write an own converter
-    return convertWithHttpSnippetLite(requests, request)
+  generate(request, configuration) {
+    return requestsLikeGenerate('requests', request, configuration)
   },
 }

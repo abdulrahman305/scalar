@@ -1,26 +1,19 @@
-import {
-  nanoidSchema,
-  selectedSecuritySchemeUidSchema,
-} from '@/entities/shared/utility'
-import type { OpenAPIV3_1 } from '@scalar/openapi-types'
+import { selectedSecuritySchemeUidSchema } from '@/entities/shared/utility'
+import { type ENTITY_BRANDS, nanoidSchema } from '@scalar/types/utils'
 import { type ZodSchema, z } from 'zod'
 
+import {
+  type PostResponseSchema,
+  XCodeSamplesSchema,
+  XPostResponseSchema,
+} from '@scalar/openapi-types/schemas/extensions'
+import { XScalarStability } from '@scalar/types'
+import { oasSecurityRequirementSchema } from '@scalar/types/entities'
 import { oasParameterSchema } from './parameters'
 import { type RequestExample, xScalarExampleSchema } from './request-examples'
-import { oasSecurityRequirementSchema } from './security'
 import { oasExternalDocumentationSchema } from './spec-objects'
 
-export const requestMethods = [
-  'connect',
-  'delete',
-  'get',
-  'head',
-  'options',
-  'patch',
-  'post',
-  'put',
-  'trace',
-] as const
+export const requestMethods = ['connect', 'delete', 'get', 'head', 'options', 'patch', 'post', 'put', 'trace'] as const
 
 export type RequestMethod = (typeof requestMethods)[number]
 
@@ -32,17 +25,26 @@ export type ResponseInstance = Omit<Response, 'headers'> & {
   cookieHeaderKeys: string[]
   /** Time in ms the request took */
   duration: number
-  /** The response data */
-  data: string | Blob
-  /** The response size in bytes */
-  size: number
   /** The response status */
   status: number
+  /** The response status text */
+  statusText: string
   /** The response method */
   method: RequestMethod
   /** The request path */
   path: string
-}
+} & (
+    | {
+        /** The response data */
+        data: string | Blob
+        /** The response size in bytes */
+        size: number
+      }
+    | {
+        /** A stream reader for a streamable response body */
+        reader: ReadableStreamDefaultReader<Uint8Array>
+      }
+  )
 
 /** A single request/response set to save to the history stack */
 export type RequestEvent = {
@@ -100,12 +102,30 @@ export const oasRequestSchema = z.object({
   'deprecated': z.boolean().optional(),
   /** Response formats */
   'responses': z.record(z.string(), z.any()).optional(),
+  /** Callbacks */
+  'callbacks': z.record(z.string(), z.record(z.string(), z.record(z.string(), z.any()))).optional(),
   /** xScalar examples */
   'x-scalar-examples': z.record(z.string(), xScalarExampleSchema).optional(),
   /** Hide operations */
   'x-internal': z.boolean().optional(),
+  /** Ignore operations */
   'x-scalar-ignore': z.boolean().optional(),
-}) satisfies ZodSchema<OpenAPIV3_1.OperationObject>
+})
+
+/**
+ * An OpenAPI extension to indicate the stability of the operation
+ *
+ * @example
+ * ```yaml
+ * x-scalar-stability: deprecated
+ * ```
+ */
+const ScalarStabilitySchema = z.object({
+  'x-scalar-stability': z
+    .enum([XScalarStability.Deprecated, XScalarStability.Experimental, XScalarStability.Stable])
+    .optional()
+    .catch(undefined),
+})
 
 /**
  * Extended properties added to the spec definition for client usage
@@ -116,25 +136,31 @@ export const oasRequestSchema = z.object({
  */
 const extendedRequestSchema = z.object({
   type: z.literal('request').optional().default('request'),
-  uid: nanoidSchema,
+  uid: nanoidSchema.brand<ENTITY_BRANDS['OPERATION']>(),
   /** Path Key */
   path: z.string().optional().default(''),
   /** Request Method */
   method: z.enum(requestMethods).default('get'),
   /** List of server UIDs specific to the request */
-  servers: nanoidSchema.array().default([]),
+  servers: z.string().brand<ENTITY_BRANDS['SERVER']>().array().default([]),
   /** The currently selected server */
-  selectedServerUid: z.string().default(''),
+  selectedServerUid: z.string().brand<ENTITY_BRANDS['SERVER']>().optional().nullable().default(null),
   /** List of example UIDs associated with the request */
-  examples: nanoidSchema.array().default([]),
+  examples: z.string().brand<ENTITY_BRANDS['EXAMPLE']>().array().default([]),
   /** List of security scheme UIDs associated with the request */
   selectedSecuritySchemeUids: selectedSecuritySchemeUidSchema,
 })
 
+export type PostResponseScript = z.infer<typeof PostResponseSchema>
+export type PostResponseScripts = z.infer<typeof XPostResponseSchema>['x-post-response']
+
 /** Unified request schema for client usage */
 export const requestSchema = oasRequestSchema
   .omit({ 'x-scalar-examples': true })
+  .merge(XCodeSamplesSchema)
+  .merge(ScalarStabilitySchema)
   .merge(extendedRequestSchema)
+  .merge(XPostResponseSchema)
 
 export type Request = z.infer<typeof requestSchema>
 export type RequestPayload = z.input<typeof requestSchema>

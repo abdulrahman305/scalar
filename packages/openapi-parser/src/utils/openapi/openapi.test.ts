@@ -2,8 +2,8 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { stringify } from 'yaml'
 
-import { readFiles } from '../../plugins/read-files/readFiles.ts'
-import { openapi } from './openapi.ts'
+import { readFiles } from '@/plugins/read-files/read-files'
+import { openapi } from './openapi'
 
 const example = {
   openapi: '3.1.0',
@@ -14,10 +14,7 @@ const example = {
   paths: {},
 }
 
-const EXAMPLE_FILE = join(
-  new URL(import.meta.url).pathname,
-  '../../examples/openapi.yaml',
-)
+const EXAMPLE_FILE = join(new URL(import.meta.url).pathname, '../../examples/openapi.yaml')
 
 describe('pipeline', () => {
   it('load object', async () => {
@@ -27,9 +24,7 @@ describe('pipeline', () => {
   })
 
   it('load string', async () => {
-    const { specification } = await openapi()
-      .load(JSON.stringify(example))
-      .get()
+    const { specification } = await openapi().load(JSON.stringify(example)).get()
 
     expect(specification.openapi).toBe('3.1.0')
   })
@@ -289,9 +284,7 @@ describe('pipeline', () => {
         })
         .dereference()
         .get()
-    }).rejects.toThrowError(
-      'Can’t resolve reference: #/components/requestBodies/DoesNotExist',
-    )
+    }).rejects.toThrowError("Can't resolve reference: #/components/requestBodies/DoesNotExist")
   })
 
   it('throws an error when dereference fails (only dereference)', async () => {
@@ -314,9 +307,7 @@ describe('pipeline', () => {
           throwOnError: true,
         })
         .get()
-    }).rejects.toThrowError(
-      'Can’t resolve reference: #/components/requestBodies/DoesNotExist',
-    )
+    }).rejects.toThrowError("Can't resolve reference: #/components/requestBodies/DoesNotExist")
   })
 
   it('throws an error when validate fails (global)', async () => {
@@ -341,9 +332,7 @@ describe('pipeline', () => {
         })
         .validate()
         .get()
-    }).rejects.toThrowError(
-      'Can’t resolve reference: #/components/requestBodies/DoesNotExist',
-    )
+    }).rejects.toThrowError("Can't resolve reference: #/components/requestBodies/DoesNotExist")
   })
 
   it('throws an error when validate fails (only validate)', async () => {
@@ -368,9 +357,7 @@ describe('pipeline', () => {
           throwOnError: true,
         })
         .get()
-    }).rejects.toThrowError(
-      'Can’t resolve reference: #/components/requestBodies/DoesNotExist',
-    )
+    }).rejects.toThrowError("Can't resolve reference: #/components/requestBodies/DoesNotExist")
   })
 
   it('works with then & catch', async () => {
@@ -399,9 +386,7 @@ describe('pipeline', () => {
           reject()
         })
         .catch((error) => {
-          expect(error.message).toBe(
-            'Can’t resolve reference: #/components/requestBodies/DoesNotExist',
-          )
+          expect(error.message).toBe("Can't resolve reference: #/components/requestBodies/DoesNotExist")
 
           resolve(null)
         })

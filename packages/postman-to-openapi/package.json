@@ -19,13 +19,13 @@
     "export",
     "scalar"
   ],
-  "version": "0.1.27",
+  "version": "0.3.22",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
-    "build": "scalar-build-rollup",
-    "format": "scalar-format-js",
+    "build": "scalar-build-esbuild",
+    "format": "scalar-format",
     "lint:check": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest",
@@ -48,11 +48,11 @@
   ],
   "module": "dist/index.js",
   "dependencies": {
+    "@scalar/helpers": "workspace:*",
     "@scalar/oas-utils": "workspace:*",
     "@scalar/openapi-types": "workspace:*"
   },
   "devDependencies": {
-    "@scalar/build-tooling": "workspace:*",
-    "vite": "^5.4.10"
+    "@scalar/build-tooling": "workspace:*"
   }
 }

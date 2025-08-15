@@ -1,18 +1,37 @@
 <script lang="ts" setup>
-import type { OpenAPIV2, OpenAPIV3, OpenAPIV3_1 } from '@scalar/openapi-types'
+import type { OpenAPIV3_1 } from '@scalar/openapi-types'
+import { computed } from 'vue'
 
-defineProps<{
+const { value } = defineProps<{
   value:
-    | OpenAPIV2.DefinitionsObject
-    | OpenAPIV3.SchemaObject
-    | OpenAPIV3.ArraySchemaObject
-    | OpenAPIV3.NonArraySchemaObject
     | OpenAPIV3_1.SchemaObject
     | OpenAPIV3_1.ArraySchemaObject
     | OpenAPIV3_1.NonArraySchemaObject
   name?: string
 }>()
+
+/** Generate a failsafe type from the properties when we don't have one */
+const failsafeType = computed(() => {
+  if (value.type) {
+    return value.type
+  }
+
+  if (value.enum) {
+    return 'enum'
+  }
+
+  if ('items' in value && value.items === 'object') {
+    return 'array'
+  }
+
+  if (value.properties || value.additionalProperties) {
+    return 'object'
+  }
+
+  return 'unknown'
+})
 </script>
+
 <template>
   <span
     v-if="typeof value === 'object'"
@@ -30,14 +49,11 @@ defineProps<{
       <template v-if="value.type === 'array'"> [] </template>
       <template v-if="value.enum"> enum </template>
     </span>
-    <template v-if="value?.xml?.name && value?.xml?.name !== '##default'">
-      &lt;{{ value?.xml?.name }} /&gt;
-    </template>
-    <template v-else-if="name">
+    <template v-if="name">
       {{ name }}
     </template>
     <template v-else>
-      {{ value.type }}
+      {{ failsafeType }}
     </template>
   </span>
 </template>

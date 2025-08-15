@@ -1,4 +1,4 @@
-import { openapi } from '@scalar/openapi-parser'
+import { normalize, toYaml } from '@scalar/openapi-parser'
 import type { Context } from 'hono'
 
 /**
@@ -14,26 +14,26 @@ export async function respondWithOpenApiDocument(
   }
 
   try {
-    const { specification } = await openapi().load(input).get()
+    const document = normalize(input)
 
     // JSON
     if (format === 'json') {
-      return c.json(specification)
+      return c.json(document)
     }
 
     // YAML
     try {
-      const yamlSpecification = await openapi().load(input).toYaml()
+      const yamlDocument = toYaml(normalize(document))
+
       c.header('Content-Type', 'text/yaml')
-      return c.text(yamlSpecification, 200, {
+      return c.text(yamlDocument, 200, {
         'Content-Type': 'application/yaml; charset=UTF-8',
       })
     } catch (error) {
       return c.json(
         {
-          error: 'Failed to convert specification to YAML',
-          message:
-            error instanceof Error ? error.message : 'Unknown error occurred',
+          error: 'Failed to convert document to YAML',
+          message: error instanceof Error ? error.message : 'Unknown error occurred',
         },
         500,
       )
@@ -41,9 +41,8 @@ export async function respondWithOpenApiDocument(
   } catch (error) {
     return c.json(
       {
-        error: 'Failed to parse OpenAPI specification',
-        message:
-          error instanceof Error ? error.message : 'Unknown error occurred',
+        error: 'Failed to parse OpenAPI document',
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
       },
       400,
     )

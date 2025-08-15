@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { parseEnvVariables } from '@/libs'
-import { type EnvVariables, getEnvColor } from '@/libs/env-helpers'
-import { ScalarButton, ScalarIcon, ScalarTeleport } from '@scalar/components'
+import { ScalarButton, ScalarTeleport } from '@scalar/components'
+import { ScalarIconGlobe, ScalarIconPlus } from '@scalar/icons'
 import type { Environment } from '@scalar/oas-utils/entities/environment'
 import { onClickOutside } from '@vueuse/core'
 import Fuse from 'fuse.js'
-import { type CSSProperties, computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, type CSSProperties } from 'vue'
 import { useRouter } from 'vue-router'
+
+import { parseEnvVariables } from '@/libs'
+import { getEnvColor, type EnvVariables } from '@/libs/env-helpers'
+import { PathId } from '@/routes'
+import { useActiveEntities } from '@/store'
 
 const props = defineProps<{
   query: string
@@ -24,18 +28,35 @@ const isOpen = ref(true)
 const dropdownRef = ref<HTMLElement | null>(null)
 const selectedVariableIndex = ref(0)
 const router = useRouter()
+const { activeCollection } = useActiveEntities()
 
 const redirectToEnvironment = () => {
-  if (!router) return
+  if (!router) {
+    return
+  }
   const { currentRoute, push } = router
-
   const workspaceId = currentRoute.value.params.workspace
-  push({
-    name: 'environment.default',
-    params: {
-      workspace: workspaceId,
-    },
-  })
+
+  // Global environment page for draft collection
+  if (
+    !activeCollection.value ||
+    activeCollection.value.info?.title === 'Drafts'
+  ) {
+    push({
+      name: 'environment.default',
+      params: {
+        [PathId.Workspace]: workspaceId,
+      },
+    })
+  } else {
+    // Collection environment page for collections
+    push({
+      name: 'collection.environment',
+      params: {
+        [PathId.Collection]: activeCollection.value.uid,
+      },
+    })
+  }
   isOpen.value = false
 }
 
@@ -72,7 +93,9 @@ const handleArrowKey = (direction: 'up' | 'down') => {
   const offset = direction === 'up' ? -1 : 1
   const length = filteredVariables.value.length
 
-  if (length === 0) return
+  if (length === 0) {
+    return
+  }
 
   selectedVariableIndex.value =
     (selectedVariableIndex.value + offset + length) % length
@@ -120,33 +143,36 @@ onClickOutside(
     class="scalar-client">
     <div
       ref="dropdownRef"
-      class="fixed left-0 top-0 flex flex-col p-0.75 max-h-[60svh] w-56 rounded border custom-scroll"
+      class="custom-scroll fixed top-0 left-0 flex max-h-[60svh] w-56 flex-col rounded border p-0.75"
       :style="dropdownStyle">
       <ul
         v-if="filteredVariables.length"
-        class="flex flex-col gap-1/2">
+        class="gap-1/2 flex flex-col">
         <template
           v-for="(item, index) in filteredVariables"
           :key="item.key">
           <li
-            class="h-8 font-code text-xxs hover:bg-b-2 flex cursor-pointer items-center justify-between gap-1.5 rounded p-1.5 transition-colors duration-150"
+            class="font-code text-xxs hover:bg-b-2 flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded p-1.5 transition-colors duration-150"
             :class="{ 'bg-b-2': index === selectedVariableIndex }"
             @click="selectVariable(item.key)">
-            <div class="flex items-center gap-1.5 whitespace-nowrap">
+            <div class="flex items-center gap-2 whitespace-nowrap">
               <span
-                v-if="item.source === 'collection'"
-                class="h-2.5 w-2.5 min-w-2.5 rounded-full"
+                v-if="
+                  item.source === 'collection' &&
+                  environment.name !== 'No Environment'
+                "
+                class="h-2.25 w-2.25 min-w-2.25 rounded-full"
                 :style="{
                   backgroundColor: getEnvColor(environment),
                 }"></span>
-              <ScalarIcon
+              <ScalarIconGlobe
                 v-else
-                class="w-2.5"
+                class="-ml-0.25 size-2.5"
                 icon="Globe" />
               {{ item.key }}
             </div>
             <span
-              class="w-20 overflow-hidden text-ellipsis text-right whitespace-nowrap">
+              class="w-20 overflow-hidden text-right text-ellipsis whitespace-nowrap">
               {{ item.value }}
             </span>
           </li>
@@ -154,17 +180,15 @@ onClickOutside(
       </ul>
       <ScalarButton
         v-else-if="router"
-        class="font-code text-xxs hover:bg-b-2 flex h-8 w-full justify-start gap-2 px-1.5 transition-colors duration-150"
-        variant="secondary"
+        class="font-code text-xxs bg-b-inherit hover:bg-b-2 flex h-8 w-full justify-start gap-2 px-1.5 transition-colors duration-150"
+        variant="outlined"
         @click="redirectToEnvironment">
-        <ScalarIcon
-          icon="Add"
-          size="sm" />
+        <ScalarIconPlus class="size-3" />
         Add Variable
       </ScalarButton>
       <!-- Backdrop for the dropdown -->
       <div
-        class="absolute inset-0 -z-1 rounded bg-b-1 shadow-lg brightness-lifted" />
+        class="bg-b-1 brightness-lifted absolute inset-0 -z-1 rounded shadow-lg" />
     </div>
   </ScalarTeleport>
 </template>

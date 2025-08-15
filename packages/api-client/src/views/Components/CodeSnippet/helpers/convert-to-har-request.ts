@@ -1,6 +1,6 @@
 import type { Operation, RequestExample } from '@scalar/oas-utils/entities/spec'
 import { mergeUrls } from '@scalar/oas-utils/helpers'
-import type { HarRequest } from '@scalar/snippetz'
+import type { HarRequest, FormDataParam } from '@scalar/snippetz'
 
 type Props = {
   baseUrl: string | undefined
@@ -39,95 +39,84 @@ export const convertToHarRequest = ({
   }
 
   // Handle cookies from Cookie header
-  if (cookies.length)
+  if (cookies.length) {
     harRequest.cookies = cookies
       .filter((c) => c.enabled)
       .map(({ key, value }) => ({
         name: key,
         value,
       }))
+  }
 
   // Convert headers
-  if (headers.length)
+  if (headers.length) {
     harRequest.headers = headers
-      .filter(
-        (h) =>
-          h.enabled && !(h.key.toLowerCase() === 'accept' && h.value === '*/*'),
-      )
+      .filter((h) => h.enabled && !(h.key.toLowerCase() === 'accept' && h.value === '*/*'))
       .map(({ key, value }) => ({
         name: key.replace(/\b\w/g, (letter) => letter.toUpperCase()),
         value,
       }))
+  }
 
   // Handle query parameters
-  if (query.length)
+  if (query.length) {
     harRequest.queryString = query
       .filter((q) => q.enabled)
       .map(({ key, value }) => ({
         name: key,
         value,
       }))
+  }
 
   // Handle request body if present
   if (body) {
     try {
-      const contentType =
-        headers.find((h) => h.key.toLowerCase() === 'content-type')?.value ||
-        'application/json'
+      const contentType = headers.find((h) => h.key.toLowerCase() === 'content-type')?.value
 
       // For form-data, convert to object while handling File objects
       if (body.activeBody === 'formData' && body.formData) {
-        const formDataObject: Record<string, any> = {}
+        const params: FormDataParam[] = []
 
         body.formData.value.forEach(({ key, value, file, enabled }) => {
-          if (!enabled) return
+          if (!enabled) {
+            return
+          }
 
           if (file) {
-            formDataObject[key] = {
-              type: 'file',
-              text: 'BINARY',
+            params.push({
               name: key || 'blob',
-              size: file.size,
+              value: 'BINARY',
               fileName: file.name,
-              mimeType: file.type || 'application/octet-stream',
-            }
-          }
-          // Handle multiple values for the same key
-          else {
-            // If key already exists, make an array and append
-            if (formDataObject[key]) {
-              if (!Array.isArray(formDataObject[key]))
-                formDataObject[key] = [formDataObject[key]]
-
-              formDataObject[key].push(value)
-            }
-            // Otherwise just set the key
-            else {
-              formDataObject[key] = value
-            }
+              contentType: file.type || 'application/octet-stream',
+            })
+          } else {
+            params.push({
+              name: key,
+              value,
+            })
           }
         })
 
         // Handle urlencoded form data
         if (body.formData?.encoding === 'urlencoded') {
           harRequest.postData = {
-            mimeType: contentType,
-            text: new URLSearchParams(formDataObject).toString(),
+            mimeType: contentType || 'application/x-www-form-urlencoded',
+            params,
           }
         } else {
           harRequest.postData = {
-            mimeType: contentType,
-            text: JSON.stringify(formDataObject),
+            mimeType: contentType || 'multipart/form-data',
+            params,
           }
         }
       } else if (body.activeBody === 'raw' && body.raw) {
         // For other content types (JSON, plain text, url-encoded)
         harRequest.postData = {
-          mimeType: contentType,
+          mimeType: contentType || 'application/json',
           text: body.raw?.value ?? '',
         }
       }
-    } catch (e) {
+    } catch (_e) {
       // Invalid request body, leave postData empty
     }
   }

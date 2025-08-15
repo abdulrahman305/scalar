@@ -8,25 +8,19 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ApiClientModalProvider
       configuration={{
-        spec: {
-          url: 'https://cdn.jsdelivr.net/npm/@scalar/galaxy/dist/latest.json',
-        },
+        url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
       }}>
       <App />
     </ApiClientModalProvider>
     <ApiClientModalProvider
       configuration={{
-        spec: {
-          url: 'https://cdn.jsdelivr.net/npm/@scalar/galaxy/dist/latest.json',
-        },
+        url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
       }}>
       <App initialRequest={{ path: '/auth/token', method: 'post' }} />
     </ApiClientModalProvider>
     <ApiClientModalProvider
       configuration={{
-        spec: {
-          url: 'https://cdn.jsdelivr.net/npm/@scalar/galaxy/dist/latest.json',
-        },
+        url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
       }}>
       <App initialRequest={{ path: '/planets', method: 'get' }} />
     </ApiClientModalProvider>

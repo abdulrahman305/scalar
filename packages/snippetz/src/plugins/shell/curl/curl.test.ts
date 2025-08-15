@@ -36,7 +36,7 @@ describe('shellCurl', () => {
   --header 'Content-Type: application/json'`)
   })
 
-  it('doesn’t add empty headers', () => {
+  it(`doesn't add empty headers`, () => {
     const result = shellCurl.generate({
       url: 'https://example.com',
       headers: [],
@@ -108,7 +108,7 @@ describe('shellCurl', () => {
   --cookie 'foo=bar; bar=foo'`)
   })
 
-  it('doesn’t add empty cookies', () => {
+  it(`doesn't add empty cookies`, () => {
     const result = shellCurl.generate({
       url: 'https://example.com',
       cookies: [],
@@ -229,6 +229,32 @@ describe('shellCurl', () => {
   --form 'field=value'`)
   })
 
+  it('handles multipart form data with JSON payload', () => {
+    const result = shellCurl.generate({
+      url: 'https://example.com',
+      method: 'POST',
+      headers: [
+        {
+          name: 'Content-Type',
+          value: 'multipart/form-data',
+        },
+      ],
+      postData: {
+        mimeType: 'multipart/form-data',
+        text: JSON.stringify({
+          foo: 'bar',
+        }),
+      },
+    })
+
+    expect(result).toBe(`curl https://example.com \\
+  --request POST \\
+  --header 'Content-Type: multipart/form-data' \\
+  --data '{
+  "foo": "bar"
+}'`)
+  })
+
   it('handles url-encoded form data with special characters', () => {
     const result = shellCurl.generate({
       url: 'https://example.com',
@@ -285,9 +311,7 @@ describe('shellCurl', () => {
       url: 'https://example.com/path with spaces/[brackets]',
     })
 
-    expect(result).toBe(
-      `curl 'https://example.com/path with spaces/[brackets]'`,
-    )
+    expect(result).toBe(`curl 'https://example.com/path with spaces/[brackets]'`)
   })
 
   it('handles special characters in query parameters', () => {
@@ -305,9 +329,7 @@ describe('shellCurl', () => {
       ],
     })
 
-    expect(result).toBe(
-      `curl 'https://example.com?q=hello%20world%20%26%20more&special=!%40%23%24%25%5E%26*()'`,
-    )
+    expect(result).toBe(`curl 'https://example.com?q=hello%20world%20%26%20more&special=!%40%23%24%25%5E%26*()'`)
   })
 
   it('handles empty URL', () => {
@@ -459,5 +481,45 @@ describe('shellCurl', () => {
   },
   "simple": "value"
 }'`)
+  })
+
+  it('handles URLs with dollar sign characters', () => {
+    const result = shellCurl.generate({
+      url: 'https://example.com/path$with$dollars',
+    })
+
+    expect(result).toBe(`curl 'https://example.com/path$with$dollars'`)
+  })
+
+  it('handles URLs with dollar signs in query parameters', () => {
+    const result = shellCurl.generate({
+      url: 'https://example.com',
+      queryString: [
+        {
+          name: 'price',
+          value: '$100',
+        },
+        {
+          name: 'currency',
+          value: 'USD$',
+        },
+      ],
+    })
+
+    expect(result).toBe(`curl 'https://example.com?price=%24100&currency=USD%24'`)
+  })
+
+  it('handles URLs with dollar signs in path and query', () => {
+    const result = shellCurl.generate({
+      url: 'https://example.com/api$v1/prices',
+      queryString: [
+        {
+          name: 'amount',
+          value: '$50.00',
+        },
+      ],
+    })
+
+    expect(result).toBe(`curl 'https://example.com/api$v1/prices?amount=%2450.00'`)
   })
 })

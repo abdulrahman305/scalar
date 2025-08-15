@@ -1,12 +1,14 @@
 import Link from 'next/link'
-import React from 'react'
 
 import { Button, ClientWrapper } from '../client/components'
 
 const Page = () => {
   return (
     <ClientWrapper>
-      <Button />
+      <Button
+        method="POST"
+        path="/auth/token"
+      />
       <Link href="/client">Go to client</Link>
     </ClientWrapper>
   )

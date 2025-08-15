@@ -1,96 +1,27 @@
 import { useConfig } from '@/hooks/useConfig'
-import { combineUrlAndPath, ssrState } from '@scalar/oas-utils/helpers'
-import type { Heading, Tag, TransformedOperation } from '@scalar/types/legacy'
+import { combineUrlAndPath } from '@scalar/helpers/url/merge-urls'
+import type { ApiReferenceConfiguration } from '@scalar/types/api-reference'
+import type { Heading, OpenAPIV3_1 } from '@scalar/types/legacy'
+import type { OperationObject } from '@scalar/workspace-store/schemas/v3.1/strict/path-operations'
+import type { TagObject } from '@scalar/workspace-store/schemas/v3.1/strict/tag'
+import type { Dereference } from '@scalar/workspace-store/schemas/v3.1/type-guard'
 import { slug } from 'github-slugger'
-import { ref } from 'vue'
+import { type InjectionKey, type Ref, inject, ref } from 'vue'
 
-import type { PathRouting } from '../types'
-
-const hashPrefix = ref('')
-
-// Keeps track of the URL hash without the #
-const hash = ref(ssrState.hash ?? '')
-
-// Are we using path routing
-const pathRouting = ref<PathRouting | undefined>()
-
-// To disable the intersection observer on click
-const isIntersectionEnabled = ref(false)
-
-const getPathRoutingId = (pathName: string) => {
-  if (!pathRouting.value) return ''
-
-  const reggy = new RegExp('^' + pathRouting.value?.basePath + '/?')
-  return decodeURIComponent(pathName.replace(reggy, ''))
+export type NavState = {
+  /** The URL hash without the #, also the "hash" pulled from pathRouting */
+  hash: Ref<string>
+  /** The prefix for the hash, used in ORG */
+  hashPrefix: Ref<string>
+  /** Whether the intersection observer is enabled and updating the hash as we scroll */
+  isIntersectionEnabled: Ref<boolean>
 }
+export const NAV_STATE_SYMBOL = Symbol() as InjectionKey<NavState>
 
-// Grabs the sectionId of the hash to open the section before scrolling
-const getSectionId = (hashStr = hash.value) => {
-  const tagId = hashStr.match(/(tag\/[^/]+)/)?.[0]
-  const modelId = hashStr.startsWith('model') ? 'models' : ''
-  const webhookId = hashStr.startsWith('webhook') ? 'webhooks' : ''
-
-  return tagId || modelId || webhookId
-}
-
-// Update the reactive hash state
-const updateHash = () => {
-  hash.value = pathRouting.value
-    ? getPathRoutingId(window.location.pathname)
-    : // Must remove the prefix from the hash as the internal hash value should be pure
-      decodeURIComponent(window.location.hash.replace(/^#/, '')).slice(
-        hashPrefix.value.length,
-      )
-}
-
-const replaceUrlState = (
-  replacementHash: string,
-  url = window.location.href,
-) => {
-  const newUrl = new URL(url)
-
-  // If we are pathrouting, set path instead of hash
-  if (pathRouting.value) {
-    newUrl.pathname = combineUrlAndPath(
-      pathRouting.value.basePath,
-      replacementHash,
-    )
-  } else {
-    newUrl.hash = hashPrefix.value + replacementHash
-  }
-
-  // Update the hash ref
-  hash.value = replacementHash
-
-  // We use replaceState so we don't trigger the url hash watcher and trigger a scroll
-  // this is why we set the hash value directly
-  window.history.replaceState({}, '', newUrl)
-}
-
-const getHashedUrl = (
-  replacementHash: string,
-  url = window.location.href,
-  search = window.location.search,
-) => {
-  const newUrl = new URL(url)
-  newUrl.hash = hashPrefix.value + replacementHash
-  newUrl.search = search
-  return newUrl.toString()
-}
-
-const getFullHash = (hashTarget: string = hash.value) => {
-  return `${hashPrefix.value}${hashTarget}`
-}
-
-/**
- * Gets the portion of the hash used by the references
- *
- * @returns The hash without the prefix
- */
-const getReferenceHash = () =>
-  decodeURIComponent(
-    window.location.hash.replace(/^#/, '').slice(hashPrefix.value.length),
-  )
+/** We inject a backup global refs in case one isn't provided for any integrations not using ApiReference */
+const isIntersectionEnabledBackup = ref(false)
+const hashBackup = ref('')
+const hashPrefixBackup = ref('')
 
 /**
  * Hook which provides reactive hash state from the URL
@@ -98,57 +29,153 @@ const getReferenceHash = () =>
  *
  * isIntersectionEnabled is a hack to prevent intersection observer from triggering
  * when clicking on sidebar links or going backwards
+ *
+ * @param _config this is used to pass in the config if we have not provided it yet to the useConfig hook such as in ApiReferenceLayout
  */
-export const useNavState = () => {
-  const config = useConfig()
+export const useNavState = (_config?: Ref<ApiReferenceConfiguration>) => {
+  const { isIntersectionEnabled, hash, hashPrefix } = inject(NAV_STATE_SYMBOL, {
+    isIntersectionEnabled: isIntersectionEnabledBackup,
+    hash: hashBackup,
+    hashPrefix: hashPrefixBackup,
+  })
+
+  const config = _config ?? useConfig()
+
+  const getPathRoutingId = (pathName: string) => {
+    if (!config.value.pathRouting) {
+      return ''
+    }
+
+    const reggy = new RegExp('^' + config.value.pathRouting?.basePath + '/?')
+    return decodeURIComponent(pathName.replace(reggy, ''))
+  }
+
+  // Grabs the sectionId of the hash to open the section before scrolling
+  const getSectionId = (hashStr = hash.value) => {
+    const tagId = hashStr.match(/(tag\/[^/]+)/)?.[0]
+    const modelId = hashStr.startsWith('model') ? 'models' : ''
+    const webhookId = hashStr.startsWith('webhook') ? 'webhooks' : ''
+
+    return tagId || modelId || webhookId
+  }
+
+  /**
+   * Gets the portion of the hash or path used by the references
+   *
+   * @returns The id without the prefix
+   */
+  const getReferenceId = () =>
+    config.value.pathRouting
+      ? getPathRoutingId(window.location.pathname)
+      : // Must remove the prefix from the hash as the internal hash value should be pure
+        decodeURIComponent(window.location.hash.replace(/^#/, '')).slice(hashPrefix.value.length)
+
+  // Update the reactive hash state
+  const updateHash = () => (hash.value = getReferenceId())
+
+  const replaceUrlState = (replacementHash: string, url = window.location.href) => {
+    const newUrl = new URL(url)
+
+    // If we are pathrouting, set path instead of hash
+    if (config.value.pathRouting) {
+      newUrl.pathname = combineUrlAndPath(config.value.pathRouting.basePath, replacementHash)
+    } else {
+      newUrl.hash = hashPrefix.value + replacementHash
+    }
+
+    // Update the hash ref
+    hash.value = replacementHash
+
+    // We use replaceState so we don't trigger the url hash watcher and trigger a scroll
+    // this is why we set the hash value directly
+    window.history.replaceState({}, '', newUrl)
+  }
+
+  const getHashedUrl = (replacementHash: string, url = window.location.href, search = window.location.search) => {
+    const newUrl = new URL(url)
+
+    // Path routing
+    if (config.value.pathRouting) {
+      newUrl.pathname = combineUrlAndPath(config.value.pathRouting.basePath, replacementHash)
+    }
+    // Hash routing
+    else {
+      newUrl.hash = hashPrefix.value + replacementHash
+    }
+    newUrl.search = search
+    return newUrl.toString()
+  }
+
+  const getFullHash = (hashTarget: string = hash.value) => {
+    return `${hashPrefix.value}${hashTarget}`
+  }
 
   /**
    * ID creation methods
    */
   const getHeadingId = (heading: Heading) => {
-    if (typeof config?.generateHeadingSlug === 'function') {
-      return `${config.generateHeadingSlug(heading)}`
+    if (typeof config.value.generateHeadingSlug === 'function') {
+      return `${config.value.generateHeadingSlug(heading)}`
     }
 
-    if (heading.slug) return `description/${heading.slug}`
+    if (heading.slug) {
+      return `description/${heading.slug}`
+    }
     return ''
   }
 
-  const getModelId = (model?: { name: string }) => {
-    if (!model?.name) return 'models'
-
-    if (typeof config?.generateModelSlug === 'function') {
-      return `model/${config.generateModelSlug(model)}`
+  const getModelId = (model?: { name: string }, parentTag?: OpenAPIV3_1.TagObject) => {
+    if (!model?.name) {
+      return 'models'
     }
-    return `model/${slug(model.name)}`
+
+    /** Prefix with the tag if we have one */
+    const prefixTag = parentTag ? `${getTagId(parentTag)}/` : ''
+
+    if (typeof config.value.generateModelSlug === 'function') {
+      return `${prefixTag}model/${config.value.generateModelSlug(model)}`
+    }
+    return `${prefixTag}model/${slug(model.name)}`
   }
 
-  const getTagId = (tag: Tag) => {
-    if (typeof config?.generateTagSlug === 'function') {
-      return `tag/${config.generateTagSlug(tag)}`
+  const getTagId = (tag: OpenAPIV3_1.TagObject) => {
+    if (typeof config.value.generateTagSlug === 'function') {
+      return `tag/${config.value.generateTagSlug(tag)}`
     }
-    return `tag/${slug(tag.name)}`
+    return `tag/${slug(tag.name ?? '')}`
   }
 
-  const getOperationId = (operation: TransformedOperation, parentTag: Tag) => {
-    if (typeof config?.generateOperationSlug === 'function') {
-      return `${getTagId(parentTag)}/${config.generateOperationSlug({
+  const getOperationId = (
+    operation: {
+      path: string
+      method: OpenAPIV3_1.HttpMethods
+    } & Dereference<OperationObject>,
+    parentTag: Dereference<TagObject>,
+  ) => {
+    if (typeof config.value.generateOperationSlug === 'function') {
+      return `${getTagId(parentTag)}/${config.value.generateOperationSlug({
         path: operation.path,
         operationId: operation.operationId,
-        method: operation.httpVerb,
-        summary: operation.information?.summary,
+        method: operation.method,
+        summary: operation.summary,
       })}`
     }
-    return `${getTagId(parentTag)}/${operation.httpVerb}${operation.path}`
+
+    return `${getTagId(parentTag)}/${operation.method}${operation.path}`
   }
 
-  const getWebhookId = (webhook?: { name: string; method?: string }) => {
-    if (!webhook?.name) return 'webhooks'
-
-    if (typeof config?.generateWebhookSlug === 'function') {
-      return `webhook/${config.generateWebhookSlug(webhook)}`
+  const getWebhookId = (webhook?: { name: string; method?: string }, parentTag?: OpenAPIV3_1.TagObject) => {
+    if (!webhook?.name) {
+      return 'webhooks'
     }
-    return `webhook/${webhook.method}/${slug(webhook.name)}`
+
+    /** Prefix with the tag if we have one */
+    const prefixTag = parentTag ? `${getTagId(parentTag)}/` : ''
+
+    if (typeof config.value.generateWebhookSlug === 'function') {
+      return `${prefixTag}webhook/${config.value.generateWebhookSlug(webhook)}`
+    }
+    return `${prefixTag}webhook/${webhook.method}/${slug(webhook.name)}`
   }
 
   return {
@@ -175,8 +202,7 @@ export const useNavState = () => {
      * Replacement is used so that hash changes don't trigger the url hash watcher and cause a scroll
      */
     replaceUrlState,
-    /** Gets the portion of the hash used by the references */
-    getReferenceHash,
+    getReferenceId,
     getWebhookId,
     getModelId,
     getHeadingId,
@@ -185,7 +211,9 @@ export const useNavState = () => {
     getSectionId,
     getTagId,
     isIntersectionEnabled,
-    pathRouting,
     updateHash,
   }
 }
+
+/** Whats returned from the hook */
+export type UseNavState = ReturnType<typeof useNavState>

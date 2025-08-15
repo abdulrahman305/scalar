@@ -1,14 +1,16 @@
 import type { OpenAPI } from '@scalar/openapi-types'
 
-import type { ERRORS, OpenApiVersion } from '../configuration/index.ts'
+import type { ERRORS, OpenApiVersion } from '@/configuration'
 
-// TODO: I’d expect merge to overwrite the other way around (overwrite A, keep B)
+// TODO: I'd expect merge to overwrite the other way around (overwrite A, keep B)
 /**
  * Merge types with each other
  */
 export type Merge<A, B> = A & Omit<B, keyof A>
 
 export type AnyObject = Record<string, any>
+
+export type UnknownObject = Record<string, unknown>
 
 /**
  * JSON, YAML or object representation of an OpenAPI API definition
@@ -67,7 +69,7 @@ export type AjvOptions = {
 export type Filesystem = FilesystemEntry[]
 
 /**
- * Holds all information about a single file (doesn’t have to be a literal file, see Filesystem).
+ * Holds all information about a single file (doesn't have to be a literal file, see Filesystem).
  */
 export type FilesystemEntry = {
   dir: string
@@ -95,7 +97,6 @@ declare global {
   /**
    * Available commands, can be extended dynamically
    */
-  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
   interface Commands {}
 }
 
@@ -147,10 +148,7 @@ export type EmptyCommandChainResult = {
  * This type enables the API to correctly infer the return type based on
  * the sequence of method calls in the fluent interface.
  */
-export type CommandChain<T extends Task[]> = T extends [
-  infer First,
-  ...infer Rest,
-]
+export type CommandChain<T extends Task[]> = T extends [infer First, ...infer Rest]
   ? First extends Task
     ? Rest extends Task[]
       ? Merge<Commands[First['name']]['result'], CommandChain<Rest>>

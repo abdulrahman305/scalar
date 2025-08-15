@@ -1,5 +1,126 @@
 # @scalar/code-highlight
 
+## 0.1.9
+
+### Patch Changes
+
+- d4cb86b: fix: removes inline block display to keep caret in empty code input usage
+
+## 0.1.8
+
+### Patch Changes
+
+- 85ee2ce: feat: updates markdown alert component style
+- 85ee2ce: feat: moves markdown style from code-highlight to components package
+
+## 0.1.7
+
+### Patch Changes
+
+- 6ab3a21: feat: updates markdown details component style
+
+## 0.1.6
+
+### Patch Changes
+
+- 903f975: feat: increases code line margin to enhance alignment
+
+## 0.1.5
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+
+## 0.1.4
+
+### Patch Changes
+
+- 7913193: feat: updates hljs curl language style
+
+## 0.1.3
+
+### Patch Changes
+
+- 4156f1d: Expand workspace store integration
+- a37df33: fix: enhances introduction optical alignment
+
+## 0.1.2
+
+### Patch Changes
+
+- 00fc827: feat: updates markdown overall style
+- 358eb63: fix(api-reference): fix markdown styles pt2
+
+## 0.1.1
+
+### Patch Changes
+
+- 785939b: feat: adds id to markdown heading
+- cad6277: feat(themes)!: migrate to tailwind v4
+
+## 0.1.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+## 0.0.29
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+
+## 0.0.28
+
+### Patch Changes
+
+- e8457cb: Unify themes across scalar. Cleanup interface and remove CJS build.
+
+## 0.0.27
+
+### Patch Changes
+
+- 799845f: feat(components): allow ScalarCodeblock to support different font sizes
+
+## 0.0.26
+
+### Patch Changes
+
+- 0e888bc: feat: add dart to standard languages
+
+## 0.0.25
+
+### Patch Changes
+
+- 632978d: fix(themes): hide summary caret in reset
+
+## 0.0.24
+
+### Patch Changes
+
+- 9319c0c: fix: allows alert plugin classes in markdown
+- 9319c0c: feat: updates markdown alert style
+
+## 0.0.23
+
+### Patch Changes
+
+- 3feee27: feat: adds markdown alert support
+- c10bbf5: chore: code style
+
+## 0.0.22
+
+### Patch Changes
+
+- e350f23: chore: code style
+
+## 0.0.21
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+- 1223c1f: chore: code style
+
 ## 0.0.20
 
 ### Patch Changes

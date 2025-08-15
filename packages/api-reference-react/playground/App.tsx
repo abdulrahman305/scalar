@@ -1,39 +1,30 @@
-import ScalarGalaxy from '@scalar/galaxy/3.1.json'
 import { generate } from 'random-words'
 import { useEffect, useState } from 'react'
 
-import { ApiReferenceReact, type ReferenceProps } from '../src'
+import type { ApiReferenceConfiguration } from '@scalar/api-reference'
+import { ApiReferenceReact } from '../src'
 
 function App() {
-  const [auth, setAuth] = useState<
-    Required<ReferenceProps>['configuration']['authentication']
-  >({})
+  const [auth, setAuth] = useState<Required<ApiReferenceConfiguration>['authentication']>({})
 
-  const apiKeys = [
-    'apiKeyHeader',
-    'apiKeyQuery',
-    'apiKeyCookie',
-    'basicAuth',
-    'bearerAuth',
-  ]
+  const apiKeys = ['apiKeyHeader', 'apiKeyQuery', 'apiKeyCookie', 'basicAuth', 'bearerAuth']
 
   useEffect(() => {
     // Update the document periodically to test reactivity
     const changeInt = setInterval(() => {
       setAuth({
-        preferredSecurityScheme:
-          apiKeys[Math.floor(Math.random() * apiKeys.length)],
-        http: {
-          basic: {
+        preferredSecurityScheme: apiKeys[Math.floor(Math.random() * apiKeys.length)],
+        securitySchemes: {
+          apiKeyHeader: {
+            token: (generate(2) as string[]).join('_'),
+          },
+          basicAuth: {
             username: (generate(2) as string[]).join('_'),
             password: (generate(2) as string[]).join('_'),
           },
-          bearer: {
+          bearerAuth: {
             token: (generate(2) as string[]).join('_'),
           },
-        },
-        apiKey: {
-          token: (generate(2) as string[]).join('_'),
         },
       })
     }, 10000)
@@ -43,12 +34,17 @@ function App() {
 
   return (
     <ApiReferenceReact
-      configuration={{
-        spec: {
-          content: ScalarGalaxy,
+      configuration={[
+        {
+          url: 'https://petstore.swagger.io/v2/swagger.json',
         },
-        authentication: auth,
-      }}
+        {
+          title: 'Scalar Galaxy', // optional, would fallback to 'API #1'
+          slug: 'scalar-galaxy', // optional, would be auto-generated from the title or the index
+          url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+          authentication: auth,
+        },
+      ]}
     />
   )
 }

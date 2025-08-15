@@ -1,5 +1,340 @@
 # @scalar/nextjs-api-reference
 
+## 0.8.15
+
+### Patch Changes
+
+- Updated dependencies [7dfbe9e]
+  - @scalar/core@0.3.12
+
+## 0.8.14
+
+### Patch Changes
+
+- @scalar/core@0.3.11
+
+## 0.8.13
+
+### Patch Changes
+
+- @scalar/core@0.3.10
+
+## 0.8.12
+
+### Patch Changes
+
+- @scalar/core@0.3.9
+
+## 0.8.11
+
+### Patch Changes
+
+- @scalar/core@0.3.8
+
+## 0.8.10
+
+### Patch Changes
+
+- Updated dependencies [66347d4]
+  - @scalar/core@0.3.7
+
+## 0.8.9
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+- Updated dependencies [2d7f995]
+  - @scalar/core@0.3.6
+
+## 0.8.8
+
+### Patch Changes
+
+- @scalar/core@0.3.5
+
+## 0.8.7
+
+### Patch Changes
+
+- @scalar/core@0.3.4
+
+## 0.8.6
+
+### Patch Changes
+
+- 161733e: docs: new README
+
+## 0.8.5
+
+### Patch Changes
+
+- 6ead9cd: chore: remove unused dependencies
+- 4156f1d: Expand workspace store integration
+  - @scalar/core@0.3.3
+
+## 0.8.4
+
+### Patch Changes
+
+- @scalar/core@0.3.2
+- @scalar/types@0.2.2
+
+## 0.8.3
+
+### Patch Changes
+
+- e660779: chore: bump version
+
+## 0.8.1
+
+### Patch Changes
+
+- Updated dependencies [4440949]
+  - @scalar/types@0.2.1
+  - @scalar/core@0.3.1
+
+## 0.8.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- Updated dependencies [483ca93]
+  - @scalar/types@0.2.0
+  - @scalar/core@0.3.0
+
+## 0.7.17
+
+### Patch Changes
+
+- Updated dependencies [be8a6ec]
+  - @scalar/types@0.1.16
+  - @scalar/core@0.2.16
+
+## 0.7.16
+
+### Patch Changes
+
+- Updated dependencies [f711ab5]
+- Updated dependencies [0222ad4]
+- Updated dependencies [cb9428c]
+- Updated dependencies [67aa0f4]
+  - @scalar/types@0.1.15
+  - @scalar/core@0.2.15
+
+## 0.7.15
+
+### Patch Changes
+
+- Updated dependencies [8c7bad8]
+  - @scalar/types@0.1.14
+  - @scalar/core@0.2.14
+
+## 0.7.14
+
+### Patch Changes
+
+- e8457cb: Unify themes across scalar. Cleanup interface and remove CJS build.
+- Updated dependencies [e8457cb]
+  - @scalar/types@0.1.13
+  - @scalar/core@0.2.13
+
+## 0.7.13
+
+### Patch Changes
+
+- Updated dependencies [62c4ce3]
+  - @scalar/types@0.1.12
+  - @scalar/core@0.2.12
+
+## 0.7.12
+
+### Patch Changes
+
+- Updated dependencies [eb4854d]
+  - @scalar/types@0.1.11
+  - @scalar/core@0.2.11
+
+## 0.7.11
+
+### Patch Changes
+
+- @scalar/types@0.1.10
+- @scalar/core@0.2.10
+
+## 0.7.10
+
+### Patch Changes
+
+- Updated dependencies [17e7d02]
+  - @scalar/types@0.1.9
+  - @scalar/core@0.2.9
+
+## 0.7.9
+
+### Patch Changes
+
+- Updated dependencies [feaa314]
+  - @scalar/types@0.1.8
+  - @scalar/core@0.2.8
+
+## 0.7.8
+
+### Patch Changes
+
+- Updated dependencies [9def02e]
+- Updated dependencies [3745d77]
+  - @scalar/types@0.1.7
+  - @scalar/core@0.2.7
+
+## 0.7.7
+
+### Patch Changes
+
+- Updated dependencies [3783345]
+  - @scalar/types@0.1.6
+  - @scalar/core@0.2.6
+
+## 0.7.6
+
+### Patch Changes
+
+- Updated dependencies [e09dab3]
+- Updated dependencies [04e27a1]
+  - @scalar/types@0.1.5
+  - @scalar/core@0.2.5
+
+## 0.7.5
+
+### Patch Changes
+
+- Updated dependencies [8efedf3]
+- Updated dependencies [82a4ba8]
+- Updated dependencies [57feba6]
+  - @scalar/types@0.1.4
+  - @scalar/core@0.2.4
+
+## 0.7.4
+
+### Patch Changes
+
+- Updated dependencies [543a16c]
+- Updated dependencies [57e96a0]
+  - @scalar/types@0.1.3
+  - @scalar/core@0.2.3
+
+## 0.7.3
+
+### Patch Changes
+
+- Updated dependencies [7a8965c]
+- Updated dependencies [49dffff]
+  - @scalar/types@0.1.2
+  - @scalar/core@0.2.2
+
+## 0.7.2
+
+### Patch Changes
+
+- Updated dependencies [39c0f47]
+  - @scalar/types@0.1.1
+  - @scalar/core@0.2.1
+
+## 0.7.1
+
+### Patch Changes
+
+- Updated dependencies [01f2610]
+  - @scalar/core@0.2.0
+
+## 0.7.0
+
+### Minor Changes
+
+- 5f9a8a2: feat!: remove the spec prefix, make content and url top-level attributes
+
+### Patch Changes
+
+- Updated dependencies [5f9a8a2]
+  - @scalar/types@0.1.0
+  - @scalar/core@0.1.3
+
+## 0.6.1
+
+### Patch Changes
+
+- Updated dependencies [fc6a45e]
+  - @scalar/types@0.0.41
+  - @scalar/core@0.1.2
+
+## 0.6.0
+
+### Minor Changes
+
+- dd38a68: feat: use html rendering lib from @scalar/core
+
+### Patch Changes
+
+- Updated dependencies [4d03e0f]
+  - @scalar/types@0.0.40
+  - @scalar/core@0.1.1
+
+## 0.5.15
+
+### Patch Changes
+
+- Updated dependencies [bab7990]
+- Updated dependencies [2c621d4]
+  - @scalar/types@0.0.39
+
+## 0.5.14
+
+### Patch Changes
+
+- Updated dependencies [7f1a40e]
+  - @scalar/types@0.0.38
+
+## 0.5.13
+
+### Patch Changes
+
+- Updated dependencies [89d8b75]
+- Updated dependencies [8a04b8d]
+  - @scalar/types@0.0.37
+
+## 0.5.12
+
+### Patch Changes
+
+- Updated dependencies [4db5161]
+  - @scalar/types@0.0.36
+
+## 0.5.11
+
+### Patch Changes
+
+- c10bbf5: chore: code style
+- Updated dependencies [946a5df]
+- Updated dependencies [cf14cbb]
+  - @scalar/types@0.0.35
+
+## 0.5.10
+
+### Patch Changes
+
+- @scalar/types@0.0.34
+
+## 0.5.9
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+- Updated dependencies [54fdfcb]
+- Updated dependencies [fa6afe8]
+  - @scalar/types@0.0.33
+
 ## 0.5.8
 
 ### Patch Changes

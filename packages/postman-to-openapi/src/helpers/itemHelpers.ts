@@ -4,23 +4,12 @@ import type { Item, ItemGroup } from '../types'
 import { processAuth } from './authHelpers'
 import { parseMdTable } from './md-utils'
 import { extractParameters } from './parameterHelpers'
+import { processPostResponseScripts } from './postResponseScripts'
 import { extractRequestBody } from './requestBodyHelpers'
 import { extractResponses } from './responseHelpers'
-import {
-  extractPathFromUrl,
-  extractPathParameterNames,
-  normalizePath,
-} from './urlHelpers'
+import { extractPathFromUrl, extractPathParameterNames, normalizePath } from './urlHelpers'
 
-type HttpMethods =
-  | 'get'
-  | 'put'
-  | 'post'
-  | 'delete'
-  | 'options'
-  | 'head'
-  | 'patch'
-  | 'trace'
+type HttpMethods = 'get' | 'put' | 'post' | 'delete' | 'options' | 'head' | 'patch' | 'trace'
 
 /**
  * Processes a Postman collection item or item group and returns
@@ -42,11 +31,7 @@ export function processItem(
   if ('item' in item && Array.isArray(item.item)) {
     const newParentTags = item.name ? [...parentTags, item.name] : parentTags
     item.item.forEach((childItem) => {
-      const childResult = processItem(
-        childItem,
-        newParentTags,
-        `${parentPath}/${item.name || ''}`,
-      )
+      const childResult = processItem(childItem, newParentTags, `${parentPath}/${item.name || ''}`)
       // Merge child paths and components
       for (const [pathKey, pathItem] of Object.entries(childResult.paths)) {
         if (!paths[pathKey]) {
@@ -75,16 +60,10 @@ export function processItem(
   }
 
   const { request, name, response } = item
-  const method = (
-    typeof request === 'string' ? 'get' : request.method || 'get'
-  ).toLowerCase() as HttpMethods
+  const method = (typeof request === 'string' ? 'get' : request.method || 'get').toLowerCase() as HttpMethods
 
   const path = extractPathFromUrl(
-    typeof request === 'string'
-      ? request
-      : typeof request.url === 'string'
-        ? request.url
-        : (request.url?.raw ?? ''),
+    typeof request === 'string' ? request : typeof request.url === 'string' ? request.url : (request.url?.raw ?? ''),
   )
 
   // Normalize path parameters from ':param' to '{param}'
@@ -104,11 +83,17 @@ export function processItem(
         : (request.description?.content ?? '')
 
   const operationObject: OpenAPIV3_1.OperationObject = {
-    tags: parentTags.length > 0 ? [parentTags.join(' > ')] : ['default'],
+    tags: parentTags.length > 0 ? [parentTags.join(' > ')] : undefined,
     summary,
     description,
     responses: extractResponses(response || [], item),
     parameters: [],
+  }
+
+  // Add post-response scripts if present
+  const postResponseScript = processPostResponseScripts(item.event)
+  if (postResponseScript) {
+    operationObject['x-post-response'] = postResponseScript
   }
 
   // Only add operationId if it was explicitly provided
@@ -118,8 +103,7 @@ export function processItem(
 
   // Parse parameters from the description's Markdown table
   if (operationObject.description) {
-    const { descriptionWithoutTable, parametersFromTable } =
-      parseParametersFromDescription(operationObject.description)
+    const { descriptionWithoutTable, parametersFromTable } = parseParametersFromDescription(operationObject.description)
     operationObject.description = descriptionWithoutTable.trim()
 
     // Extract parameters from the request (query, path, header)
@@ -168,15 +152,13 @@ export function processItem(
     operationObject.security.push(...security)
   }
 
-  if (
-    ['post', 'put', 'patch'].includes(method) &&
-    typeof request !== 'string' &&
-    request.body
-  ) {
+  if (['post', 'put', 'patch'].includes(method) && typeof request !== 'string' && request.body) {
     operationObject.requestBody = extractRequestBody(request.body)
   }
 
-  if (!paths[path]) paths[path] = {}
+  if (!paths[path]) {
+    paths[path] = {}
+  }
   const pathItem = paths[path] as OpenAPIV3_1.PathItemObject
   pathItem[method] = operationObject
 
@@ -193,16 +175,14 @@ function parseParametersFromDescription(description: string): {
   const tableLines: string[] = []
   const descriptionLines: string[] = []
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-
+  for (const line of lines) {
     // Detect the start of the table
     if (line.trim().startsWith('|')) {
       // Remove any preceding headers or empty lines before the table
       while (
         descriptionLines.length > 0 &&
-        (descriptionLines[descriptionLines.length - 1].trim() === '' ||
-          descriptionLines[descriptionLines.length - 1].trim().startsWith('#'))
+        (descriptionLines[descriptionLines.length - 1]?.trim() === '' ||
+          descriptionLines[descriptionLines.length - 1]?.trim().startsWith('#'))
       ) {
         descriptionLines.pop()
       }
@@ -224,27 +204,25 @@ function parseParametersFromDescription(description: string): {
 
   const tableMarkdown = tableLines.join('\n')
   const parsedTable = parseMdTable(tableMarkdown)
-  const parametersFromTable = Object.values(parsedTable).map(
-    (paramData: any) => {
-      const paramIn = paramData.object as 'query' | 'header' | 'path'
+  const parametersFromTable = Object.values(parsedTable).map((paramData: any) => {
+    const paramIn = paramData.object as 'query' | 'header' | 'path'
 
-      const param: OpenAPIV3_1.ParameterObject = {
-        name: paramData.name,
-        in: paramIn,
-        description: paramData.description,
-        required: paramData.required === 'true',
-        schema: {
-          type: paramData.type,
-        },
-      }
+    const param: OpenAPIV3_1.ParameterObject = {
+      name: paramData.name,
+      in: paramIn,
+      description: paramData.description,
+      required: paramData.required === 'true',
+      schema: {
+        type: paramData.type,
+      },
+    }
 
-      if (paramData.example) {
-        param.example = paramData.example
-      }
+    if (paramData.example) {
+      param.example = paramData.example
+    }
 
-      return param
-    },
-  )
+    return param
+  })
 
   const descriptionWithoutTable = descriptionLines.join('\n')
   return { descriptionWithoutTable, parametersFromTable }
@@ -252,11 +230,15 @@ function parseParametersFromDescription(description: string): {
 
 // Instead of using regex with \s*, let's split this into two steps
 function extractOperationInfo(name: string | undefined) {
-  if (!name) return { operationId: undefined, summary: undefined }
+  if (!name) {
+    return { operationId: undefined, summary: undefined }
+  }
 
   // First check if the string ends with something in brackets
   const match = name.match(/\[([^[\]]{0,1000})\]$/)
-  if (!match) return { operationId: undefined, summary: name }
+  if (!match) {
+    return { operationId: undefined, summary: name }
+  }
 
   // Get the operation ID from inside brackets
   const operationId = match[1]

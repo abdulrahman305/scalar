@@ -1,11 +1,9 @@
-import {
-  requestExampleSchema,
-  securitySchemeSchema,
-} from '@scalar/oas-utils/entities/spec'
+import { requestExampleSchema, securitySchemeSchema } from '@scalar/oas-utils/entities/spec'
 import { describe, expect, it } from 'vitest'
 
 import { createRequestOperation } from './create-request-operation'
 import { VOID_URL, createRequestPayload } from './create-request-operation.test'
+import type { SelectedSecuritySchemeUids } from '@scalar/oas-utils/entities/shared'
 
 describe('authentication', () => {
   it('adds apiKey auth in header', async () => {
@@ -14,22 +12,27 @@ describe('authentication', () => {
         serverPayload: { url: VOID_URL },
       }),
       securitySchemes: {
-        'api-key': {
+        'api-key': securitySchemeSchema.parse({
           type: 'apiKey',
           name: 'X-API-KEY',
           in: 'header',
           value: 'test-key',
           uid: 'api-key',
           nameKey: 'X-API-KEY',
-        },
+        }),
       },
-      selectedSecuritySchemeUids: ['api-key'],
+      selectedSecuritySchemeUids: ['api-key'] as SelectedSecuritySchemeUids,
     })
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string).headers).toMatchObject({
       'x-api-key': 'test-key',
     })
@@ -41,22 +44,27 @@ describe('authentication', () => {
         serverPayload: { url: VOID_URL },
       }),
       securitySchemes: {
-        'api-key': {
+        'api-key': securitySchemeSchema.parse({
           type: 'apiKey',
           name: 'api_key',
           in: 'query',
           value: 'test-key',
           uid: 'api-key',
           nameKey: 'api_key',
-        },
+        }),
       },
-      selectedSecuritySchemeUids: ['api-key'],
+      selectedSecuritySchemeUids: ['api-key'] as SelectedSecuritySchemeUids,
     })
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string).query).toMatchObject({
       api_key: 'test-key',
     })
@@ -68,25 +76,28 @@ describe('authentication', () => {
         serverPayload: { url: VOID_URL },
       }),
       securitySchemes: {
-        'api-key': {
+        'api-key': securitySchemeSchema.parse({
           type: 'apiKey',
           name: 'api_key',
           in: 'query',
           value: 'test-key',
           uid: 'api-key',
           nameKey: 'api_key',
-        },
+        }),
       },
-      selectedSecuritySchemeUids: ['api-key'],
+      selectedSecuritySchemeUids: ['api-key'] as SelectedSecuritySchemeUids,
     })
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
-    expect(JSON.parse(result?.response.data as string).query.api_key).toEqual(
-      'test-key',
-    )
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
+    expect(JSON.parse(result?.response.data as string).query.api_key).toEqual('test-key')
   })
 
   it('adds basic auth header', async () => {
@@ -95,7 +106,7 @@ describe('authentication', () => {
         serverPayload: { url: VOID_URL },
       }),
       securitySchemes: {
-        'basic-auth': {
+        'basic-auth': securitySchemeSchema.parse({
           type: 'http',
           scheme: 'basic',
           bearerFormat: 'Basic',
@@ -104,15 +115,20 @@ describe('authentication', () => {
           password: 'pass',
           uid: 'basic-auth',
           nameKey: 'Authorization',
-        },
+        }),
       },
-      selectedSecuritySchemeUids: ['basic-auth'],
+      selectedSecuritySchemeUids: ['basic-auth'] as SelectedSecuritySchemeUids,
     })
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string).headers).toMatchObject({
       authorization: 'Basic dXNlcjpwYXNz', // base64 of "user:pass"
     })
@@ -124,7 +140,7 @@ describe('authentication', () => {
         serverPayload: { url: VOID_URL },
       }),
       securitySchemes: {
-        'bearer-auth': {
+        'bearer-auth': securitySchemeSchema.parse({
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'Bearer',
@@ -133,15 +149,20 @@ describe('authentication', () => {
           uid: 'bearer-auth',
           nameKey: 'Authorization',
           token: 'xxxx',
-        },
+        }),
       },
-      selectedSecuritySchemeUids: ['bearer-auth'],
+      selectedSecuritySchemeUids: ['bearer-auth'] as SelectedSecuritySchemeUids,
     })
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string).headers).toMatchObject({
       authorization: 'Bearer xxxx',
     })
@@ -153,15 +174,15 @@ describe('authentication', () => {
         serverPayload: { url: VOID_URL },
       }),
       securitySchemes: {
-        'api-key': {
+        'api-key': securitySchemeSchema.parse({
           type: 'apiKey',
           name: 'api_key',
           in: 'query',
           value: 'xxxx',
           uid: 'api-key',
           nameKey: 'api_key',
-        },
-        'bearer-auth': {
+        }),
+        'bearer-auth': securitySchemeSchema.parse({
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'Bearer',
@@ -170,15 +191,20 @@ describe('authentication', () => {
           uid: 'bearer-auth',
           nameKey: 'Authorization',
           token: 'xxxx',
-        },
+        }),
       },
-      selectedSecuritySchemeUids: [['bearer-auth', 'api-key']],
+      selectedSecuritySchemeUids: [['bearer-auth', 'api-key']] as SelectedSecuritySchemeUids,
     })
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     const parsed = JSON.parse(result?.response.data as string)
     expect(parsed.headers.authorization).toEqual('Bearer xxxx')
     expect(parsed.query.api_key).toEqual('xxxx')
@@ -190,7 +216,7 @@ describe('authentication', () => {
         serverPayload: { url: VOID_URL },
       }),
       securitySchemes: {
-        'oauth2-auth': {
+        'oauth2-auth': securitySchemeSchema.parse({
           type: 'oauth2',
           uid: 'oauth2-auth',
           nameKey: 'Authorization',
@@ -206,15 +232,20 @@ describe('authentication', () => {
               'x-scalar-redirect-uri': 'https://example.com/callback',
             },
           },
-        },
+        }),
       },
-      selectedSecuritySchemeUids: ['oauth2-auth'],
+      selectedSecuritySchemeUids: ['oauth2-auth'] as SelectedSecuritySchemeUids,
     })
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string).headers).toMatchObject({
       authorization: 'Bearer oauth-token',
     })
@@ -247,12 +278,12 @@ describe('authentication', () => {
           },
         }),
       },
-      selectedSecuritySchemeUids: ['oauth2-auth'],
+      selectedSecuritySchemeUids: ['oauth2-auth'] as SelectedSecuritySchemeUids,
     })
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
-    expect(requestOperation.request.headers.get('Authorization')).toEqual(
-      'Bearer header-token',
-    )
+    expect(requestOperation.request.headers.get('Authorization')).toEqual('Bearer header-token')
   })
 })

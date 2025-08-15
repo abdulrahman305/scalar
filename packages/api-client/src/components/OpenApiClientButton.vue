@@ -26,6 +26,10 @@ const href = computed((): string | undefined => {
   const urlToImportFrom =
     url ?? (typeof window !== 'undefined' ? window.location.href : undefined)
 
+  if (!urlToImportFrom) {
+    return undefined
+  }
+
   const absoluteUrl = makeUrlAbsolute(urlToImportFrom)
 
   if (!absoluteUrl?.length) {
@@ -37,7 +41,7 @@ const href = computed((): string | undefined => {
     isDevelopment ? 'http://localhost:5065' : 'https://client.scalar.com',
   )
 
-  // URL that we’d like to import
+  // URL that we'd like to import
   link.searchParams.set('url', absoluteUrl)
 
   // Integration identifier
@@ -57,10 +61,12 @@ const href = computed((): string | undefined => {
     const darkLogo = document.querySelector("img.dark\\:block[alt='Logo']")
     const lightLogo = document.querySelector("img.dark\\:hidden[alt='Logo']")
 
-    if (darkLogo && darkLogo instanceof HTMLImageElement)
+    if (darkLogo && darkLogo instanceof HTMLImageElement) {
       link.searchParams.set('dark_logo', encodeURIComponent(darkLogo.src))
-    if (lightLogo && lightLogo instanceof HTMLImageElement)
+    }
+    if (lightLogo && lightLogo instanceof HTMLImageElement) {
       link.searchParams.set('light_logo', encodeURIComponent(lightLogo.src))
+    }
   }
 
   return link.toString()
@@ -92,6 +98,7 @@ const href = computed((): string | undefined => {
   display: flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
   font-size: var(--scalar-mini);
   font-weight: var(--scalar-semibold);
   line-height: 1.385;

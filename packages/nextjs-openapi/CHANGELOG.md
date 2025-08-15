@@ -1,5 +1,394 @@
 # @scalar/nextjs-openapi
 
+## 0.2.15
+
+### Patch Changes
+
+- @scalar/nextjs-api-reference@0.8.15
+- @scalar/ts-to-openapi@0.1.0
+- @scalar/types@0.2.11
+
+## 0.2.14
+
+### Patch Changes
+
+- Updated dependencies [ccf875a]
+- Updated dependencies [94d6d0c]
+  - @scalar/types@0.2.11
+  - @scalar/nextjs-api-reference@0.8.14
+
+## 0.2.13
+
+### Patch Changes
+
+- Updated dependencies [fb62e1b]
+  - @scalar/types@0.2.10
+  - @scalar/nextjs-api-reference@0.8.13
+
+## 0.2.12
+
+### Patch Changes
+
+- Updated dependencies [591562f]
+  - @scalar/types@0.2.9
+  - @scalar/nextjs-api-reference@0.8.12
+
+## 0.2.11
+
+### Patch Changes
+
+- Updated dependencies [c10e191]
+  - @scalar/types@0.2.8
+  - @scalar/nextjs-api-reference@0.8.11
+
+## 0.2.10
+
+### Patch Changes
+
+- Updated dependencies [ad2e3e6]
+  - @scalar/types@0.2.7
+  - @scalar/nextjs-api-reference@0.8.10
+
+## 0.2.9
+
+### Patch Changes
+
+- Updated dependencies [2d7f995]
+  - @scalar/nextjs-api-reference@0.8.9
+  - @scalar/types@0.2.6
+  - @scalar/ts-to-openapi@0.1.0
+
+## 0.2.8
+
+### Patch Changes
+
+- @scalar/nextjs-api-reference@0.8.8
+- @scalar/types@0.2.5
+
+## 0.2.7
+
+### Patch Changes
+
+- Updated dependencies [1468280]
+  - @scalar/types@0.2.4
+  - @scalar/nextjs-api-reference@0.8.7
+
+## 0.2.6
+
+### Patch Changes
+
+- Updated dependencies [161733e]
+  - @scalar/nextjs-api-reference@0.8.6
+
+## 0.2.5
+
+### Patch Changes
+
+- Updated dependencies [221e35f]
+- Updated dependencies [6ead9cd]
+- Updated dependencies [4156f1d]
+  - @scalar/types@0.2.3
+  - @scalar/nextjs-api-reference@0.8.5
+  - @scalar/ts-to-openapi@0.1.0
+
+## 0.2.4
+
+### Patch Changes
+
+- @scalar/nextjs-api-reference@0.8.4
+- @scalar/ts-to-openapi@0.1.0
+- @scalar/types@0.2.2
+
+## 0.2.3
+
+### Patch Changes
+
+- 66e2768: Removed app router route group from url
+  - @scalar/nextjs-api-reference@0.8.3
+  - @scalar/ts-to-openapi@0.1.0
+  - @scalar/types@0.2.1
+
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [e660779]
+  - @scalar/nextjs-api-reference@0.8.3
+
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [4440949]
+  - @scalar/types@0.2.1
+  - @scalar/nextjs-api-reference@0.8.1
+
+## 0.2.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- Updated dependencies [483ca93]
+  - @scalar/ts-to-openapi@0.1.0
+  - @scalar/nextjs-api-reference@0.8.0
+  - @scalar/types@0.2.0
+
+## 0.1.19
+
+### Patch Changes
+
+- Updated dependencies [be8a6ec]
+  - @scalar/types@0.1.16
+  - @scalar/nextjs-api-reference@0.7.17
+
+## 0.1.18
+
+### Patch Changes
+
+- Updated dependencies [f711ab5]
+- Updated dependencies [0222ad4]
+- Updated dependencies [cb9428c]
+- Updated dependencies [67aa0f4]
+  - @scalar/types@0.1.15
+  - @scalar/nextjs-api-reference@0.7.16
+
+## 0.1.17
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+- Updated dependencies [8c7bad8]
+  - @scalar/ts-to-openapi@0.0.6
+  - @scalar/types@0.1.14
+  - @scalar/nextjs-api-reference@0.7.15
+
+## 0.1.16
+
+### Patch Changes
+
+- Updated dependencies [e8457cb]
+  - @scalar/nextjs-api-reference@0.7.14
+  - @scalar/types@0.1.13
+
+## 0.1.15
+
+### Patch Changes
+
+- 36fd1fc: feat: support src/ directory (not just app/)
+  - @scalar/nextjs-api-reference@0.7.13
+
+## 0.1.14
+
+### Patch Changes
+
+- Updated dependencies [62c4ce3]
+  - @scalar/types@0.1.12
+  - @scalar/nextjs-api-reference@0.7.13
+  - @scalar/ts-to-openapi@0.0.5
+
+## 0.1.13
+
+### Patch Changes
+
+- Updated dependencies [eb4854d]
+  - @scalar/types@0.1.11
+  - @scalar/nextjs-api-reference@0.7.12
+
+## 0.1.12
+
+### Patch Changes
+
+- @scalar/nextjs-api-reference@0.7.11
+- @scalar/types@0.1.10
+
+## 0.1.11
+
+### Patch Changes
+
+- Updated dependencies [17e7d02]
+  - @scalar/types@0.1.9
+  - @scalar/nextjs-api-reference@0.7.10
+
+## 0.1.10
+
+### Patch Changes
+
+- Updated dependencies [feaa314]
+  - @scalar/types@0.1.8
+  - @scalar/nextjs-api-reference@0.7.9
+
+## 0.1.9
+
+### Patch Changes
+
+- Updated dependencies [9def02e]
+- Updated dependencies [3745d77]
+  - @scalar/types@0.1.7
+  - @scalar/nextjs-api-reference@0.7.8
+
+## 0.1.8
+
+### Patch Changes
+
+- e3e2cd8: chore: use ApiReferenceConfiguration instead of ReferenceConfiguration
+  - @scalar/nextjs-api-reference@0.7.7
+
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies [3783345]
+  - @scalar/types@0.1.6
+  - @scalar/nextjs-api-reference@0.7.7
+
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [e09dab3]
+- Updated dependencies [04e27a1]
+  - @scalar/types@0.1.5
+  - @scalar/nextjs-api-reference@0.7.6
+
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies [8efedf3]
+- Updated dependencies [82a4ba8]
+- Updated dependencies [57feba6]
+  - @scalar/types@0.1.4
+  - @scalar/nextjs-api-reference@0.7.5
+
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [543a16c]
+- Updated dependencies [57e96a0]
+  - @scalar/types@0.1.3
+  - @scalar/nextjs-api-reference@0.7.4
+
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [7a8965c]
+- Updated dependencies [49dffff]
+  - @scalar/types@0.1.2
+  - @scalar/nextjs-api-reference@0.7.3
+
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [39c0f47]
+  - @scalar/types@0.1.1
+  - @scalar/nextjs-api-reference@0.7.2
+
+## 0.1.1
+
+### Patch Changes
+
+- @scalar/nextjs-api-reference@0.7.1
+
+## 0.1.0
+
+### Minor Changes
+
+- 5f9a8a2: feat!: remove the spec prefix, make content and url top-level attributes
+
+### Patch Changes
+
+- Updated dependencies [5f9a8a2]
+  - @scalar/nextjs-api-reference@0.7.0
+  - @scalar/types@0.1.0
+
+## 0.0.44
+
+### Patch Changes
+
+- Updated dependencies [fc6a45e]
+  - @scalar/types@0.0.41
+  - @scalar/nextjs-api-reference@0.6.1
+
+## 0.0.43
+
+### Patch Changes
+
+- Updated dependencies [4d03e0f]
+- Updated dependencies [dd38a68]
+  - @scalar/types@0.0.40
+  - @scalar/nextjs-api-reference@0.6.0
+
+## 0.0.42
+
+### Patch Changes
+
+- Updated dependencies [bab7990]
+- Updated dependencies [2c621d4]
+  - @scalar/types@0.0.39
+  - @scalar/nextjs-api-reference@0.5.15
+
+## 0.0.41
+
+### Patch Changes
+
+- Updated dependencies [7f1a40e]
+  - @scalar/types@0.0.38
+  - @scalar/nextjs-api-reference@0.5.14
+
+## 0.0.40
+
+### Patch Changes
+
+- Updated dependencies [89d8b75]
+- Updated dependencies [8a04b8d]
+  - @scalar/types@0.0.37
+  - @scalar/nextjs-api-reference@0.5.13
+  - @scalar/ts-to-openapi@0.0.5
+
+## 0.0.39
+
+### Patch Changes
+
+- Updated dependencies [4db5161]
+  - @scalar/types@0.0.36
+  - @scalar/nextjs-api-reference@0.5.12
+
+## 0.0.38
+
+### Patch Changes
+
+- Updated dependencies [946a5df]
+- Updated dependencies [c10bbf5]
+- Updated dependencies [cf14cbb]
+  - @scalar/types@0.0.35
+  - @scalar/nextjs-api-reference@0.5.11
+  - @scalar/ts-to-openapi@0.0.5
+
+## 0.0.37
+
+### Patch Changes
+
+- @scalar/nextjs-api-reference@0.5.10
+- @scalar/ts-to-openapi@0.0.5
+- @scalar/types@0.0.34
+
+## 0.0.36
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+- Updated dependencies [54fdfcb]
+- Updated dependencies [fa6afe8]
+  - @scalar/ts-to-openapi@0.0.5
+  - @scalar/types@0.0.33
+  - @scalar/nextjs-api-reference@0.5.9
+
 ## 0.0.35
 
 ### Patch Changes

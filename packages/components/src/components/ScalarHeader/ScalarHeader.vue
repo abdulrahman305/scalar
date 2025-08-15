@@ -24,17 +24,17 @@
 export default {}
 </script>
 <script setup lang="ts">
-import { useBindCx } from '../../hooks/useBindCx'
+import { useBindCx } from '@scalar/use-hooks/useBindCx'
 
 const { cx } = useBindCx()
 
 defineSlots<{
   /** The first section of the header, typically on the left */
-  start?: () => any
+  start?(): unknown
   /** The middle section of the header */
-  default?: () => any
+  default?(): unknown
   /** The last section of the header, typically on the right */
-  end?: () => any
+  end?(): unknown
 }>()
 </script>
 <template>

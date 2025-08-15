@@ -1,10 +1,12 @@
 import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
 import { createStoreEvents } from '@/store/events'
+import { environmentSchema } from '@scalar/oas-utils/entities/environment'
+import { collectionSchema, operationSchema } from '@scalar/oas-utils/entities/spec'
+import { workspaceSchema } from '@scalar/oas-utils/entities/workspace'
 import { mount } from '@vue/test-utils'
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
 
+import { mockUseLayout } from '@/vitest.setup'
 import RequestSubpageHeader from './RequestSubpageHeader.vue'
 
 // Mock vue-router
@@ -26,44 +28,41 @@ const mockWorkspace = {
   events: createStoreEvents(),
   hideClientButton: false,
   showSidebar: true,
-  requestHistory: ref([]),
+  requestHistory: [],
 }
 
-// Mock useActiveEntities
-vi.mock('@/store/active-entities', () => ({
-  useActiveEntities: vi.fn(),
-}))
-const mockUseActiveEntities = useActiveEntities as Mock
-const mockActiveEntities = {
-  activeCollection: ref({
-    documentUrl: 'https://example.com',
-    integration: 'test',
-  }),
-  activeEnvironment: ref({}),
-  activeRequest: ref({ uid: 'mockRequestUid' }),
-  activeWorkspace: ref({}),
-}
-
-// Mock useLayout
-vi.mock('@/hooks', () => ({
-  useLayout: () => ({
-    layout: 'modal',
-  }),
-}))
+const mockCollection = collectionSchema.parse({
+  documentUrl: 'https://example.com',
+  integration: 'test',
+})
+const mockOperation = operationSchema.parse({
+  uid: 'mockRequestUid',
+})
+const mockEnvironment = environmentSchema.parse({
+  uid: 'mockEnvironmentUid',
+  name: 'Mock Environment',
+  description: 'Mock Environment Description',
+})
 
 describe('RequestSubpageHeader', () => {
-  const createWrapper = (options = {}) => {
-    return mount(RequestSubpageHeader, {
+  const createWrapper = (options = {}) =>
+    mount(RequestSubpageHeader, {
       props: {
-        modelValue: false,
+        collection: mockCollection,
+        environment: mockEnvironment,
+        envVariables: [],
+        layout: 'modal',
+        operation: mockOperation,
+        server: undefined,
+        selectedSchemeOptions: [],
+        workspace: workspaceSchema.parse(mockWorkspace),
       },
+      attachTo: document.body,
       ...options,
     })
-  }
 
   // Mock our request + example
   beforeEach(() => {
-    mockUseActiveEntities.mockReturnValue(mockActiveEntities)
     mockUseWorkspace.mockReturnValue(mockWorkspace)
   })
 
@@ -72,30 +71,11 @@ describe('RequestSubpageHeader', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
-  it('shows SidebarToggle when showSidebar is true', () => {
-    const wrapper = createWrapper()
-    expect(wrapper.find('.scalar-sidebar-toggle').exists()).toBe(true)
-  })
-
-  it('hides SidebarToggle when showSidebar is false', async () => {
-    mockUseWorkspace.mockReturnValue({ ...mockWorkspace, showSidebar: false })
-    const wrapper = createWrapper()
-
-    await wrapper.vm.$nextTick()
-    expect(wrapper.find('.scalar-sidebar-toggle').exists()).toBe(false)
-  })
-
   it('shows OpenApiClientButton when layout is modal and document URL is present', async () => {
+    vi.mocked(mockUseLayout).mockReturnValue({ layout: 'modal' })
     mockUseWorkspace.mockReturnValue({
       ...mockWorkspace,
       hideClientButton: false,
-    })
-    mockUseActiveEntities.mockReturnValue({
-      ...mockActiveEntities,
-      activeCollection: ref({
-        documentUrl: 'https://example.com',
-        integration: 'test',
-      }),
     })
     const wrapper = createWrapper()
 
@@ -103,13 +83,8 @@ describe('RequestSubpageHeader', () => {
     expect(wrapper.find('.open-api-client-button').exists()).toBe(true)
   })
 
-  it('emits update:modelValue when SidebarToggle is clicked', async () => {
-    const wrapper = createWrapper()
-    await wrapper.find('.scalar-sidebar-toggle').trigger('click')
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([true])
-  })
-
   it('emits hideModal when close button is clicked', async () => {
+    vi.mocked(mockUseLayout).mockReturnValue({ layout: 'modal' })
     mockUseWorkspace.mockReturnValue({
       ...mockWorkspace,
     })

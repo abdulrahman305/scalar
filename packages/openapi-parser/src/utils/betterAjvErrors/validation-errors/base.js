@@ -1,13 +1,9 @@
 // import { codeFrameColumns } from '@babel/code-frame';
 // import chalk from 'chalk';
-// import { getMetaFromPath } from '../json/index'
+// import { getMetaFromPath } from '@/json/index'
 
 export default class BaseValidationError {
-  // eslint-disable-next-line default-param-last
-  constructor(
-    options = { isIdentifierLocation: false },
-    { data, schema, jsonAst, jsonRaw },
-  ) {
+  constructor(options = { isIdentifierLocation: false }, { data, schema, jsonAst, jsonRaw }) {
     this.options = options
     this.data = data
     this.schema = schema
@@ -19,14 +15,10 @@ export default class BaseValidationError {
    * @return {string}
    */
   get instancePath() {
-    return typeof this.options.instancePath !== 'undefined'
-      ? this.options.instancePath
-      : this.options.dataPath
+    return typeof this.options.instancePath !== 'undefined' ? this.options.instancePath : this.options.dataPath
   }
 
   getError() {
-    throw new Error(
-      `Implement the 'getError' method inside ${this.constructor.name}!`,
-    )
+    throw new Error(`Implement the 'getError' method inside ${this.constructor.name}!`)
   }
 }

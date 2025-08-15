@@ -1,21 +1,22 @@
 <script setup lang="ts">
+import type { Environment } from '@scalar/oas-utils/entities/environment'
+import type { Workspace } from '@scalar/oas-utils/entities/workspace'
 import {
   colorPicker as colorPickerExtension,
   useCodeMirror,
+  useDropdown,
   type CodeMirrorLanguage,
   type Extension,
-  useDropdown,
 } from '@scalar/use-codemirror'
 import { nanoid } from 'nanoid'
-import { ref, toRef, useAttrs, watch, type Ref, computed } from 'vue'
-import DataTableInputSelect from '../DataTable/DataTableInputSelect.vue'
-import { pillPlugin, backspaceCommand } from './codeVariableWidget'
-import EnvironmentVariableDropdown from '@/views/Environment/EnvironmentVariableDropdown.vue'
-import { useClipboard } from '@scalar/use-hooks/useClipboard'
-import { ScalarIcon } from '@scalar/components'
-import { prettyPrintJson } from '@scalar/oas-utils/helpers'
-import { useActiveEntities } from '@/store/active-entities'
+import { computed, ref, toRef, useAttrs, watch, type Ref } from 'vue'
+
 import { useLayout } from '@/hooks'
+import type { EnvVariable } from '@/store/active-entities'
+import EnvironmentVariableDropdown from '@/views/Environment/EnvironmentVariableDropdown.vue'
+
+import DataTableInputSelect from '../DataTable/DataTableInputSelect.vue'
+import { backspaceCommand, pillPlugin } from './codeVariableWidget'
 
 const props = withDefaults(
   defineProps<{
@@ -24,6 +25,7 @@ const props = withDefaults(
     modelValue: string | number
     error?: boolean
     emitOnBlur?: boolean
+    extensions?: Extension[]
     lineNumbers?: boolean
     lint?: boolean
     disableTabIndent?: boolean
@@ -40,28 +42,33 @@ const props = withDefaults(
     nullable?: boolean
     withVariables?: boolean
     importCurl?: boolean
-    isCopyable?: boolean
     default?: string | number
+    environment: Environment
+    envVariables: EnvVariable[]
+    workspace: Workspace
+    lineWrapping?: boolean
   }>(),
   {
     disableCloseBrackets: false,
     disableEnter: false,
+    extensions: () => [],
     disableTabIndent: false,
     emitOnBlur: true,
     colorPicker: false,
     nullable: false,
     withVariables: true,
-    isCopyable: false,
     disabled: false,
+    lineWrapping: false,
   },
 )
 const emit = defineEmits<{
   (e: 'submit', v: string): void
   (e: 'update:modelValue', v: string): void
   (e: 'curl', v: string): void
+  (e: 'blur', v: string): void
 }>()
 
-const attrs = useAttrs()
+const attrs = useAttrs() as { id?: string }
 const uid = (attrs.id as string) || `id-${nanoid()}`
 
 const isFocused = ref(false)
@@ -74,10 +81,7 @@ const dropdownRef = ref<InstanceType<
   typeof EnvironmentVariableDropdown
 > | null>(null)
 
-const { activeEnvVariables, activeEnvironment, activeWorkspace } =
-  useActiveEntities()
 const { layout } = useLayout()
-const { copyToClipboard } = useClipboard()
 
 // ---------------------------------------------------------------------------
 // Event mapping from codemirror to standard input interfaces
@@ -86,7 +90,9 @@ const { copyToClipboard } = useClipboard()
 function handleChange(value: string) {
   // We need to be careful, only if the value is different we trigger an update
   // on initial load of the component, this gets triggered cause we set the content
-  if (value === props.modelValue) return null
+  if (value === props.modelValue) {
+    return null
+  }
   if (props.importCurl && value.trim().toLowerCase().startsWith('curl')) {
     emit('curl', value)
     // Maintain previous input value
@@ -100,6 +106,7 @@ function handleChange(value: string) {
     // Prevent table value population on current request
     return null
   }
+
   return props.handleFieldChange
     ? props.handleFieldChange(value)
     : emit('update:modelValue', value)
@@ -115,7 +122,10 @@ function handleSubmit(value: string) {
 /** Optional submit on blur.  */
 function handleBlur(value: string) {
   isFocused.value = false
-  if (props.emitOnBlur && props.modelValue) handleSubmit(value)
+  if (props.emitOnBlur && props.modelValue) {
+    handleSubmit(value)
+  }
+  emit('blur', value)
 }
 
 // ---------------------------------------------------------------------------
@@ -123,17 +133,28 @@ function handleBlur(value: string) {
 
 // WARNING: Extensions are non-reactive! If props change nothing will happen
 
-const extensions: Extension[] = []
-if (props.colorPicker) extensions.push(colorPickerExtension)
-extensions.push(
+const extensions: Extension[] = [...props.extensions]
+if (props.colorPicker) {
+  extensions.push(colorPickerExtension)
+}
+
+// Create a reactive pill plugin that updates when environment changes
+const pillPluginExtension = computed(() =>
   pillPlugin({
-    environment: activeEnvironment.value,
-    envVariables: activeEnvVariables.value,
-    workspace: activeWorkspace.value,
+    environment: props.environment,
+    envVariables: props.envVariables,
+    workspace: props.workspace,
     isReadOnly: layout === 'modal',
   }),
-  backspaceCommand,
 )
+
+// Base extensions that will be used for the editor
+const baseExtensions = computed(() => [
+  ...extensions,
+  pillPluginExtension.value,
+  backspaceCommand,
+])
+
 const codeMirrorRef: Ref<HTMLDivElement | null> = ref(null)
 
 const { codeMirror } = useCodeMirror({
@@ -141,7 +162,8 @@ const { codeMirror } = useCodeMirror({
     props.modelValue !== undefined ? String(props.modelValue) : '',
   ),
   onChange: (value) => {
-    handleChange(value), updateDropdownVisibility()
+    handleChange(value)
+    updateDropdownVisibility()
   },
   onFocus: () => (isFocused.value = true),
   onBlur: (val) => handleBlur(val),
@@ -152,7 +174,7 @@ const { codeMirror } = useCodeMirror({
   lineNumbers: toRef(() => props.lineNumbers),
   language: toRef(() => props.language),
   lint: toRef(() => props.lint),
-  extensions,
+  extensions: baseExtensions,
   placeholder: toRef(() => props.placeholder),
 })
 
@@ -176,20 +198,9 @@ const { handleDropdownSelect, updateDropdownVisibility } = useDropdown({
 })
 
 // Computed property to check if type is boolean and nullable
-const booleanOptions = computed(() => {
-  return props.type === 'boolean' ||
-    props.type?.includes('boolean') ||
-    props.nullable
-    ? ['true', 'false', 'null']
-    : ['true', 'false']
-})
-
-/** Expose focus method */
-defineExpose({
-  focus: () => {
-    codeMirror.value?.focus()
-  },
-})
+const booleanOptions = computed(() =>
+  props.nullable ? ['true', 'false', 'null'] : ['true', 'false'],
+)
 
 const handleKeyDown = (key: string, event: KeyboardEvent) => {
   if (showDropdown.value) {
@@ -203,15 +214,43 @@ const handleKeyDown = (key: string, event: KeyboardEvent) => {
       event.preventDefault()
       dropdownRef.value?.handleSelect()
     }
+  } else if (key === 'escape') {
+    if (!props.disableTabIndent) {
+      event.stopPropagation()
+    }
+  } else if (key === 'enter' && event.target instanceof HTMLDivElement) {
+    handleSubmit(event.target.textContent ?? '')
   }
 }
 
 const defaultType = computed(() => {
   return Array.isArray(props.type)
-    ? // Find the first type, that’s not 'null'
+    ? // Find the first type, that's not 'null'
       (props.type.find((type) => type !== 'null') ?? 'string')
-    : // If it’s not an array, just return the type
+    : // If it's not an array, just return the type
       props.type
+})
+
+const displayVariablesDropdown = computed(
+  () =>
+    showDropdown.value &&
+    props.withVariables &&
+    layout !== 'modal' &&
+    props.environment,
+)
+
+defineExpose({
+  /** Expose focus method */
+  focus: () => {
+    codeMirror.value?.focus()
+  },
+  // Expose these methods for testing
+  handleChange,
+  handleSubmit,
+  handleBlur,
+  booleanOptions,
+  codeMirror,
+  modelValue: props.modelValue,
 })
 </script>
 <script lang="ts">
@@ -223,9 +262,10 @@ export default {
 <template>
   <template v-if="disabled">
     <div
-      class="cursor-default flex items-center justify-center text-c-2"
-      :class="layout === 'modal' ? 'font-code pl-1 pr-2 text-sm' : 'px-2'">
-      <span>{{ modelValue }}</span>
+      class="text-c-2 flex cursor-default items-center justify-center"
+      :class="layout === 'modal' ? 'font-code pr-2 pl-1 text-base' : 'px-2'"
+      data-testid="code-input-disabled">
+      <span class="whitespace-nowrap">{{ modelValue }}</span>
     </div>
   </template>
   <template v-else-if="props.enum && props.enum.length">
@@ -255,48 +295,47 @@ export default {
       :id="uid"
       v-bind="$attrs"
       ref="codeMirrorRef"
-      class="peer font-code w-full whitespace-nowrap overflow-hidden text-xs leading-[1.44] relative has-[:focus-visible]:outline has-[:focus-visible]:rounded-[4px] -outline-offset-1"
+      class="group/input group-[.alert]:outline-orange group-[.error]:outline-red font-code peer relative w-full overflow-hidden text-xs leading-[1.44] whitespace-nowrap -outline-offset-1 has-[:focus-visible]:rounded-[4px] has-[:focus-visible]:outline"
       :class="{
+        'line-wrapping has-[:focus-visible]:bg-b-1 has-[:focus-visible]:absolute has-[:focus-visible]:z-1':
+          lineWrapping,
         'flow-code-input--error': error,
       }"
       @keydown.down.stop="handleKeyDown('down', $event)"
       @keydown.enter="handleKeyDown('enter', $event)"
+      @keydown.escape="handleKeyDown('escape', $event)"
       @keydown.up.stop="handleKeyDown('up', $event)">
       <div
-        v-if="isCopyable"
-        class="scalar-code-copy z-context">
-        <button
-          class="copy-button"
-          type="button"
-          @click="copyToClipboard(prettyPrintJson(modelValue))">
-          <span class="sr-only">Copy content</span>
-
-          <ScalarIcon
-            icon="Clipboard"
-            size="md" />
-        </button>
+        v-if="!disableTabIndent"
+        class="z-context text-c-2 absolute right-1.5 bottom-1 hidden font-sans group-has-[:focus-visible]/input:block"
+        role="alert">
+        Press
+        <kbd class="-mx-0.25 rounded border px-0.5 font-mono">Esc</kbd> then
+        <kbd class="-mx-0.25 rounded border px-0.5 font-mono">Tab</kbd> to exit
       </div>
     </div>
   </template>
   <div
     v-if="$slots.warning"
-    class="absolute centered-y right-7 text-orange text-xs">
+    class="centered-y text-orange absolute right-7 text-xs">
     <slot name="warning" />
   </div>
-  <slot name="icon"></slot>
+  <div
+    v-if="$slots.icon"
+    class="centered-y absolute right-0 flex h-full items-center p-1.5 group-has-[.cm-focused]:z-1">
+    <slot name="icon" />
+  </div>
   <div
     v-if="required"
-    class="required absolute centered-y right-0 pt-px pr-2 text-xxs text-c-3 bg-b-1 shadow-[-8px_0_4px_var(--scalar-background-1)] opacity-100 duration-150 transition-opacity peer-has-[.cm-focused]:opacity-0 pointer-events-none">
+    class="required centered-y text-xxs text-c-3 group-[.error]:text-red bg-b-1 pointer-events-none absolute right-0 mr-0.5 pt-px pr-2 opacity-100 shadow-[-8px_0_4px_var(--scalar-background-1)] transition-opacity duration-150 group-[.alert]:bg-transparent group-[.alert]:shadow-none group-[.error]:bg-transparent group-[.error]:shadow-none peer-has-[.cm-focused]:opacity-0">
     Required
   </div>
   <EnvironmentVariableDropdown
-    v-if="
-      showDropdown && withVariables && layout !== 'modal' && activeEnvironment
-    "
+    v-if="displayVariablesDropdown"
     ref="dropdownRef"
     :dropdownPosition="dropdownPosition"
-    :envVariables="activeEnvVariables"
-    :environment="activeEnvironment"
+    :envVariables="envVariables"
+    :environment="environment"
     :query="dropdownQuery"
     @select="handleDropdownSelect" />
 </template>
@@ -371,8 +410,8 @@ export default {
   background-color: transparent;
   border-right: none;
   color: var(--scalar-color-3);
-  font-size: var(--scalar-mini);
-  line-height: 1.44;
+  font-size: var(--scalar-small);
+  line-height: 22px;
   border-radius: 0 0 0 3px;
 }
 :deep(.cm-gutters:before) {
@@ -387,11 +426,15 @@ export default {
 }
 :deep(.cm-gutterElement) {
   font-family: var(--scalar-font-code) !important;
-  padding: 0 6px 0 8px !important;
+  padding-left: 0px !important;
+  padding-right: 6px !important;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   position: relative;
+}
+:deep(.cm-lineNumbers .cm-gutterElement) {
+  min-width: fit-content;
 }
 :deep(.cm-gutter + .cm-gutter :not(.cm-foldGutter) .cm-gutterElement) {
   padding-left: 0 !important;
@@ -399,47 +442,12 @@ export default {
 :deep(.cm-scroller) {
   overflow: auto;
 }
-/* Copy Button */
-.peer:hover .copy-button,
-.copy-button:focus-visible {
-  opacity: 100;
-}
-.scalar-code-copy {
-  align-items: flex-start;
-  display: flex;
-  inset: 0;
-  justify-content: flex-end;
-  position: sticky;
-}
-.copy-button {
-  align-items: center;
-  display: flex;
-  position: relative;
-  background-color: var(--scalar-background-2);
-  border: 1px solid var(--scalar-border-color);
-  border-radius: 3px;
-  color: var(--scalar-color-3);
-  cursor: pointer;
-  height: 30px;
-  margin-bottom: -30px;
-  opacity: 0;
-  padding: 6px;
-  transition:
-    opacity 0.15s ease-in-out,
-    color 0.15s ease-in-out;
-  top: 0px;
-  right: 0px;
-}
-.scalar-code-copy,
-.copy-button {
-  /* Pass down the background color */
-  background: inherit;
-}
-.copy-button:hover {
-  color: var(--scalar-color-1);
-}
-.copy-button svg {
-  stroke-width: 1.5;
+.line-wrapping:focus-within :deep(.cm-content) {
+  display: inline-table;
+  min-height: fit-content;
+  padding: 3px 6px;
+  white-space: break-spaces;
+  word-break: break-all;
 }
 </style>
 <style>
@@ -450,14 +458,14 @@ export default {
   border-radius: 3px;
   display: inline-block;
   border-radius: 30px;
-  font-size: var(--scalar-mini);
+  font-size: var(--scalar-small);
   background: color-mix(in srgb, var(--tw-bg-base), transparent 94%) !important;
 }
 .cm-pill.bg-grey {
   background: var(--scalar-background-3) !important;
 }
 .dark-mode .cm-pill {
-  background: color-mix(in srgb, var(--tw-bg-base), transparent 80%) !important;
+  background: color-mix(in srgb, var(--tw-bg-base), transparent 90%) !important;
 }
 .cm-pill:first-of-type {
   margin-left: 0;

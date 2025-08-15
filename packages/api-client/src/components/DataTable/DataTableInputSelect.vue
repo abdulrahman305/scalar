@@ -89,14 +89,14 @@ const updateSelectedOptions = (selectedOptions: any) => {
 
 <template>
   <div
-    class="pr-4 w-full has-[:focus-visible]:outline has-[:focus-visible]:rounded-[4px] -outline-offset-1">
+    class="group-[.alert]:outline-orange group-[.error]:outline-red w-full pr-10 -outline-offset-1 has-[:focus-visible]:rounded-[4px] has-[:focus-visible]:outline">
     <template v-if="type === 'array'">
       <ScalarComboboxMultiselect
         :modelValue="selectedArrayOptions"
         :options="arrayOptions"
         @update:modelValue="updateSelectedOptions">
         <ScalarButton
-          class="gap-1.5 font-normal h-full justify-start px-2 py-1.5 custom-scroll pr-6 outline-none"
+          class="custom-scroll h-full justify-start gap-1.5 px-2 py-1.5 pr-6 font-normal outline-none"
           fullWidth
           variant="ghost">
           <span class="text-c-1 whitespace-nowrap">{{
@@ -106,7 +106,8 @@ const updateSelectedOptions = (selectedOptions: any) => {
           }}</span>
           <ScalarIcon
             icon="ChevronDown"
-            size="md" />
+            size="md"
+            class="min-w-4" />
         </ScalarButton>
       </ScalarComboboxMultiselect>
     </template>
@@ -114,7 +115,7 @@ const updateSelectedOptions = (selectedOptions: any) => {
       <input
         ref="inputRef"
         v-model="customValue"
-        class="border-none text-c-1 min-w-0 w-full px-2 py-1.5 outline-none"
+        class="text-c-1 w-full min-w-0 border-none px-2 py-1.5 outline-none"
         placeholder="Value"
         type="text"
         @blur="handleBlur"
@@ -125,10 +126,12 @@ const updateSelectedOptions = (selectedOptions: any) => {
         resize
         :value="initialValue">
         <ScalarButton
-          class="gap-1.5 font-normal h-full justify-start px-2 py-1.5 outline-none overflow-auto whitespace-nowrap"
+          class="h-full justify-start gap-1.5 overflow-auto px-2 py-1.5 font-normal whitespace-nowrap outline-none"
           fullWidth
           variant="ghost">
-          <span class="text-c-1">{{ initialValue || 'Select a value' }}</span>
+          <span class="text-c-1 overflow-hidden text-ellipsis">{{
+            initialValue || 'Select a value'
+          }}</span>
           <ScalarIcon
             icon="ChevronDown"
             size="md" />
@@ -137,11 +140,11 @@ const updateSelectedOptions = (selectedOptions: any) => {
           <ScalarDropdownItem
             v-for="option in options"
             :key="option"
-            class="flex gap-1.5 group/item items-center whitespace-nowrap text-ellipsis overflow-hidden"
+            class="group/item flex items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap"
             :value="option"
             @click="updateSelected(option)">
             <div
-              class="flex items-center justify-center rounded-full p-[3px] w-4 h-4"
+              class="flex h-4 w-4 items-center justify-center rounded-full p-[3px]"
               :class="
                 isSelected(option)
                   ? 'bg-c-accent text-b-1'
@@ -152,14 +155,14 @@ const updateSelectedOptions = (selectedOptions: any) => {
                 icon="Checkmark"
                 thickness="3" />
             </div>
-            {{ option }}
+            <span class="overflow-hidden text-ellipsis">{{ option }}</span>
           </ScalarDropdownItem>
           <template v-if="canAddCustomValue">
             <ScalarDropdownDivider v-if="options.length" />
             <ScalarDropdownItem
               class="flex items-center gap-1.5"
               @click="addingCustomValue = true">
-              <div class="flex items-center justify-center h-4 w-4">
+              <div class="flex h-4 w-4 items-center justify-center">
                 <ScalarIcon
                   icon="Add"
                   size="sm" />

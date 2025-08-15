@@ -1,55 +1,31 @@
 <script setup lang="ts">
-import { ScalarIcon } from '@scalar/components'
-import type { Target, TargetId } from '@scalar/snippetz/types'
-import { ref } from 'vue'
+import { Tab } from '@headlessui/vue'
+import { ScalarCombobox, ScalarIcon } from '@scalar/components'
+import { freezeElement } from '@scalar/helpers/dom/freeze-element'
+import type { AvailableClients, TargetId } from '@scalar/types/snippetz'
+import { computed, ref } from 'vue'
 
-import { type HttpClientState, useHttpClientStore } from '../../../stores'
+import { findClient } from '@/v2/blocks/scalar-request-example-block/helpers/find-client'
+import type {
+  ClientOption,
+  ClientOptionGroup,
+} from '@/v2/blocks/scalar-request-example-block/types'
+import { emitCustomEvent } from '@/v2/events/definitions'
 
-// Use the template store to keep it accessible globally
-const {
-  httpClient,
-  setHttpClient,
-  availableTargets,
-  getClientTitle,
-  getTargetTitle,
-} = useHttpClientStore()
+import { isFeaturedClient } from './featured-clients'
+
+const { selectedClient } = defineProps<{
+  /** Client options */
+  clientOptions: ClientOptionGroup[]
+  /** The currently selected Http Client */
+  selectedClient?: AvailableClients[number]
+  /** List of featured clients */
+  featuredClients: ClientOption[]
+  /** The id of the tab panel that contains for the non featured clients */
+  morePanel?: string
+}>()
 
 const containerRef = ref<HTMLElement>()
-
-// Show popular clients with an icon, not just in a select.
-const featuredClients = (
-  [
-    {
-      targetKey: 'shell',
-      clientKey: 'curl',
-    },
-    {
-      targetKey: 'ruby',
-      clientKey: 'native',
-    },
-    {
-      targetKey: 'node',
-      clientKey: 'undici',
-    },
-    {
-      targetKey: 'php',
-      clientKey: 'guzzle',
-    },
-    {
-      targetKey: 'python',
-      clientKey: 'python3',
-    },
-  ] as const
-).filter((featuredClient) =>
-  availableTargets.value.find((target: Target) => {
-    return (
-      target.key === featuredClient.targetKey &&
-      target.clients.find(
-        (client) => client.client === featuredClient.clientKey,
-      )
-    )
-  }),
-)
 
 /**
  * Icons have longer names to appear in icon searches, e.g. "javascript-js" instead of just "javascript". This function
@@ -58,117 +34,101 @@ const featuredClients = (
 const getIconByLanguageKey = (targetKey: TargetId) =>
   `programming-language-${targetKey === 'js' ? 'javascript' : targetKey}` as const
 
-const isSelectedClient = (language: HttpClientState) => {
-  return (
-    language.targetKey === httpClient.targetKey &&
-    language.clientKey === httpClient.clientKey
+/** Set custom example, or update the selected HTTP client globally */
+const selectClient = (option: ClientOption) => {
+  if (!containerRef.value) {
+    return
+  }
+
+  // We need to freeze the ui to prevent scrolling as the clients change
+  const unfreeze = freezeElement(containerRef.value)
+  setTimeout(() => {
+    unfreeze()
+  }, 300)
+
+  // Update the store
+  emitCustomEvent(
+    containerRef.value,
+    'scalar-update-selected-client',
+    option.id,
   )
 }
 
-const checkIfClientIsFeatured = (client: HttpClientState) =>
-  featuredClients.some(
-    (item) =>
-      item.targetKey === client.targetKey &&
-      item.clientKey === client.clientKey,
-  )
+/** Calculates the targetKey from the selected client id */
+const selectedTargetKey = computed(
+  () => selectedClient?.split('/')[0] as TargetId | undefined,
+)
 </script>
 <template>
   <div
     ref="containerRef"
     class="client-libraries-content">
-    <button
-      v-for="client in featuredClients"
-      :key="client.clientKey"
-      aria-hidden="true"
+    <Tab
+      v-for="featuredClient in featuredClients"
+      :key="featuredClient.clientKey"
       class="client-libraries rendered-code-sdks"
       :class="{
-        'client-libraries__active': isSelectedClient(client),
-      }"
-      tabindex="-1"
-      type="button"
-      @click="() => setHttpClient(client)">
-      <div :class="`client-libraries-icon__${client.targetKey}`">
+        'client-libraries__active': featuredClient.id === selectedClient,
+      }">
+      <div :class="`client-libraries-icon__${featuredClient.targetKey}`">
         <ScalarIcon
           class="client-libraries-icon"
-          :icon="getIconByLanguageKey(client.targetKey)" />
+          :icon="getIconByLanguageKey(featuredClient.targetKey)" />
       </div>
-      <span class="client-libraries-text">{{ getTargetTitle(client) }}</span>
-    </button>
+      <span class="client-libraries-text">{{
+        featuredClient.targetTitle
+      }}</span>
+    </Tab>
 
-    <label
-      class="client-libraries client-libraries__select"
-      :class="{
-        'client-libraries__active':
-          httpClient && !checkIfClientIsFeatured(httpClient),
-      }">
-      <span class="sr-only">Select Client Library</span>
-      <select
-        class="language-select"
-        :value="JSON.stringify(httpClient)"
-        @input="
-          (event) =>
-            setHttpClient(JSON.parse((event.target as HTMLSelectElement).value))
-        ">
-        <optgroup
-          v-for="target in availableTargets"
-          :key="target.key"
-          :label="target.title">
-          <option
-            v-for="client in target.clients"
-            :key="client.client"
-            :aria-label="`${target.title} ${getClientTitle({
-              targetKey: target.key,
-              clientKey: client.client,
-            })}`"
-            :value="
-              JSON.stringify({
-                targetKey: target.key,
-                clientKey: client.client,
-              })
-            ">
-            {{
-              getClientTitle({
-                targetKey: target.key,
-                clientKey: client.client,
-              })
-            }}
-          </option>
-        </optgroup>
-      </select>
-      <div
-        aria-hidden="true"
-        class="client-libraries-icon__more">
-        <template v-if="httpClient && !checkIfClientIsFeatured(httpClient)">
-          <div :class="`client-libraries-icon__${httpClient.targetKey}`">
-            <ScalarIcon
+    <!-- Client Dropdown -->
+    <ScalarCombobox
+      :options="clientOptions"
+      :modelValue="findClient(clientOptions, selectedClient)"
+      @update:modelValue="selectClient($event as ClientOption)"
+      placement="bottom-end"
+      teleport>
+      <button
+        class="client-libraries client-libraries__select"
+        :class="{
+          'client-libraries__active':
+            selectedClient && !isFeaturedClient(selectedClient),
+        }">
+        <div
+          aria-hidden="true"
+          class="client-libraries-icon__more">
+          <template v-if="selectedClient && !isFeaturedClient(selectedClient)">
+            <div :class="`client-libraries-icon__${selectedTargetKey}`">
+              <ScalarIcon
+                class="client-libraries-icon"
+                v-if="selectedTargetKey"
+                :icon="getIconByLanguageKey(selectedTargetKey)" />
+            </div>
+          </template>
+          <template v-else>
+            <svg
               class="client-libraries-icon"
-              :icon="getIconByLanguageKey(httpClient.targetKey)" />
-          </div>
-        </template>
-        <template v-else>
-          <svg
-            class="client-libraries-icon"
-            height="50"
-            role="presentation"
-            viewBox="0 0 50 50"
-            width="50"
-            xmlns="http://www.w3.org/2000/svg">
-            <g
-              fill="currentColor"
-              fill-rule="nonzero">
-              <path
-                d="M10.71 25.3a3.87 3.87 0 1 0 7.74 0 3.87 3.87 0 0 0-7.74 0M21.13 25.3a3.87 3.87 0 1 0 7.74 0 3.87 3.87 0 0 0-7.74 0M31.55 25.3a3.87 3.87 0 1 0 7.74 0 3.87 3.87 0 0 0-7.74 0" />
-            </g>
-          </svg>
-        </template>
-      </div>
-      <span
-        v-if="availableTargets.length"
-        aria-hidden="true"
-        class="client-libraries-text">
-        More
-      </span>
-    </label>
+              height="50"
+              role="presentation"
+              viewBox="0 0 50 50"
+              width="50"
+              xmlns="http://www.w3.org/2000/svg">
+              <g
+                fill="currentColor"
+                fill-rule="nonzero">
+                <path
+                  d="M10.71 25.3a3.87 3.87 0 1 0 7.74 0 3.87 3.87 0 0 0-7.74 0M21.13 25.3a3.87 3.87 0 1 0 7.74 0 3.87 3.87 0 0 0-7.74 0M31.55 25.3a3.87 3.87 0 1 0 7.74 0 3.87 3.87 0 0 0-7.74 0" />
+              </g>
+            </svg>
+          </template>
+        </div>
+        <span
+          v-if="clientOptions.length"
+          class="client-libraries-text client-libraries-text-more">
+          More
+        </span>
+        <span class="sr-only">Select from all clients</span>
+      </button>
+    </ScalarCombobox>
   </div>
 </template>
 <style scoped>
@@ -179,7 +139,8 @@ const checkIfClientIsFeatured = (client: HttpClientState) =>
   overflow: hidden;
   padding: 0 12px;
   background-color: var(--scalar-background-1);
-  border-top: var(--scalar-border-width) solid var(--scalar-border-color);
+  border-left: var(--scalar-border-width) solid var(--scalar-border-color);
+  border-right: var(--scalar-border-width) solid var(--scalar-border-color);
 }
 .client-libraries {
   display: flex;
@@ -194,9 +155,6 @@ const checkIfClientIsFeatured = (client: HttpClientState) =>
   color: var(--scalar-color-3);
   border-bottom: 1px solid transparent;
   user-select: none;
-}
-.client-libraries:first-child {
-  border-radius: var(--scalar-radius) 0 0 0;
 }
 
 .client-libraries:not(.client-libraries__active):hover:before {
@@ -269,34 +227,15 @@ const checkIfClientIsFeatured = (client: HttpClientState) =>
     transform: rotate(1turn);
   }
 }
-.client-libraries .client-libraries-text:last-of-type {
-  font-size: var(--scalar-mini);
-  font-weight: var(--scalar-semibold);
+.client-libraries .client-libraries-text {
+  font-size: var(--scalar-small);
   position: relative;
   display: flex;
   align-items: center;
 }
 .client-libraries__active .client-libraries-text {
   color: var(--scalar-color-1);
-}
-.client-libraries__select select {
-  background: var(--scalar-background-3);
-  color: var(--scalar-color-2);
-  opacity: 0;
-  height: 100%;
-  width: 100%;
-  aspect-ratio: 1;
-  position: absolute;
-  top: 0;
-  left: 0;
-  cursor: pointer;
-  z-index: 1;
-  appearance: none;
-  border: none;
-}
-.client-libraries__select:has(select:focus-visible) {
-  border-radius: var(--scalar-radius);
-  box-shadow: inset 0 0 0 1px var(--scalar-color-accent);
+  font-weight: var(--scalar-semibold);
 }
 @media screen and (max-width: 600px) {
   .references-classic .client-libraries {

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import IntersectionObserver from '@/components/IntersectionObserver.vue'
-import { useNavState } from '@/hooks/useNavState'
 import { getHeadings, splitContent } from '@scalar/code-highlight/markdown'
 import { ScalarMarkdown } from '@scalar/components'
 import GitHubSlugger from 'github-slugger'
 import { computed } from 'vue'
+
+import IntersectionObserver from '@/components/IntersectionObserver.vue'
+import { useNavState } from '@/hooks/useNavState'
 
 const props = defineProps<{
   /** Markdown document */
@@ -47,7 +48,9 @@ const { getHeadingId, getFullHash, isIntersectionEnabled, replaceUrlState } =
   useNavState()
 
 function handleScroll(headingId = '') {
-  if (!isIntersectionEnabled.value) return
+  if (!isIntersectionEnabled.value) {
+    return
+  }
 
   replaceUrlState(headingId)
 }
@@ -102,15 +105,12 @@ const transformHeading = (node: Record<string, any>) => {
 <style scoped>
 .introduction-description-heading {
   scroll-margin-top: 64px;
-  margin-top: 1em;
-  margin-bottom: 0.5em;
 }
-.markdown + .markdown {
-  margin-top: 1em;
-}
+
 .introduction-description {
   display: flex;
   flex-direction: column;
+  margin-top: 24px;
 }
 .references-classic .introduction-description :deep(img) {
   max-width: 720px;

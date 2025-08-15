@@ -15,6 +15,14 @@ npm install @scalar/galaxy
 
 ## Usage
 
+### Scalar Registry
+
+| Version | Format  | URL                                                                |
+| ------- | ------- | ------------------------------------------------------------------ |
+| Latest  | Preview | https://registry.scalar.com/@scalar/apis/galaxy                    |
+| Latest  | JSON    | https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json |
+| Latest  | YAML    | https://registry.scalar.com/@scalar/apis/galaxy/latest?format=yaml |
+
 ### CDN
 
 | Version     | Format | URL                                                          |
@@ -91,12 +99,12 @@ Response
 ### Serve an OpenAPI document using the CLI
 
 ```bash
-npx @scalar/cli serve ./src/documents/3.1.yaml --watch
+npx @scalar/cli document serve ./src/documents/3.1.yaml --watch
 ```
 
 ## Community
 
-We are API nerds. You too? Let’s chat on Discord: <https://discord.gg/scalar>
+We are API nerds. You too? Let's chat on Discord: <https://discord.gg/scalar>
 
 ## License
 

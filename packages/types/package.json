@@ -16,14 +16,15 @@
     "scalar",
     "references"
   ],
-  "version": "0.0.32",
+  "version": "0.2.11",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
-    "build": "scalar-build-rollup",
-    "lint:check": "eslint .",
-    "lint:fix": "eslint .  --fix",
+    "build": "scalar-build-esbuild",
+    "lint:check": "scalar-lint-check",
+    "lint:fix": "scalar-lint-fix",
+    "test": "vitest",
     "types:build": "scalar-types-build",
     "types:check": "scalar-types-check"
   },
@@ -35,20 +36,35 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./utils": {
-      "import": "./dist/utils/index.js",
-      "types": "./dist/utils/index.d.ts",
-      "default": "./dist/utils/index.js"
+    "./api-client": {
+      "import": "./dist/api-client/index.js",
+      "types": "./dist/api-client/index.d.ts",
+      "default": "./dist/api-client/index.js"
+    },
+    "./api-reference": {
+      "import": "./dist/api-reference/index.js",
+      "types": "./dist/api-reference/index.d.ts",
+      "default": "./dist/api-reference/index.js"
+    },
+    "./entities": {
+      "import": "./dist/entities/index.js",
+      "types": "./dist/entities/index.d.ts",
+      "default": "./dist/entities/index.js"
     },
     "./legacy": {
       "import": "./dist/legacy/index.js",
       "types": "./dist/legacy/index.d.ts",
       "default": "./dist/legacy/index.js"
     },
-    "./external": {
-      "import": "./dist/external/index.js",
-      "types": "./dist/external/index.d.ts",
-      "default": "./dist/external/index.js"
+    "./snippetz": {
+      "import": "./dist/snippetz/index.js",
+      "types": "./dist/snippetz/index.d.ts",
+      "default": "./dist/snippetz/index.js"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts",
+      "default": "./dist/utils/index.js"
     }
   },
   "files": [
@@ -57,10 +73,13 @@
   ],
   "dependencies": {
     "@scalar/openapi-types": "workspace:*",
-    "@unhead/schema": "^1.11.11"
+    "nanoid": "catalog:*",
+    "zod": "catalog:*"
   },
   "devDependencies": {
     "@scalar/build-tooling": "workspace:*",
-    "@scalar/snippetz": "workspace:*"
+    "@types/har-format": "^1.2.15",
+    "type-fest": "catalog:*",
+    "vite": "catalog:*"
   }
 }

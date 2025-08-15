@@ -10,13 +10,14 @@
 export default {}
 </script>
 <script setup lang="ts">
-import { useBindCx } from '../../hooks/useBindCx'
+import { ScalarIconUploadSimple } from '@scalar/icons'
+import { useBindCx } from '@scalar/use-hooks/useBindCx'
+
 import type {
   FileUploadInputEmits,
   FileUploadInputProps,
   FileUploadInputSlots,
 } from './types'
-import { ScalarIcon } from '../ScalarIcon'
 
 defineProps<FileUploadInputProps>()
 defineEmits<FileUploadInputEmits>()
@@ -36,9 +37,7 @@ const { cx } = useBindCx()
     @click="$emit('click', $event)">
     <div class="flex items-center gap-1 whitespace-nowrap text-c-2">
       <slot>
-        <ScalarIcon
-          icon="UploadSimple"
-          size="sm" />
+        <ScalarIconUploadSimple class="size-3.5" />
         <span> Upload {{ multiple ? 'files' : 'file' }} </span>
       </slot>
     </div>

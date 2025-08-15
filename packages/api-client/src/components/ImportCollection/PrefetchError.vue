@@ -7,8 +7,8 @@ defineProps<{
 </script>
 
 <template>
-  <div class="text-sm break-words text-center w-full font-medium">
-    We couldn’t find an OpenAPI document at the provided URL. Please download
+  <div class="w-full text-center text-sm font-medium break-words">
+    We couldn't find an OpenAPI document at the provided URL. Please download
     and import the
     <a
       v-if="url && isUrl(url)"

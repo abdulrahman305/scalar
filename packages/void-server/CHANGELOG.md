@@ -1,5 +1,52 @@
 # @scalar/void-server
 
+## 2.2.1
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+
+## 2.2.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+## 2.1.1
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+
+## 2.1.0
+
+### Minor Changes
+
+- e489824: feat: use hono logger
+
+### Patch Changes
+
+- e489824: feat: add /stream for server side events
+
+## 2.0.17
+
+### Patch Changes
+
+- 238c8e8: fix: void server docker deployment
+
+## 2.0.16
+
+### Patch Changes
+
+- fc6a45e: refactor: use stricter TS config
+
+## 2.0.15
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+- 1223c1f: chore: code style
+
 ## 2.0.14
 
 ### Patch Changes

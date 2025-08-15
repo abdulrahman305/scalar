@@ -4,13 +4,13 @@ import { htmlFromMarkdown } from './markdown'
 
 describe('htmlFromMarkdown', () => {
   it('returns HTML', () => {
-    const html = htmlFromMarkdown(`# Example Heading`)
+    const html = htmlFromMarkdown('# Example Heading')
 
     expect(html.trim()).toEqual('<h1>Example Heading</h1>')
   })
 
   it('removes tags', () => {
-    const html = htmlFromMarkdown(`# <i>Example</i> <em>Heading</em>`, {
+    const html = htmlFromMarkdown('# <i>Example</i> <em>Heading</em>', {
       removeTags: ['i'],
     })
 
@@ -18,28 +18,21 @@ describe('htmlFromMarkdown', () => {
   })
 
   it('removes script tags', () => {
-    const html = htmlFromMarkdown(
-      `# Example Heading<script>alert('foobar');</script>`,
-    )
+    const html = htmlFromMarkdown(`# Example Heading<script>alert('foobar');</script>`)
 
     expect(html.trim()).toEqual('<h1>Example Heading</h1>')
   })
 
   it('allows given tags', () => {
-    const html = htmlFromMarkdown(
-      `# Example Heading<script>alert('foobar');</script>`,
-      {
-        allowTags: ['script'],
-      },
-    )
+    const html = htmlFromMarkdown(`# Example Heading<script>alert('foobar');</script>`, {
+      allowTags: ['script'],
+    })
 
-    expect(html.trim()).toEqual(
-      `<h1>Example Heading\n  <script>alert('foobar');</script>\n</h1>`,
-    )
+    expect(html.trim()).toEqual(`<h1>Example Heading\n  <script>alert('foobar');</script>\n</h1>`)
   })
 
   it('allows to add ids', () => {
-    const html = htmlFromMarkdown(`# Example Heading`, {
+    const html = htmlFromMarkdown('# Example Heading', {
       transformType: 'heading',
       transform: (node) => {
         node.data = {

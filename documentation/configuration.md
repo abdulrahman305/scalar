@@ -1,44 +1,268 @@
 # Configuration
 
-There’s a universal configuration object that can be used on all platforms.
+You can pass a — what we call — universal configuration object to fine-tune your API reference.
 
-#### isEditable?: boolean
+## Universal Configuration
 
-Whether the Swagger editor should be shown.
+It is universal, because it works in all environments. You can pass it to the JS API directly, or you can use it in one
+of our integrations.
+
+Let's say you are working with just an HTML file, that's how you pass the configuration:
+
+```ts
+Scalar.createApiReference('#app', {
+  // Your configuration goes here…
+  url: '…'
+})
+```
+
+Or — just as an example — in the Hono server framework, you would pass the same configuration like this:
+
+```ts
+app.get(
+  '/doc',
+  Scalar({
+    // Your configuration goes here…
+    url: '…'
+  }),
+)
+```
+
+## OpenAPI documents
+
+There is just one thing that is really required to render at least something: The content.
+
+There are a bunch of ways to pass your OpenAPI document:
+
+### URL
+
+Pass an absolute or relative URL to your OpenAPI document.
+
+```ts
+Scalar.createApiReference('#app', {
+  url: '/openapi.json'
+})
+```
+
+This can be JSON or YAML.
+
+It's the recommended way to pass your OpenAPI document. In most cases, the OpenAPI document can be cached by the browser
+and subsequent requests are pretty fast then, even if the document grows over time.
+
+> No OpenAPI document? All backend frameworks have some kind of OpenAPI generator. Just
+> search for "yourframework generate openapi document".
+
+### Content
+
+> While this approach is convenient for quick setup, it may impact performance for large documents.
+> For optimal performance with extensive OpenAPI specifications, consider using a URL to an external OpenAPI document
+> instead.
+
+You can just directly pass JSON/YAML content:
+
+```ts
+Scalar.createApiReference('#app', {
+  content: `{
+    "openapi": "3.1.0",
+    "info": {
+      "title": "Hello World",
+      "version": "1.0.0"
+    },
+    "paths": {
+      // …
+    }
+  }`
+})
+```
+
+### Multiple Documents
+
+Add multiple OpenAPI documents to render all of them. We will need a slug and title to distinguish them in the UI and in
+the URL. You can just omit those attributes, and we will try our best to still distinguish them, though.
+
+```ts
+Scalar.createApiReference('#app', {
+  sources: [
+    // API #1
+    {
+      title: 'Scalar Galaxy', // optional, would fallback to 'API #1'
+      slug: 'scalar-galaxy', // optional, would be auto-generated from the title or the index
+      url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+    },
+    // API #2
+    {
+      url: 'https://example.com/openapi.json',
+    },
+    // API #3
+    {
+      content: '{ "openapi": "3.1.1", … }',
+    }
+  ]
+})
+```
+
+The first one in the list is the default one. Sometimes, this list is auto-generated and you might want to explicitly
+set the default like this:
+
+```ts
+Scalar.createApiReference('#app', {
+  sources: [
+    // API #1
+    {
+      url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+    },
+    // API #2
+    {
+      url: 'https://example.com/openapi.json',
+      // This will make it the default OpenAPI document:
+      default: true,
+    }
+  ]
+})
+```
+
+### Multiple Configurations
+
+Sometimes, you want to modify the configuration for your OpenAPI documents. And the good news is: You can.
+
+Pass an array of configurations to render multiple documents with specific configurations:
+
+```ts
+Scalar.createApiReference('#app', [
+  // Configuration #1
+  {
+    title: 'Scalar Galaxy', // optional, would fallback to 'API #1'
+    slug: 'scalar-galaxy', // optional, would be auto-generated from the title or the index
+    url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+    customCss: `body { background-color: #BADA55}`
+  },
+  // Configuration #2
+  {
+    url: 'https://example.com/openapi.json',
+    customCss: `body { background-color: #c0ffee}`
+  },
+  // Configuration #3
+  {
+    content: '{ "openapi": "3.1.1", … }',
+    customCss: `body { background-color: #facade}`
+  }
+])
+```
+
+By default, the first one in the list will be the default configuration. You can explicitly set one with `default: true`:
+
+```ts
+Scalar.createApiReference('#app', [
+  {
+    url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+  },
+  {
+    url: 'https://example.com/openapi.json',
+  },
+  {
+    // Make this the default configuration:
+    default: true,
+    content: '{ "openapi": "3.1.1", … }',
+  }
+])
+```
+
+
+### Multiple Configurations with Sources (Advanced)
+
+You can even combine multiple configurations that each have their own set of sources. This gives you maximum flexibility in organizing and configuring your API documents:
+
+```ts
+Scalar.createApiReference('#app', [
+  // Configuration #1
+  {
+    // With sources! 🤯
+    sources: [
+      // API #1
+      {
+        url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+      },
+      // API #2
+      {
+        url: 'https://example.com/openapi.json',
+        // This will make it the default OpenAPI document:
+        default: true,
+      }
+    ]
+  },
+  // Configuration #2
+  {
+    url: 'https://example.com/openapi.json',
+  },
+  // Configuration #3
+  {
+    sources: [
+      {
+        content: '{ "openapi": "3.1.1", … }',
+      }
+    ]
+  }
+])
+```
+
+### JSON or YAML
+
+It is completely up to you whether you want to pass JSON or YAML. None of the differences make really a big difference,
+but here is a short overview:
+
+* JSON is faster to parse for the browser
+* JSON is supported natively in basically any environment
+* YAML is easier to write, especially if you want multiline text (for example for descriptions)
+* YAML is easier to read for humans
+* YAML documents tend to be a little bit smaller
+
+## List of all attributes
+
+### content?: string | Record<string, any> | () => Record<string, any>
+
+Directly pass an OpenAPI/Swagger document (JSON or YAML) as a string:
 
 ```js
 {
-  isEditable: true
+  content: '{ "openapi": "3.1.1" }'
 }
 ```
 
-#### spec.content?: string
-
-Directly pass an OpenAPI/Swagger spec.
+Or as a JavaScript object:
 
 ```js
 {
-  spec: {
-    content: '{ … }'
+  content: {
+    openapi: '3.1.1',
   }
 }
 ```
 
-#### spec.url?: string
-
-Pass the URL of a spec file (JSON or Yaml).
+Or as a callback returning the actual document:
 
 ```js
 {
-  spec: {
-    url: '/openapi.json'
+  content() {
+    return {
+      openapi: '3.1.1',
+    }
   }
 }
 ```
 
-#### proxyUrl?: string
+### url?: string
 
-Making requests to other domains is restricted in the browser and requires [CORS headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS). It’s recommended to use a proxy to send requests to other origins.
+Pass the URL of an OpenAPI document (JSON or YAML).
+
+```js
+{
+  url: '/openapi.json'
+}
+```
+
+### proxyUrl?: string
+
+Making requests to other domains is restricted in the browser and requires [CORS headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS). It's recommended to use a proxy to send requests to other origins.
 
 ```js
 {
@@ -54,9 +278,21 @@ You can use our hosted proxy:
 }
 ```
 
-If you like to run your own, check out our [example proxy written in Go](https://github.com/scalar/scalar/tree/main/examples/proxy-server).
+If you like to run your own, check out our [example proxy written in Go](https://github.com/scalar/scalar/tree/main/projects/proxy-scalar-com).
 
-#### showSidebar?: boolean
+### plugins?: ApiReferencePlugin[]
+
+Pass an array of custom plugins that you want. [Read more about plugins here.](./plugins.md)
+
+```js
+{
+  plugins: [
+    XCustomExtensionPlugin(),
+  ],
+}
+```
+
+### showSidebar?: boolean
 
 Whether the sidebar should be shown.
 
@@ -66,7 +302,7 @@ Whether the sidebar should be shown.
 }
 ```
 
-#### hideModels?: boolean
+### hideModels?: boolean
 
 Whether models (`components.schemas` or `definitions`) should be shown in the sidebar, search and content.
 
@@ -78,11 +314,23 @@ Whether models (`components.schemas` or `definitions`) should be shown in the si
 }
 ```
 
-#### hideDownloadButton?: boolean
+### documentDownloadType?: 'json' | 'yaml' | 'both' | 'none'
 
-Whether to show the “Download OpenAPI Document” button
+Sets the file type of the document to download, set to `none` to hide the download button
 
-`@default false`
+`@default 'both'`
+
+```js
+{
+  documentDownloadType: 'json'
+}
+```
+
+### hideDownloadButton?: boolean
+
+Whether to show the "Download OpenAPI Document" button
+
+`@deprecated Use documentDownloadType: 'none' instead`
 
 ```js
 {
@@ -90,9 +338,9 @@ Whether to show the “Download OpenAPI Document” button
 }
 ```
 
-#### hideTestRequestButton?: boolean
+### hideTestRequestButton?: boolean
 
-Whether to show the “Test Request” button
+Whether to show the "Test Request" button
 
 `@default false`
 
@@ -102,7 +350,7 @@ Whether to show the “Test Request” button
 }
 ```
 
-#### hideSearch?: boolean
+### hideSearch?: boolean
 
 Whether to show the sidebar search bar
 
@@ -114,7 +362,7 @@ Whether to show the sidebar search bar
 }
 ```
 
-#### darkMode?: boolean
+### darkMode?: boolean
 
 Whether dark mode is on or off initially (light mode)
 
@@ -124,7 +372,7 @@ Whether dark mode is on or off initially (light mode)
 }
 ```
 
-#### forceDarkModeState?: 'dark' | 'light'
+### forceDarkModeState?: 'dark' | 'light'
 
 forceDarkModeState makes it always this state no matter what
 
@@ -134,7 +382,7 @@ forceDarkModeState makes it always this state no matter what
 }
 ```
 
-#### hideDarkModeToggle?: boolean
+### hideDarkModeToggle?: boolean
 
 Whether to show the dark mode toggle
 
@@ -144,11 +392,33 @@ Whether to show the dark mode toggle
 }
 ```
 
+### layout?: 'modern' | 'classic'
+
+The layout style to use for the API reference.
+
+```js
+{
+  layout: 'modern' // or 'classic'
+}
+```
+
+### isLoading?: boolean
+
+Controls whether the references show a loading state in the intro section. Useful when you want to indicate that content is being loaded.
+
+`@default false`
+
+```js
+{
+  isLoading: true
+}
+```
+
 ### customCss?: string
 
-You can pass custom CSS directly to the component. This is helpful for the integrations for Fastify, Express, Hono and others where you it’s easier to add CSS to the configuration.
+You can pass custom CSS directly to the component. This is helpful for the integrations for Fastify, Express, Hono and others where you it's easier to add CSS to the configuration.
 
-In Vue or React you’d probably use other ways to add custom CSS.
+In Vue or React you'd probably use other ways to add custom CSS.
 
 ```js
 {
@@ -156,7 +426,7 @@ In Vue or React you’d probably use other ways to add custom CSS.
 }
 ```
 
-#### searchHotKey?: string
+### searchHotKey?: string
 
 Key used with CTRL/CMD to open the search modal (defaults to 'k' e.g. CMD+k)
 
@@ -166,7 +436,7 @@ Key used with CTRL/CMD to open the search modal (defaults to 'k' e.g. CMD+k)
 }
 ```
 
-#### baseServerURL?: string
+### baseServerURL?: string
 
 If you want to prefix all relative servers with a base URL, you can do so here.
 
@@ -176,7 +446,7 @@ If you want to prefix all relative servers with a base URL, you can do so here.
 }
 ```
 
-#### servers?: Server[]
+### servers?: Server[]
 
 Pass a list of servers to override the servers in your OpenAPI document.
 
@@ -187,11 +457,20 @@ Pass a list of servers to override the servers in your OpenAPI document.
       url: 'https://api.scalar.com',
       description: 'Production',
     },
+    {
+      url: 'https://sandbox.scalar.com:{port}',
+      description: 'Development sandboxes',
+      variables: {
+        port: {
+          default: '8080',
+        }
+      }
+    },
   ]
 }
 ```
 
-#### metaData?: object
+### metaData?: object
 
 You can pass information to the config object to configure meta information out of the box.
 
@@ -199,7 +478,7 @@ You can pass information to the config object to configure meta information out 
 {
   metaData: {
     title: 'Page title',
-    description: 'My page page',
+    description: 'My page description',
     ogDescription: 'Still about my my page',
     ogTitle: 'Page title',
     ogImage: 'https://example.com/image.png',
@@ -209,7 +488,7 @@ You can pass information to the config object to configure meta information out 
 }
 ```
 
-#### favicon?: string
+### favicon?: string
 
 You can specify the path to a favicon to be used for the documentation.
 
@@ -219,9 +498,9 @@ You can specify the path to a favicon to be used for the documentation.
 }
 ```
 
-#### defaultHttpClient?: HttpClientState
+### defaultHttpClient?: HttpClientState
 
-By default, we’re using Shell/curl as the default HTTP client. Or, if that’s disabled (through `hiddenClients`), we’re just using the first available HTTP client.
+By default, we're using Shell/curl as the default HTTP client. Or, if that's disabled (through `hiddenClients`), we're just using the first available HTTP client.
 
 You can explicitly set the default HTTP client, though:
 
@@ -234,9 +513,9 @@ You can explicitly set the default HTTP client, though:
 }
 ```
 
-#### hiddenClients?: array | true
+### hiddenClients?: array | true
 
-We’re generating code examples for a long list of popular HTTP clients. You can control which are shown by passing an array of clients, to hide the given clients.
+We're generating code examples for a long list of popular HTTP clients. You can control which are shown by passing an array of clients, to hide the given clients.
 
 Pass an empty array `[]` to show all available clients.
 
@@ -254,7 +533,7 @@ Pass an array of individual clients to hide just those clients.
 }
 ```
 
-Here’s a list of all clients that you can potentially hide:
+Here's a list of all clients that you can potentially hide:
 
 ```js
 {
@@ -270,9 +549,14 @@ But you can also pass `true` to **hide all** HTTP clients. If you have any custo
 }
 ```
 
-#### onSpecUpdate?: (spec: string) => void
+## onDocumentSelect?: () => void
 
-You can listen to spec changes with onSpecUpdate that runs on spec/swagger content change
+Triggered when multiple documents are configured and the users switches between them.
+
+
+### onSpecUpdate?: (spec: string) => void
+
+You can listen to changes with onSpecUpdate that runs on spec/swagger content change
 
 ```js
 {
@@ -282,47 +566,135 @@ You can listen to spec changes with onSpecUpdate that runs on spec/swagger conte
 }
 ```
 
-#### authentication?: Partial<AuthenticationState>
+### onServerChange?: (server: string) => void
+
+You can listen to changes with onServerChange that runs on server change
+
+```js
+{
+  onServerChange: (value: string) => {
+    console.log('Server updated:', value)
+  }
+}
+```
+
+### authentication?: AuthenticationConfiguration
 
 To make authentication easier you can prefill the credentials for your users:
 
-```js
+```ts
 {
   authentication: {
-    // The OpenAPI file has keys for all security schemes:
-    // Which one should be used by default?
+    // The OpenAPI file has keys for all security schemes.
+    // Specify which security scheme(s) should be used by default.
+    // Can be a single string:
     preferredSecurityScheme: 'my_custom_security_scheme',
-    // Can also be an array of preferred security schemes to select multiple:
-    preferredSecuritySchemes: ['my_custom_security_scheme', 'another_security_scheme'],
-    // Or an array of arrays for complex security requirements:
-    preferredSecuritySchemes: [['my_custom_security_scheme', 'another_security_scheme'], 'yet_another_security_scheme'],
-    // The `my_custom_security_scheme` security scheme is of type `apiKey`, so prefill the token:
-    apiKey: {
-      token: 'super-secret-token',
+    // Or an array for multiple schemes (OR relationship):
+    preferredSecurityScheme: ['scheme1', 'scheme2'],
+    // Or an array of arrays for complex AND/OR relationships:
+    preferredSecurityScheme: [['scheme1', 'scheme2'], 'scheme3'],
+
+    // Define security scheme configurations:
+    securitySchemes: {
+      // For API Key
+      apiKeyHeader: {
+        name: 'X-API-KEY',
+        in: 'header',
+        value: 'tokenValue',
+      },
+      // For HTTP Bearer
+      httpBearer: {
+        token: 'xyz token value',
+      },
+      // For HTTP Basic
+      httpBasic: {
+        username: 'username',
+        password: 'password',
+      },
+      // For OAuth2
+      oauth2: {
+        flows: {
+          authorizationCode: {
+            // Provide a token that is used instead of calling the auth provider
+            token: 'auth code token',
+            // Prefill client id or secret
+            'x-scalar-client-id': 'your-client-id',
+            clientSecret: 'your-client-secret',
+            // Overwrite values from the OpenAPI document
+            authorizationUrl: 'https://auth.example.com/oauth2/authorize',
+            tokenUrl: 'https://auth.example.com/oauth2/token',
+            'x-scalar-redirect-uri': 'https://your-app.com/callback',
+            // Use PKCE for additional security: 'SHA-256', 'plain', or 'no'
+            'x-usePkce': 'SHA-256',
+            // Preselected scopes
+            selectedScopes: ['profile', 'email'],
+            // Set additional query parameters for the Authorization request
+            'x-scalar-security-query': {
+              prompt: 'consent',
+              audience: 'scalar'
+            },
+            // Set additional body parameters for the Token request
+            'x-scalar-security-body': {
+              audience: 'scalar'
+            },
+            // Custom token name for non-standard OAuth2 responses (default: 'access_token')
+            'x-tokenName': 'custom_access_token',
+            // Specify where OAuth2 credentials should be sent: 'header' or 'body'
+            'x-scalar-credentials-location': 'header'
+          },
+          clientCredentials: {
+            token: 'client credentials token',
+            'x-scalar-client-id': 'your-client-id',
+            clientSecret: 'your-client-secret',
+            tokenUrl: 'https://auth.example.com/oauth2/token',
+            // Preselected scopes
+            selectedScopes: ['profile', 'api:read'],
+            // Custom token name for non-standard OAuth2 responses (default: 'access_token')
+            'x-tokenName': 'custom_access_token',
+            // Specify where OAuth2 credentials should be sent: 'header' or 'body'
+            'x-scalar-credentials-location': 'body'
+          },
+          implicit: {
+            token: 'implicit flow token',
+            'x-scalar-client-id': 'your-client-id',
+            authorizationUrl: 'https://auth.example.com/oauth2/authorize',
+            'x-scalar-redirect-uri': 'https://your-app.com/callback',
+            // Preselected scopes
+            selectedScopes: ['openid', 'profile'],
+            // Custom token name for non-standard OAuth2 responses (default: 'access_token')
+            'x-tokenName': 'custom_access_token'
+          },
+          password: {
+            token: 'password flow token',
+            'x-scalar-client-id': 'your-client-id',
+            clientSecret: 'your-client-secret',
+            tokenUrl: 'https://auth.example.com/oauth2/token',
+            username: 'default-username',
+            password: 'default-password',
+            selectedScopes: ['profile', 'email'],
+            // Custom token name for non-standard OAuth2 responses (default: 'access_token')
+            'x-tokenName': 'custom_access_token',
+            // Specify where OAuth2 credentials should be sent: 'header' or 'body'
+            'x-scalar-credentials-location': 'header'
+          },
+        },
+        // Set default scopes for all flows
+        'x-default-scopes': ['profile', 'email']
+      }
     },
-  },
+  }
 }
 ```
 
-For OpenAuth2 it’s more looking like this:
+The `authentication` configuration accepts:
 
-```js
-{
-  authentication: {
-    // The OpenAPI file has keys for all security schemes
-    // Which one should be used by default?
-    preferredSecurityScheme: 'oauth2',
-    // The `oauth2` security scheme is of type `oAuth2`, so prefill the client id and the scopes:
-    oAuth2: {
-    clientId: 'foobar123',
-    // optional:
-    scopes: ['read:planets', 'write:planets'],
-    },
-  },
-}
-```
+- `preferredSecurityScheme`: Specifies which security scheme(s) to use by default. Can be:
+  - A single security scheme name (string)
+  - An array of security scheme names (OR relationship)
+  - An array containing strings or arrays of strings (AND/OR relationship)
+- `securitySchemes`: An object mapping security scheme names to their configurations. Each security scheme can be configured with type-specific options.
 
-#### generateHeadingSlug?: (heading: Heading) => string
+### generateHeadingSlug?: (heading: Heading) => string
 
 Customize how heading URLs are generated. This function receives the heading and returns a string ID that controls the entire URL hash.
 
@@ -340,7 +712,7 @@ Customize how heading URLs are generated. This function receives the heading and
 }
 ```
 
-#### generateModelSlug?: (model: { name: string }) => string
+### generateModelSlug?: (model: { name: string }) => string
 
 Customize how model URLs are generated. This function receives the model object and returns a string ID. Note that `model/` will automatically be prepended to the result.
 
@@ -358,7 +730,7 @@ Customize how model URLs are generated. This function receives the model object 
 }
 ```
 
-#### generateTagSlug?: (tag: Tag) => string
+### generateTagSlug?: (tag: Tag) => string
 
 Customize how tag URLs are generated. This function receives the tag object and returns a string ID. Note that `tag/` will automatically be prepended to the result.
 
@@ -376,7 +748,7 @@ Customize how tag URLs are generated. This function receives the tag object and 
 }
 ```
 
-#### generateOperationSlug?: (operation: Operation) => string
+### generateOperationSlug?: (operation: Operation) => string
 
 Customize how operation URLs are generated. This function receives the operation object containing `path`, `operationId`, `method`, and `summary`. Note that `tag/tag-name/` will automatically be prepended to the result.
 
@@ -395,7 +767,7 @@ Customize how operation URLs are generated. This function receives the operation
 }
 ```
 
-#### generateWebhookSlug?: (webhook: { name: string; method?: string }) => string
+### generateWebhookSlug?: (webhook: { name: string; method?: string }) => string
 
 Customize how webhook URLs are generated. This function receives the webhook object containing the name and an optional HTTP method. Note that `webhook/` will automatically be prepended to the result.
 
@@ -414,7 +786,58 @@ Customize how webhook URLs are generated. This function receives the webhook obj
 }
 ```
 
-#### onLoaded?: () => void
+### pathRouting?: { basePath: string }
+
+Configuration for path-based routing instead of hash-based routing. Your server must support this routing method.
+
+```js
+{
+  pathRouting: {
+    basePath: '/standalone-api-reference'
+  }
+}
+```
+
+
+### redirect?: (path: string) => string | null | undefined
+
+Function to handle redirects in the API reference. Receives either:
+- The current path with hash if pathRouting is enabled
+- The current hash if using hashRouting (default)
+
+```js
+// Example for hashRouting (default)
+{
+  redirect: (hash) => hash.replace('#v1/old-path', '#v2/new-path')
+}
+
+// Example for pathRouting
+{
+  redirect: (pathWithHash) => {
+    if (pathWithHash.includes('#')) {
+      return pathWithHash.replace('/v1/tags/user#operation/get-user', '/v1/tags/user/operation/get-user')
+    }
+    return null
+  }
+}
+```
+
+### onBeforeRequest?: ({ request: Request }) => void | Promise<void>
+
+Callback function that is fired before a request is sent through the API client.
+
+The function receives the request object and can be used to modify the request before it is sent.
+
+```js
+{
+  onBeforeRequest: ({ request }) => {
+    // Add a custom header to all requests
+    request.headers.set('X-Custom-Header', 'test')
+  }
+}
+```
+
+### onLoaded?: () => void
 
 Callback that triggers as soon as the references are lazy loaded.
 
@@ -428,9 +851,60 @@ Callback that triggers as soon as the references are lazy loaded.
 }
 ```
 
-#### withDefaultFonts?: boolean
+### onShowMore?: (tagId: string) => void | Promise<void>
 
-By default we’re using Inter and JetBrains Mono, served by Google Fonts. If you use a different font or just don’t want to use Google Fonts, pass `withDefaultFonts: false` to the configuration.
+Callback function that is triggered when a user clicks the "Show more" button in the references. The function receives the ID of the tag that was clicked.
+
+```js
+{
+  onShowMore: (tagId) => {
+    console.log('Show more clicked for tag:', tagId)
+  }
+}
+```
+
+### onSidebarClick?: (href: string) => void | Promise<void>
+
+Callback function that is triggered when a user clicks on any item in the sidebar. The function receives the href of the clicked item.
+
+```js
+{
+  onSidebarClick: (href) => {
+    console.log('Sidebar item clicked:', href)
+  }
+}
+```
+
+### onRequestSent?: (request: string) => void
+
+Callback function that is triggered when a request is sent through the API client. The function receives the request details as a string.
+
+```js
+{
+  onRequestSent: (request) => {
+    console.log('Request sent:', request)
+  }
+}
+```
+
+### persistAuth?: boolean
+
+Whether to persist authentication credentials in local storage. This allows the authentication state to be maintained across page reloads.
+
+`@default false`
+
+```js
+{
+  persistAuth: true
+}
+```
+
+> [!WARNING]
+> Persisting authentication information in the browser's local storage may present security risks in certain environments. Use this feature with caution based on your security requirements.
+
+### withDefaultFonts?: boolean
+
+By default we're using Inter and JetBrains Mono, served from our fonts CDN at `https://fonts.scalar.com`. If you use a different font or just don't want to load web fonts, pass `withDefaultFonts: false` to the configuration.
 
 ```js
 {
@@ -438,7 +912,7 @@ By default we’re using Inter and JetBrains Mono, served by Google Fonts. If yo
 }
 ```
 
-#### defaultOpenAllTags?: boolean
+### defaultOpenAllTags?: boolean
 
 By default we only open the relevant tag based on the url, however if you want all the tags open by default then set this configuration option :)
 
@@ -448,7 +922,7 @@ By default we only open the relevant tag based on the url, however if you want a
 }
 ```
 
-#### tagsSorter?: 'alpha' | (a: Tag, b: Tag) => number
+### tagsSorter?: 'alpha' | (a: Tag, b: Tag) => number
 
 Sort tags alphanumerically (`'alpha'`):
 
@@ -460,7 +934,7 @@ Sort tags alphanumerically (`'alpha'`):
 
 Or specify a custom function to sort the tags.
 
-> Note: Most of our integrations pass the configuration as JSON and you can’t use custom sort functions there. It will work in Vue, Nuxt, React, Next and all integrations that don’t need to pass the configuration as a JSON string.
+> Note: Most of our integrations pass the configuration as JSON and you can't use custom sort functions there. It will work in Vue, Nuxt, React, Next and all integrations that don't need to pass the configuration as a JSON string.
 
 ```js
 {
@@ -474,7 +948,7 @@ Or specify a custom function to sort the tags.
 
 Learn more about Array sort functions: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
 
-#### operationsSorter?: 'alpha' | 'method' | ((a: TransformedOperation, b: TransformedOperation) => number)
+### operationsSorter?: 'alpha' | 'method' | ((a: OperationSortValue, b: OperationSortValue) => number)
 
 ```js
 {
@@ -487,8 +961,8 @@ Or specify a custom function to sort the operations.
 ```js
 {
   operationsSorter: (a, b) => {
-    const methodOrder = ['GET', 'POST', 'PUT', 'DELETE']
-    const methodComparison = methodOrder.indexOf(a.httpVerb) - methodOrder.indexOf(b.httpVerb)
+    const methodOrder = ['get', 'post', 'put', 'delete']
+    const methodComparison = methodOrder.indexOf(a.method) - methodOrder.indexOf(b.method)
 
     if (methodComparison !== 0) {
       return methodComparison
@@ -499,11 +973,13 @@ Or specify a custom function to sort the operations.
 }
 ```
 
-#### theme?: string
+> Note: `method` is the HTTP method of the operation, represented as a lowercase string.
 
-You don’t like the color scheme? We’ve prepared some themes for you:
+### theme?: string
 
-Can be one of: **alternate**, **default**, **moon**, **purple**, **solarized**, **bluePlanet**, **saturn**, **kepler**, **mars**, **deepSpace**, **none**
+You don't like the color scheme? We've prepared some themes for you:
+
+Can be one of: **alternate**, **default**, **moon**, **purple**, **solarized**, **bluePlanet**, **saturn**, **kepler**, **mars**, **deepSpace**, **laserwave**, **none**
 
 ```js
 {
@@ -511,7 +987,7 @@ Can be one of: **alternate**, **default**, **moon**, **purple**, **solarized**, 
 }
 ```
 
-#### hideClientButton?: boolean
+### hideClientButton?: boolean
 
 Whether to show the client button from the reference sidebar and modal
 

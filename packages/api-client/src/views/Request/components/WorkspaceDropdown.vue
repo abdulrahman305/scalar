@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import DeleteSidebarListElement from '@/components/Sidebar/Actions/DeleteSidebarListElement.vue'
-import EditSidebarListElement from '@/components/Sidebar/Actions/EditSidebarListElement.vue'
-import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
 import {
   ScalarButton,
   ScalarDropdown,
@@ -11,18 +7,25 @@ import {
   ScalarIcon,
   ScalarListboxCheckbox,
   ScalarModal,
-  ScalarTooltip,
   useModal,
 } from '@scalar/components'
+import type { Workspace } from '@scalar/oas-utils/entities/workspace'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+
+import DeleteSidebarListElement from '@/components/Sidebar/Actions/DeleteSidebarListElement.vue'
+import EditSidebarListElement from '@/components/Sidebar/Actions/EditSidebarListElement.vue'
+import { useWorkspace } from '@/store'
+import { useActiveEntities } from '@/store/active-entities'
 
 const { activeWorkspace } = useActiveEntities()
 const { workspaces, workspaceMutators, events } = useWorkspace()
 const { push } = useRouter()
 
-const updateSelected = (uid: string) => {
-  if (uid === activeWorkspace.value?.uid) return
+const updateSelected = (uid: Workspace['uid']) => {
+  if (uid === activeWorkspace.value?.uid) {
+    return
+  }
 
   push({
     name: 'workspace',
@@ -38,13 +41,15 @@ const createNewWorkspace = () =>
   events.commandPalette.emit({ commandName: 'Create Workspace' })
 
 const tempName = ref('')
-const tempUid = ref('')
+const tempUid = ref('' as Workspace['uid'])
 const editModal = useModal()
 const deleteModal = useModal()
 
-const openRenameModal = (uid: string) => {
+const openRenameModal = (uid: Workspace['uid']) => {
   const workspace = workspaces[uid]
-  if (!workspace) return
+  if (!workspace) {
+    return
+  }
 
   tempName.value = workspace.name
   tempUid.value = uid
@@ -60,9 +65,11 @@ const handleWorkspaceEdit = (name: string) => {
   editModal.hide()
 }
 
-const openDeleteModal = (uid: string) => {
+const openDeleteModal = (uid: Workspace['uid']) => {
   const workspace = workspaces[uid]
-  if (!workspace) return
+  if (!workspace) {
+    return
+  }
 
   tempName.value = workspace.name
   tempUid.value = uid
@@ -96,13 +103,13 @@ const deleteWorkspace = async () => {
 
 <template>
   <div>
-    <div class="flex items-center text-sm w-[inherit]">
+    <div class="flex w-[inherit] items-center text-base">
       <ScalarDropdown>
         <ScalarButton
-          class="font-normal h-full justify-start line-clamp-1 py-1.5 px-1.5 text-c-1 hover:bg-b-2 w-fit"
+          class="text-c-1 hover:bg-b-2 line-clamp-1 h-full w-fit justify-start px-1.5 py-1.5 font-normal"
           fullWidth
           variant="ghost">
-          <div class="font-bold m-0 flex gap-1.5 items-center">
+          <div class="m-0 flex items-center gap-1.5 font-bold">
             <h2 class="line-clamp-1 text-left">
               {{ activeWorkspace?.name }}
             </h2>
@@ -114,17 +121,17 @@ const deleteWorkspace = async () => {
           <ScalarDropdownItem
             v-for="(workspace, uid) in workspaces"
             :key="uid"
-            class="flex gap-1.5 group/item items-center whitespace-nowrap text-ellipsis overflow-hidden w-full"
-            @click.stop="updateSelected(uid)">
+            class="group/item flex w-full items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap"
+            @click.stop="updateSelected(workspace.uid)">
             <ScalarListboxCheckbox :selected="activeWorkspace?.uid === uid" />
-            <span class="text-ellipsis overflow-hidden">{{
+            <span class="overflow-hidden text-ellipsis">{{
               workspace.name
             }}</span>
             <ScalarDropdown
               placement="right-start"
               teleport>
               <ScalarButton
-                class="px-0.5 py-0 hover:bg-b-3 group-hover/item:flex aspect-square ml-auto -mr-1 h-fit"
+                class="hover:bg-b-3 -mr-1 ml-auto aspect-square h-fit px-0.5 py-0 group-hover/item:flex"
                 size="sm"
                 type="button"
                 variant="ghost">
@@ -135,8 +142,8 @@ const deleteWorkspace = async () => {
               <template #items>
                 <ScalarDropdownItem
                   class="flex gap-2"
-                  @mousedown="openRenameModal(uid)"
-                  @touchend.prevent="openRenameModal(uid)">
+                  @mousedown="openRenameModal(workspace.uid)"
+                  @touchend.prevent="openRenameModal(workspace.uid)">
                   <ScalarIcon
                     class="inline-flex"
                     icon="Edit"
@@ -144,42 +151,15 @@ const deleteWorkspace = async () => {
                     thickness="1.5" />
                   <span>Rename</span>
                 </ScalarDropdownItem>
-                <ScalarTooltip
-                  v-if="isLastWorkspace"
-                  class="z-overlay"
-                  side="bottom">
-                  <template #trigger>
-                    <ScalarDropdownItem
-                      class="flex gap-2 w-full"
-                      disabled
-                      @mousedown.prevent
-                      @touchend.prevent>
-                      <ScalarIcon
-                        class="inline-flex"
-                        icon="Delete"
-                        size="md"
-                        thickness="1.5" />
-                      <span>Delete</span>
-                    </ScalarDropdownItem>
-                  </template>
-                  <template #content>
-                    <div
-                      class="grid gap-1.5 pointer-events-none min-w-48 w-content shadow-lg rounded bg-b-1 z-context p-2 text-xxs leading-5 z-10 text-c-1">
-                      <div class="flex items-center text-c-2">
-                        <span>Only workspace cannot be deleted.</span>
-                      </div>
-                    </div>
-                  </template>
-                </ScalarTooltip>
                 <ScalarDropdownItem
-                  v-else
-                  class="flex !gap-2"
-                  @mousedown.prevent="openDeleteModal(uid)"
-                  @touchend.prevent="openDeleteModal(uid)">
+                  v-if="!isLastWorkspace"
+                  class="flex gap-2"
+                  @mousedown.prevent="openDeleteModal(workspace.uid)"
+                  @touchend.prevent="openDeleteModal(workspace.uid)">
                   <ScalarIcon
                     class="inline-flex"
                     icon="Delete"
-                    size="sm"
+                    size="md"
                     thickness="1.5" />
                   <span>Delete</span>
                 </ScalarDropdownItem>
@@ -192,7 +172,7 @@ const deleteWorkspace = async () => {
           <ScalarDropdownItem
             class="flex items-center gap-1.5"
             @click="createNewWorkspace">
-            <div class="flex items-center justify-center h-4 w-4">
+            <div class="flex h-4 w-4 items-center justify-center">
               <ScalarIcon
                 icon="Add"
                 size="sm" />
@@ -208,7 +188,7 @@ const deleteWorkspace = async () => {
       title="Delete workspace">
       <DeleteSidebarListElement
         :variableName="tempName"
-        warningMessage="This cannot be undone. You’re about to delete the workspace and everything inside it."
+        warningMessage="This cannot be undone. You're about to delete the workspace and everything inside it."
         @close="deleteModal.hide()"
         @delete="deleteWorkspace" />
     </ScalarModal>

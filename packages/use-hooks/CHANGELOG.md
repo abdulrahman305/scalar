@@ -1,5 +1,250 @@
 # @scalar/use-hooks
 
+## 0.2.4
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+  - @scalar/use-toasts@0.8.0
+
+## 0.2.3
+
+### Patch Changes
+
+- 4bbbb32: feat(components): add sidebar sections
+
+## 0.2.2
+
+### Patch Changes
+
+- cad6277: feat(themes)!: migrate to tailwind v4
+  - @scalar/use-toasts@0.8.0
+
+## 0.2.1
+
+### Patch Changes
+
+- @scalar/themes@0.12.1
+
+## 0.2.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- Updated dependencies [5613e40]
+- Updated dependencies [483ca93]
+  - @scalar/themes@0.12.0
+  - @scalar/use-toasts@0.8.0
+
+## 0.1.50
+
+### Patch Changes
+
+- @scalar/themes@0.11.3
+
+## 0.1.49
+
+### Patch Changes
+
+- Updated dependencies [90b773e]
+  - @scalar/themes@0.11.2
+
+## 0.1.48
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+- Updated dependencies [8c7bad8]
+- Updated dependencies [2157fb4]
+  - @scalar/use-toasts@0.7.10
+  - @scalar/themes@0.11.1
+
+## 0.1.47
+
+### Patch Changes
+
+- Updated dependencies [e8457cb]
+  - @scalar/themes@0.11.0
+
+## 0.1.46
+
+### Patch Changes
+
+- @scalar/themes@0.10.4
+- @scalar/use-toasts@0.7.9
+
+## 0.1.45
+
+### Patch Changes
+
+- @scalar/themes@0.10.3
+
+## 0.1.44
+
+### Patch Changes
+
+- @scalar/themes@0.10.2
+
+## 0.1.43
+
+### Patch Changes
+
+- 2b61d8e: docs(icons): update docs and storybook
+  - @scalar/themes@0.10.1
+
+## 0.1.42
+
+### Patch Changes
+
+- 363276e: feat(icons): add Phosphor icons to @scalar/icons
+
+## 0.1.41
+
+### Patch Changes
+
+- Updated dependencies [feaa314]
+  - @scalar/themes@0.10.0
+
+## 0.1.40
+
+### Patch Changes
+
+- @scalar/themes@0.9.86
+
+## 0.1.39
+
+### Patch Changes
+
+- Updated dependencies [8720ae7]
+  - @scalar/themes@0.9.85
+
+## 0.1.38
+
+### Patch Changes
+
+- @scalar/themes@0.9.84
+
+## 0.1.37
+
+### Patch Changes
+
+- @scalar/themes@0.9.83
+
+## 0.1.36
+
+### Patch Changes
+
+- @scalar/themes@0.9.82
+
+## 0.1.35
+
+### Patch Changes
+
+- @scalar/themes@0.9.81
+
+## 0.1.34
+
+### Patch Changes
+
+- @scalar/themes@0.9.80
+
+## 0.1.33
+
+### Patch Changes
+
+- @scalar/themes@0.9.79
+
+## 0.1.32
+
+### Patch Changes
+
+- Updated dependencies [1437882]
+- Updated dependencies [e00fa7e]
+- Updated dependencies [632978d]
+  - @scalar/themes@0.9.78
+
+## 0.1.31
+
+### Patch Changes
+
+- @scalar/themes@0.9.77
+
+## 0.1.30
+
+### Patch Changes
+
+- @scalar/themes@0.9.76
+
+## 0.1.29
+
+### Patch Changes
+
+- @scalar/themes@0.9.75
+
+## 0.1.28
+
+### Patch Changes
+
+- @scalar/themes@0.9.74
+
+## 0.1.27
+
+### Patch Changes
+
+- @scalar/themes@0.9.73
+
+## 0.1.26
+
+### Patch Changes
+
+- Updated dependencies [89d8b75]
+  - @scalar/themes@0.9.72
+  - @scalar/use-toasts@0.7.9
+
+## 0.1.25
+
+### Patch Changes
+
+- 0d4520f: fix(themes): improve how we handle zoomed in screens
+- Updated dependencies [0d4520f]
+  - @scalar/themes@0.9.71
+
+## 0.1.24
+
+### Patch Changes
+
+- @scalar/themes@0.9.70
+
+## 0.1.23
+
+### Patch Changes
+
+- Updated dependencies [c9a8fd8]
+- Updated dependencies [9251b22]
+- Updated dependencies [8d9a2c0]
+  - @scalar/themes@0.9.69
+  - @scalar/use-toasts@0.7.9
+
+## 0.1.22
+
+### Patch Changes
+
+- Updated dependencies [e47a698]
+  - @scalar/themes@0.9.68
+  - @scalar/use-toasts@0.7.9
+
+## 0.1.21
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+- Updated dependencies [fa6afe8]
+  - @scalar/use-toasts@0.7.9
+  - @scalar/themes@0.9.67
+
 ## 0.1.20
 
 ### Patch Changes

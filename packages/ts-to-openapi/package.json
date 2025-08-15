@@ -16,14 +16,14 @@
     "scalar",
     "openapi"
   ],
-  "version": "0.0.4",
+  "version": "0.1.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
-    "build": "scalar-build-rollup",
-    "lint:check": "eslint .",
-    "lint:fix": "eslint .  --fix",
+    "build": "scalar-build-esbuild",
+    "lint:check": "scalar-lint-check",
+    "lint:fix": "scalar-lint-fix",
     "test": "vitest",
     "types:build": "scalar-types-build",
     "types:check": "scalar-types-check"
@@ -46,7 +46,8 @@
   "devDependencies": {
     "@scalar/build-tooling": "workspace:*",
     "fast-glob": "^3.3.2",
-    "vitest": "^1.6.0"
+    "typescript": "^5.6.2",
+    "vitest": "catalog:*"
   },
   "peerDependencies": {
     "typescript": "^5.6.0"

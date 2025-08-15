@@ -1,4 +1,4 @@
-import { ERRORS } from '../../configuration/index.ts'
+import { ERRORS } from '@/configuration'
 import type {
   AnyApiDefinitionFormat,
   AnyObject,
@@ -6,11 +6,11 @@ import type {
   Filesystem,
   LoadResult,
   ThrowOnErrorOption,
-} from '../../types/index.ts'
-import { getEntrypoint } from '../getEntrypoint.ts'
-import { getListOfReferences } from '../getListOfReferences.ts'
-import { makeFilesystem } from '../makeFilesystem.ts'
-import { normalize } from '../normalize.ts'
+} from '@/types/index'
+import { getEntrypoint } from '@/utils/get-entrypoint'
+import { getListOfReferences } from '@/utils/get-list-of-references'
+import { makeFilesystem } from '@/utils/make-filesystem'
+import { normalize } from '@/utils/normalize'
 
 export type LoadPlugin = {
   check: (value?: any) => boolean
@@ -27,6 +27,12 @@ export type LoadOptions = {
 } & ThrowOnErrorOption
 
 /**
+ * @deprecated This function is deprecated and will be removed in a future version.
+ * Please use the new bundler utility instead:
+ * ```ts
+ * import { bundle } from "@scalar/openapi-parser"
+ * ```
+ *
  * Loads an OpenAPI document, including any external references.
  *
  * This function handles loading content from various sources, normalizes the content,
@@ -35,13 +41,10 @@ export type LoadOptions = {
  * It builds a filesystem representation of all loaded content and collects any errors
  * encountered during the process.
  */
-export async function load(
-  value: AnyApiDefinitionFormat,
-  options?: LoadOptions,
-): Promise<LoadResult> {
+export async function load(value: AnyApiDefinitionFormat, options?: LoadOptions): Promise<LoadResult> {
   const errors: ErrorObject[] = []
 
-  // Don’t load a reference twice, check the filesystem before fetching something
+  // Don't load a reference twice, check the filesystem before fetching something
   if (options?.filesystem?.find((entry) => entry.filename === value)) {
     return {
       specification: getEntrypoint(options.filesystem)?.specification,
@@ -58,19 +61,14 @@ export async function load(
   if (plugin) {
     try {
       content = normalize(await plugin.get(value))
-    } catch (error) {
+    } catch (_error) {
       if (options?.throwOnError) {
-        throw new Error(
-          ERRORS.EXTERNAL_REFERENCE_NOT_FOUND.replace('%s', value as string),
-        )
+        throw new Error(ERRORS.EXTERNAL_REFERENCE_NOT_FOUND.replace('%s', value as string))
       }
 
       errors.push({
         code: 'EXTERNAL_REFERENCE_NOT_FOUND',
-        message: ERRORS.EXTERNAL_REFERENCE_NOT_FOUND.replace(
-          '%s',
-          value as string,
-        ),
+        message: ERRORS.EXTERNAL_REFERENCE_NOT_FOUND.replace('%s', value as string),
       })
 
       return {
@@ -124,34 +122,27 @@ export async function load(
   // Load other external references
   for (const reference of listOfReferences) {
     // Find a matching plugin
-    const otherPlugin = options?.plugins?.find((thisPlugin) =>
-      thisPlugin.check(reference),
-    )
+    const otherPlugin = options?.plugins?.find((thisPlugin) => thisPlugin.check(reference))
 
-    // Skip if no plugin is found (internal references don’t need a plugin for example)
+    // Skip if no plugin is found (internal references don't need a plugin for example)
     if (!otherPlugin) {
       continue
     }
 
     const target =
-      otherPlugin.check(reference) && otherPlugin.resolvePath
-        ? otherPlugin.resolvePath(value, reference)
-        : reference
+      otherPlugin.check(reference) && otherPlugin.resolvePath ? otherPlugin.resolvePath(value, reference) : reference
 
-    // Don’t load a reference twice, check the filesystem before fetching something
+    // Don't load a reference twice, check the filesystem before fetching something
     if (filesystem.find((entry) => entry.filename === reference)) {
       continue
     }
 
-    const { filesystem: referencedFiles, errors: newErrors } = await load(
-      target,
-      {
-        ...options,
-        // Make the filename the exact same value as the $ref
-        // TODO: This leads to problems, if there are multiple references with the same file name but in different folders
-        filename: reference,
-      },
-    )
+    const { filesystem: referencedFiles, errors: newErrors } = await load(target, {
+      ...options,
+      // Make the filename the exact same value as the $ref
+      // TODO: This leads to problems, if there are multiple references with the same file name but in different folders
+      filename: reference,
+    })
 
     errors.push(...newErrors)
 

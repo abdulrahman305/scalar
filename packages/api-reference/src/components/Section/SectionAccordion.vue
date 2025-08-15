@@ -1,23 +1,44 @@
 <script setup lang="ts">
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import { ScalarIcon } from '@scalar/components'
+import { ScalarIconCaretRight } from '@scalar/icons'
 import { useElementHover } from '@vueuse/core'
 import { ref } from 'vue'
 
+import { useSidebar } from '@/features/sidebar'
+import { useNavState } from '@/hooks/useNavState'
+
 import IntersectionObserver from '../IntersectionObserver.vue'
 
-defineProps<{
+const { id } = defineProps<{
   id?: string
   transparent?: boolean
 }>()
 
 const button = ref()
 const isHovered = useElementHover(button)
+
+const { getSectionId, isIntersectionEnabled, replaceUrlState } = useNavState()
+const { setCollapsedSidebarItem } = useSidebar()
+
+/** On scroll over this section */
+const handleScroll = () => {
+  if (!id || !isIntersectionEnabled.value) {
+    return
+  }
+
+  replaceUrlState(id)
+
+  // Open models and webhooks on scroll
+  if (id?.startsWith('model') || id?.startsWith('webhook')) {
+    setCollapsedSidebarItem(getSectionId(id), true)
+  }
+}
 </script>
 <template>
   <IntersectionObserver
     :id="id"
-    class="section-wrapper">
+    class="section-wrapper"
+    @intersecting="handleScroll">
     <Disclosure
       v-slot="{ open }"
       as="section"
@@ -36,9 +57,9 @@ const isHovered = useElementHover(button)
             :active="isHovered || open"
             name="actions" />
         </div>
-        <ScalarIcon
-          class="section-accordion-chevron"
-          :icon="open ? 'ChevronDown' : 'ChevronRight'" />
+        <ScalarIconCaretRight
+          class="section-accordion-chevron size-4.5 transition-transform"
+          :class="{ 'rotate-90': open }" />
       </DisclosureButton>
       <DisclosurePanel class="section-accordion-content">
         <div
@@ -70,7 +91,7 @@ const isHovered = useElementHover(button)
 
 .section-accordion-transparent {
   background: transparent;
-  border: 1px solid var(--scalar-border-color);
+  border: var(--scalar-border-width) solid var(--scalar-border-color);
 }
 
 .section-accordion-button {
@@ -96,7 +117,6 @@ const isHovered = useElementHover(button)
 
 .section-accordion-chevron {
   margin-right: 4px;
-  width: 20px;
   cursor: pointer;
   opacity: 1;
   color: var(--scalar-color-3);
@@ -105,7 +125,7 @@ const isHovered = useElementHover(button)
   color: var(--scalar-color-1);
 }
 .section-accordion-content {
-  border-top: 1px solid var(--scalar-border-color);
+  border-top: var(--scalar-border-width) solid var(--scalar-border-color);
   display: flex;
   flex-direction: column;
 }

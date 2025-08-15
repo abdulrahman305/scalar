@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type StyleValue, computed } from 'vue'
+import { computed, type StyleValue } from 'vue'
 
 const props = defineProps<{ art: string; animate?: boolean }>()
 
@@ -17,15 +17,20 @@ const getLineAnimation = (chars: number, row: number): StyleValue => ({
 </script>
 <template>
   <div
+    aria-hidden="true"
     class="ascii-art font-code flex flex-col items-start text-[6px] leading-[7px]"
-    :class="{ 'ascii-art-animate': animate }">
+    :class="{ 'ascii-art-animate': animate }"
+    role="presentation"
+    inert>
     <span
       v-for="(line, i) in lines"
       :key="i"
       class="inline-block"
       :style="{ width: `calc(${line.length + 1}ch)` }">
       <!-- prettier-ignore -->
-      <span class="inline-block whitespace-pre overflow-hidden" :style="getLineAnimation(line.length, i)">{{
+      <span
+class="inline-block whitespace-pre overflow-hidden"
+:style="getLineAnimation(line.length, i)">{{
        line
       }}</span>
     </span>

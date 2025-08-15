@@ -18,8 +18,8 @@ export default {}
 </script>
 <script setup lang="ts">
 import { Menu, MenuButton, MenuItems } from '@headlessui/vue'
+import { useBindCx } from '@scalar/use-hooks/useBindCx'
 
-import { useBindCx } from '../../hooks/useBindCx'
 import { ScalarFloating, type ScalarFloatingOptions } from '../ScalarFloating'
 import ScalarDropdownMenu from './ScalarDropdownMenu.vue'
 
@@ -30,12 +30,12 @@ defineSlots<{
   default(props: {
     /** Whether or not the dropdown is open */
     open: boolean
-  }): any
+  }): unknown
   /** The list of dropdown items */
   items(props: {
     /** Whether or not the dropdown is open */
     open: boolean
-  }): any
+  }): unknown
 }>()
 
 defineOptions({ inheritAttrs: false })

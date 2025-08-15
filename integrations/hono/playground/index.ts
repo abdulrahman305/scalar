@@ -1,8 +1,8 @@
 import { serve } from '@hono/node-server'
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { createMarkdownFromOpenApi } from '@scalar/openapi-to-markdown'
 import { cors } from 'hono/cors'
-
-import { apiReference } from '../src/index'
+import { Scalar } from '../src/index'
 
 const PORT = Number(process.env.PORT) || 5054
 const HOST = process.env.HOST || '0.0.0.0'
@@ -29,7 +29,7 @@ app.openapi(
       },
     },
   }),
-  (c) => {
+  (c): Response => {
     return c.json({
       message: 'hello',
     })
@@ -62,7 +62,7 @@ app.openapi(
       },
     },
   }),
-  (c) => {
+  (c): Response => {
     return c.json({
       posts: [
         {
@@ -109,7 +109,7 @@ app.openapi(
       },
     },
   }),
-  (c) => {
+  (c): Response => {
     return c.json({
       id: 123,
       title: 'My Blog Post',
@@ -155,7 +155,7 @@ app.openapi(
       },
     },
   }),
-  (c) => {
+  (c): Response => {
     return c.json({
       status: 'OK',
       message: 'Post deleted',
@@ -164,8 +164,8 @@ app.openapi(
 )
 
 // Create an OpenAPI endpoint
-app.use('/openapi.json', cors())
-app.doc('/openapi.json', {
+app.use('/doc', cors())
+app.doc('/doc', {
   openapi: '3.1.0',
   info: {
     title: 'Example',
@@ -178,13 +178,35 @@ app.doc('/openapi.json', {
 // Load the middleware
 app.get(
   '/',
-  apiReference({
-    spec: {
-      url: '/openapi.json',
+  Scalar({
+    onLoaded: () => {
+      console.log('ready')
     },
+    sources: [
+      {
+        title: 'Hono',
+        url: '/doc',
+      },
+      {
+        title: 'Scalar Galaxy',
+        url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+      },
+    ],
     pageTitle: 'Hono API Reference Demo',
   }),
 )
+
+// Markdown for LLMs
+const content = app.getOpenAPI31Document({
+  openapi: '3.1.0',
+  info: { title: 'Example', version: 'v1' },
+})
+
+const markdown = await createMarkdownFromOpenApi(JSON.stringify(content))
+
+app.get('/llms.txt', async (c) => {
+  return c.text(markdown)
+})
 
 // Listen
 serve(
@@ -194,8 +216,6 @@ serve(
     hostname: HOST,
   },
   (address) => {
-    console.log(
-      `🔥 Hono Middleware listening on http://${HOST}:${address.port}/`,
-    )
+    console.log(`🔥 Hono Middleware listening on http://${HOST}:${address.port}/`)
   },
 )

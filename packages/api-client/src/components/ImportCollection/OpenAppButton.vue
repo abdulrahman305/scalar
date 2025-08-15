@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-// TODO: We don’t need this button in Electron
-import { isUrl } from '@/components/ImportCollection/utils/isUrl'
+// TODO: We don't need this button in Electron
 import { ScalarButton, ScalarIcon } from '@scalar/components'
 import { computed } from 'vue'
+
+import { isUrl } from '@/components/ImportCollection/utils/is-url'
 
 const props = defineProps<{
   source?: string | null
@@ -14,9 +15,15 @@ const APP_DOWNLOAD_URL = 'https://scalar.com/download'
 const platform = computed((): 'Windows' | 'macOS' | 'Linux' | '' => {
   const userAgent = navigator.userAgent.toLowerCase()
 
-  if (userAgent.includes('win')) return 'Windows'
-  if (userAgent.includes('mac')) return 'macOS'
-  if (userAgent.includes('linux')) return 'Linux'
+  if (userAgent.includes('win')) {
+    return 'Windows'
+  }
+  if (userAgent.includes('mac')) {
+    return 'macOS'
+  }
+  if (userAgent.includes('linux')) {
+    return 'Linux'
+  }
 
   return ''
 })

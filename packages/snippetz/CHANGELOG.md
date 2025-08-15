@@ -1,5 +1,119 @@
 # @scalar/snippetz
 
+## 0.4.4
+
+### Patch Changes
+
+- Updated dependencies [ccf875a]
+- Updated dependencies [94d6d0c]
+  - @scalar/types@0.2.11
+
+## 0.4.3
+
+### Patch Changes
+
+- Updated dependencies [fb62e1b]
+  - @scalar/types@0.2.10
+
+## 0.4.2
+
+### Patch Changes
+
+- fbb7daa: feat: improved rust/reqwest output
+- Updated dependencies [591562f]
+  - @scalar/types@0.2.9
+
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [c10e191]
+  - @scalar/types@0.2.8
+
+## 0.4.0
+
+### Minor Changes
+
+- 85a81eb: add Rust reqwest async/sync
+
+### Patch Changes
+
+- d93f60c: chore(snippetz): move @scalar/types to dependencies
+- Updated dependencies [ad2e3e6]
+  - @scalar/types@0.2.7
+
+## 0.3.2
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+
+## 0.3.1
+
+### Patch Changes
+
+- b6ed440: feat(snippetz): add python/httpx plugin
+
+## 0.3.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- b77f67a: feat(snippetz): add multipart/form-data support for several converters
+- 20cf550: fix: array query params showing on code snippet
+
+## 0.2.20
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+
+## 0.2.19
+
+### Patch Changes
+
+- 183cbba: feat: new php/guzzle plugin
+- 4df5387: feat: new php/curl plugin
+
+## 0.2.18
+
+### Patch Changes
+
+- 6095530: feat: new python/request code generator
+
+## 0.2.17
+
+### Patch Changes
+
+- 4a42197: fix: multipart/form-data with JSON doesn’t pretty print
+
+## 0.2.16
+
+### Patch Changes
+
+- 2c621d4: refactor: move snippetz types to @scalar/types
+
+## 0.2.15
+
+### Patch Changes
+
+- 0d58572: fix: handle case where mimeType application/json but only text is provided to body
+
+## 0.2.14
+
+### Patch Changes
+
+- e350f23: chore: code style
+
+## 0.2.13
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+
 ## 0.2.12
 
 ### Patch Changes

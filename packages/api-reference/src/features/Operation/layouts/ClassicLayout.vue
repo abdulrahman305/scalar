@@ -1,45 +1,74 @@
 <script setup lang="ts">
-import { Anchor } from '@/components/Anchor'
-import { Badge } from '@/components/Badge'
-import { HttpMethod } from '@/components/HttpMethod'
-import OperationPath from '@/components/OperationPath.vue'
-import { SectionAccordion } from '@/components/Section'
-import { ExampleRequest } from '@/features/ExampleRequest'
-import { ExampleResponses } from '@/features/ExampleResponses'
-import { TestRequestButton } from '@/features/TestRequestButton'
+import {
+  ScalarErrorBoundary,
+  ScalarIconButton,
+  ScalarMarkdown,
+} from '@scalar/components'
+import type { HttpMethod as HttpMethodType } from '@scalar/helpers/http/http-methods'
+import {
+  ScalarIconCopy,
+  ScalarIconPlay,
+  ScalarIconWebhooksLogo,
+} from '@scalar/icons'
 import {
   getOperationStability,
   getOperationStabilityColor,
   isOperationDeprecated,
-} from '@/helpers'
-import { useConfig } from '@/hooks/useConfig'
-import {
-  ScalarIcon,
-  ScalarIconButton,
-  ScalarMarkdown,
-} from '@scalar/components'
-import type {
-  Collection,
-  Operation,
-  Server,
-} from '@scalar/oas-utils/entities/spec'
-import type { TransformedOperation } from '@scalar/types/legacy'
+} from '@scalar/oas-utils/helpers'
+import type { OpenAPIV3_1 } from '@scalar/openapi-types'
 import { useClipboard } from '@scalar/use-hooks/useClipboard'
+import type { WorkspaceStore } from '@scalar/workspace-store/client'
+import type { OperationObject } from '@scalar/workspace-store/schemas/v3.1/strict/path-operations'
+import type { SecuritySchemeObject } from '@scalar/workspace-store/schemas/v3.1/strict/security-scheme'
+import type { ServerObject } from '@scalar/workspace-store/schemas/v3.1/strict/server'
+import type { Dereference } from '@scalar/workspace-store/schemas/v3.1/type-guard'
+import { computed } from 'vue'
 
-import OperationParameters from '../components/OperationParameters.vue'
-import OperationResponses from '../components/OperationResponses.vue'
+import { Anchor } from '@/components/Anchor'
+import { Badge } from '@/components/Badge'
+import { HttpMethod } from '@/components/HttpMethod'
+import { LinkList } from '@/components/LinkList'
+import OperationPath from '@/components/OperationPath.vue'
+import { SectionAccordion } from '@/components/Section'
+import { ExampleResponses } from '@/features/example-responses'
+import { ExternalDocs } from '@/features/external-docs'
+import Callbacks from '@/features/Operation/components/callbacks/Callbacks.vue'
+import OperationParameters from '@/features/Operation/components/OperationParameters.vue'
+import OperationResponses from '@/features/Operation/components/OperationResponses.vue'
+import type { Schemas } from '@/features/Operation/types/schemas'
+import { TestRequestButton } from '@/features/test-request-button'
+import { XBadges } from '@/features/x-badges'
+import { useConfig } from '@/hooks/useConfig'
+import { RequestExample } from '@/v2/blocks/scalar-request-example-block'
+import type { ClientOptionGroup } from '@/v2/blocks/scalar-request-example-block/types'
 
-defineProps<{
-  id?: string
-  collection: Collection
-  server: Server | undefined
-  operation: Operation
-  /** @deprecated Use `operation` instead */
-  transformedOperation: TransformedOperation
+const { operation, path, isWebhook } = defineProps<{
+  id: string
+  path: string
+  clientOptions: ClientOptionGroup[]
+  method: HttpMethodType
+  operation: Dereference<OperationObject>
+  oldOperation: OpenAPIV3_1.OperationObject
+  // pathServers: ServerObject[] | undefined
+  isWebhook: boolean
+  server: ServerObject | undefined
+  securitySchemes: SecuritySchemeObject[]
+  schemas?: Schemas
+  store: WorkspaceStore
 }>()
+
+const operationTitle = computed(() => operation.summary || path || '')
 
 const { copyToClipboard } = useClipboard()
 const config = useConfig()
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
+
+const handleDiscriminatorChange = (type: string) => {
+  emit('update:modelValue', type)
+}
 </script>
 <template>
   <SectionAccordion
@@ -47,80 +76,138 @@ const config = useConfig()
     class="reference-endpoint"
     transparent>
     <template #title>
-      <h3 class="operation-title">
+      <div class="operation-title">
         <div class="operation-details">
           <HttpMethod
             class="endpoint-type"
-            :method="operation.method"
+            :method="method"
             short />
           <Anchor
-            :id="id ?? ''"
+            :id="id"
             class="endpoint-anchor">
-            <div class="endpoint-label">
+            <h3 class="endpoint-label">
               <div class="endpoint-label-path">
                 <OperationPath
-                  :deprecated="isOperationDeprecated(transformedOperation)"
-                  :path="operation.path" />
+                  :deprecated="isOperationDeprecated(operation)"
+                  :path="path" />
               </div>
               <div class="endpoint-label-name">
-                {{ transformedOperation.name }}
+                {{ operationTitle }}
               </div>
+              <!-- Stability badge -->
               <Badge
-                v-if="getOperationStability(transformedOperation)"
-                :class="getOperationStabilityColor(transformedOperation)">
-                {{ getOperationStability(transformedOperation) }}
+                class="capitalize"
+                v-if="getOperationStability(operation)"
+                :class="getOperationStabilityColor(operation)">
+                {{ getOperationStability(operation) }}
               </Badge>
-            </div>
+
+              <!-- Webhook badge -->
+              <Badge
+                v-if="isWebhook"
+                class="font-code text-green flex w-fit items-center justify-center gap-1">
+                <ScalarIconWebhooksLogo weight="bold" />Webhook
+              </Badge>
+
+              <!-- x-badges before -->
+              <XBadges
+                :badges="operation['x-badges']"
+                position="before" />
+            </h3>
           </Anchor>
         </div>
-      </h3>
+      </div>
     </template>
     <template #actions="{ active }">
+      <!-- x-badges after -->
+      <XBadges
+        :badges="operation['x-badges']"
+        position="after" />
       <TestRequestButton
-        v-if="active"
-        :operation="operation" />
-      <ScalarIcon
+        v-if="active && !isWebhook"
+        :method="method"
+        :path="path" />
+      <ScalarIconPlay
         v-else-if="!config?.hideTestRequestButton"
-        class="endpoint-try-hint"
-        icon="Play"
-        thickness="1.75px" />
+        class="endpoint-try-hint size-4.5" />
       <ScalarIconButton
-        class="endpoint-copy"
-        icon="Clipboard"
+        class="endpoint-copy p-0.5"
+        :icon="ScalarIconCopy"
         label="Copy endpoint URL"
         size="xs"
         variant="ghost"
-        @click.stop="copyToClipboard(operation.path)" />
+        @click.stop="copyToClipboard(path)" />
     </template>
     <template
-      v-if="operation?.description"
+      v-if="operation.description"
       #description>
       <ScalarMarkdown
-        :value="operation?.description"
-        withImages />
+        :value="operation.description"
+        withImages
+        withAnchors
+        transformType="heading"
+        :anchorPrefix="id" />
     </template>
     <div class="endpoint-content">
       <div class="operation-details-card">
         <div class="operation-details-card-item">
-          <OperationParameters :operation="operation" />
+          <OperationParameters
+            :requestBody="oldOperation.requestBody"
+            :parameters="operation.parameters"
+            :schemas
+            @update:modelValue="handleDiscriminatorChange" />
         </div>
         <div class="operation-details-card-item">
           <OperationResponses
             :collapsableItems="false"
-            :operation="transformedOperation" />
+            :responses="oldOperation.responses"
+            :schemas="schemas" />
+        </div>
+
+        <!-- Callbacks -->
+        <div
+          v-if="operation?.callbacks"
+          class="operation-details-card-item">
+          <Callbacks
+            :method="method"
+            :path="path"
+            :callbacks="operation.callbacks"
+            :schemas="schemas" />
         </div>
       </div>
-      <ExampleResponses :responses="operation.responses" />
-      <ExampleRequest
-        :collection="collection"
-        :operation="operation"
-        :server="server"
-        :transformedOperation="transformedOperation" />
+
+      <ExampleResponses
+        class="operation-example-card"
+        :responses="operation.responses" />
+
+      <!-- New Example Request -->
+      <div>
+        <!-- External Docs -->
+        <LinkList v-if="operation.externalDocs">
+          <ExternalDocs :value="operation.externalDocs" />
+        </LinkList>
+        <!-- Request Example -->
+        <ScalarErrorBoundary>
+          <RequestExample
+            class="operation-example-card"
+            :method="method"
+            :selectedServer="server"
+            :clientOptions="clientOptions"
+            :selectedClient="store.workspace['x-scalar-default-client']"
+            :securitySchemes="securitySchemes"
+            :path="path"
+            fallback
+            :operation="operation"
+            @update:modelValue="handleDiscriminatorChange" />
+        </ScalarErrorBoundary>
+      </div>
     </div>
   </SectionAccordion>
 </template>
 
 <style scoped>
+@reference "@/style.css";
+
 .operation-title {
   display: flex;
   justify-content: space-between;
@@ -133,6 +220,10 @@ const config = useConfig()
 
   min-width: 0;
   flex-shrink: 1;
+}
+.operation-details :deep(.endpoint-anchor .scalar-button svg) {
+  width: 16px;
+  height: 16px;
 }
 .endpoint-type {
   display: flex;
@@ -162,7 +253,7 @@ const config = useConfig()
   background: currentColor;
   opacity: 0.15;
 
-  border-radius: var(--scalar-radius-lg);
+  border-radius: var(--scalar-radius);
 }
 
 .endpoint-anchor {
@@ -170,8 +261,6 @@ const config = useConfig()
   align-items: center;
   min-width: 0;
   flex-shrink: 1;
-
-  font-size: 20px;
 }
 .endpoint-anchor.label {
   display: flex;
@@ -212,13 +301,10 @@ const config = useConfig()
 
 .endpoint-try-hint {
   padding: 2px;
-  height: 24px;
-  width: 24px;
   flex-shrink: 0;
 }
 .endpoint-copy {
   color: currentColor;
-  padding: 2px;
 }
 .endpoint-copy :deep(svg) {
   stroke-width: 2px;
@@ -232,7 +318,7 @@ const config = useConfig()
   padding: 9px;
 }
 
-@screen lg {
+@variant lg {
   .endpoint-content {
     grid-auto-flow: column;
   }
@@ -245,16 +331,18 @@ const config = useConfig()
 }
 
 .endpoint-content > * {
-  max-height: unset;
+  min-width: 0;
 }
 
 .operation-details-card {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
-.operation-details-card-item :deep(.parameter-list) {
-  border: 1px solid var(--scalar-border-color);
+.operation-details-card-item :deep(.parameter-list),
+.operation-details-card-item :deep(.callbacks-list) {
+  border: var(--scalar-border-width) solid var(--scalar-border-color);
   border-radius: var(--scalar-radius-lg);
   margin-top: 0;
 }
@@ -276,14 +364,15 @@ const config = useConfig()
 }
 .operation-details-card :deep(.parameter-item) {
   margin: 0;
-  padding: 0 9px;
+  padding: 0;
 }
 .operation-details-card :deep(.property) {
   padding: 9px;
   margin: 0;
 }
 .operation-details-card :deep(.parameter-list-title),
-.operation-details-card :deep(.request-body-title) {
+.operation-details-card :deep(.request-body-title),
+.operation-details-card :deep(.callbacks-title) {
   text-transform: uppercase;
   font-weight: var(--scalar-bold);
   font-size: var(--scalar-mini);
@@ -292,9 +381,77 @@ const config = useConfig()
   padding: 9px;
   margin: 0;
 }
-.operation-details-card :deep(.request-body-title-select) {
-  text-transform: initial;
-  font-weight: initial;
-  margin-left: auto;
+
+.operation-details-card :deep(.callback-list-item-title) {
+  padding-left: 28px;
+  padding-right: 12px;
+}
+
+.operation-details-card :deep(.callback-list-item-icon) {
+  left: 6px;
+}
+
+.operation-details-card :deep(.callback-operation-container) {
+  padding-inline: 9px;
+  padding-bottom: 9px;
+}
+
+.operation-details-card :deep(.callback-operation-container > .request-body),
+.operation-details-card :deep(.callback-operation-container > .parameter-list) {
+  border: none;
+}
+
+.operation-details-card
+  :deep(.callback-operation-container > .request-body > .request-body-header) {
+  padding: 0;
+  padding-bottom: 9px;
+  border-bottom: var(--scalar-border-width) solid var(--scalar-border-color);
+}
+
+.operation-details-card :deep(.request-body-description) {
+  margin-top: 0;
+  padding: 9px 9px 0 9px;
+  border-top: var(--scalar-border-width) solid var(--scalar-border-color);
+}
+
+.operation-details-card :deep(.request-body) {
+  margin-top: 0;
+  border-radius: var(--scalar-radius-lg);
+  border: var(--scalar-border-width) solid var(--scalar-border-color);
+}
+
+.operation-details-card :deep(.request-body-header) {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.operation-details-card :deep(.contents button) {
+  margin-right: 9px;
+}
+
+.operation-details-card
+  :deep(.schema-card--open + .schema-card:not(.schema-card--open)) {
+  margin-inline: 9px;
+  margin-bottom: 9px;
+}
+.operation-details-card :deep(.request-body-schema .property--level-0) {
+  padding: 0;
+}
+
+.operation-details-card :deep(.selected-content-type) {
+  margin-right: 9px;
+}
+
+.operation-example-card {
+  position: sticky;
+  top: calc(var(--refs-header-height) + 24px);
+  max-height: calc(((var(--full-height) - var(--refs-header-height)) - 48px));
+}
+
+@media (max-width: 600px) {
+  .operation-example-card {
+    max-height: unset;
+    position: static;
+  }
 }
 </style>

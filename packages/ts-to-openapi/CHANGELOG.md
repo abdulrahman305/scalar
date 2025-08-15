@@ -1,5 +1,24 @@
 # @scalar/ts-to-openapi
 
+## 0.1.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+## 0.0.6
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+
+## 0.0.5
+
+### Patch Changes
+
+- 54fdfcb: chore: remove spec wording
+- fa6afe8: chore: code formatting
+
 ## 0.0.4
 
 ### Patch Changes

@@ -1,27 +1,57 @@
 <script setup lang="ts">
+import { ScalarHotkey } from '@scalar/components'
+import type { Collection, Operation } from '@scalar/oas-utils/entities/spec'
+import type { Workspace } from '@scalar/oas-utils/entities/workspace'
+import { nextTick, onBeforeUnmount, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
 import Computer from '@/assets/computer.ascii?raw'
 import EmptyState from '@/components/EmptyState.vue'
 import ScalarAsciiArt from '@/components/ScalarAsciiArt.vue'
-import ScalarHotkey from '@/components/ScalarHotkey.vue'
 import { useLayout } from '@/hooks'
 import type { HotKeyEvent } from '@/libs'
 import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
-import { onBeforeUnmount, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
 
-const { activeWorkspaceRequests } = useActiveEntities()
-const { events } = useWorkspace()
+const { numWorkspaceRequests, collection, operation, workspace } = defineProps<{
+  collection: Collection
+  operation: Operation
+  workspace: Workspace
+  numWorkspaceRequests: number
+}>()
+
+const { events, requestMutators } = useWorkspace()
 const route = useRoute()
+const router = useRouter()
 const { layout } = useLayout()
 
-const openCommandPaletteRequest = () => {
-  events.commandPalette.emit({ commandName: 'Create Request' })
+const addRequest = () => {
+  // If the request has tags, add the first tag to the new request
+  const requestData = operation.tags?.length
+    ? { tags: operation.tags[0] ? [operation.tags[0]] : [] }
+    : {}
+
+  const newRequest = requestMutators.add(requestData, collection.uid)
+
+  if (newRequest) {
+    router.push({
+      name: 'request',
+      params: {
+        workspace: workspace.uid,
+        request: newRequest.uid,
+      },
+    })
+
+    nextTick(() => {
+      events.hotKeys.emit({
+        focusAddressBar: new KeyboardEvent('keydown', { key: 'l' }),
+      })
+    })
+  }
 }
 
 const handleHotKey = (event?: HotKeyEvent) => {
   if (event?.createNew && route.name === 'request') {
-    openCommandPaletteRequest()
+    addRequest()
   }
 }
 
@@ -31,12 +61,11 @@ onMounted(() => events.hotKeys.on(handleHotKey))
 onBeforeUnmount(() => events.hotKeys.off(handleHotKey))
 </script>
 <template>
-  <div class="border-t relative col-1 flex-center gap-6 p-2 capitalize">
+  <div class="flex-center relative flex flex-1 flex-col gap-6 p-2 capitalize">
     <div
       class="flex h-[calc(100%_-_50px)] flex-col items-center justify-center"
       :class="{
-        'hidden opacity-0':
-          activeWorkspaceRequests.length <= 1 && layout !== 'modal',
+        'hidden opacity-0': numWorkspaceRequests <= 1 && layout !== 'modal',
       }">
       <div
         v-if="layout !== 'modal'"
@@ -62,9 +91,9 @@ onBeforeUnmount(() => events.hotKeys.off(handleHotKey))
     </div>
     <div
       v-if="layout !== 'modal'"
-      class="h-[calc(100%_-_50px)] items-center justify-center hidden pb-5"
+      class="hidden h-[calc(100%_-_50px)] items-center justify-center pb-5"
       :class="{
-        '!flex opacity-100': activeWorkspaceRequests.length == 1,
+        '!flex opacity-100': numWorkspaceRequests == 1,
       }">
       <EmptyState />
     </div>
@@ -82,7 +111,7 @@ onBeforeUnmount(() => events.hotKeys.off(handleHotKey))
         v-if="layout === 'desktop'"
         class="flex items-center gap-1.5"
         type="button"
-        @click="openCommandPaletteRequest">
+        @click="addRequest()">
         New Request
         <ScalarHotkey hotkey="N" />
       </button>

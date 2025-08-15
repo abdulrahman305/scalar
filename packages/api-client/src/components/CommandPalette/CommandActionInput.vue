@@ -30,7 +30,9 @@ const model = computed<string>({
 
 /** Re-emits enter as a submit event for the form  */
 function handleEnter(event: KeyboardEvent) {
-  if (event.shiftKey || !event.target) return
+  if (event.shiftKey || !event.target) {
+    return
+  }
   event.preventDefault()
   const target = event.target as HTMLTextAreaElement
   const submitEvent = new Event('submit', { cancelable: true })
@@ -39,7 +41,9 @@ function handleEnter(event: KeyboardEvent) {
 
 /** Emits a back event if the input is empty */
 function handleBack(event: KeyboardEvent) {
-  if (model.value !== '') return
+  if (model.value !== '') {
+    return
+  }
   event.preventDefault()
   event.stopPropagation()
   emit('onDelete', event)
@@ -47,9 +51,10 @@ function handleBack(event: KeyboardEvent) {
 </script>
 <template>
   <textarea
+    id="command-action-input"
     ref="input"
     v-model="model"
-    class="border-none outline-none flex-1 w-full pl-8 text-sm min-h-8 py-1.5 resize-none"
+    class="min-h-8 w-full flex-1 resize-none border border-transparent py-1.5 pl-8.5 text-sm outline-none focus:border-b-1"
     :placeholder="props.placeholder ?? ''"
     wrap="hard"
     v-bind="$attrs"

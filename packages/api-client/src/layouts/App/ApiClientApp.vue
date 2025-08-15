@@ -1,17 +1,30 @@
 <script setup lang="ts">
 // TODO: Disabled until we polished the UI.
 // import { ImportCollectionListener } from '@/components/ImportCollection'
-import TopNav from '@/components/TopNav/TopNav.vue'
-import MainLayout from '@/layouts/App/MainLayout.vue'
-import { DEFAULT_HOTKEYS, type HotKeyEvent, handleHotKeyDown } from '@/libs'
-import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
-import { addScalarClassesToHeadless } from '@scalar/components'
+import {
+  addScalarClassesToHeadless,
+  ScalarTeleportRoot,
+} from '@scalar/components'
 import { getThemeStyles } from '@scalar/themes'
+import { useBreakpoints } from '@scalar/use-hooks/useBreakpoints'
 import { useColorMode } from '@scalar/use-hooks/useColorMode'
 import { ScalarToasts } from '@scalar/use-toasts'
-import { computed, onBeforeMount, onBeforeUnmount, onMounted, ref } from 'vue'
+import {
+  computed,
+  onBeforeMount,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
 import { RouterView } from 'vue-router'
+
+import TopNav from '@/components/TopNav/TopNav.vue'
+import { useSidebar } from '@/hooks/useSidebar'
+import MainLayout from '@/layouts/App/MainLayout.vue'
+import { DEFAULT_HOTKEYS, handleHotKeyDown, type HotKeyEvent } from '@/libs'
+import { useWorkspace } from '@/store'
+import { useActiveEntities } from '@/store/active-entities'
 
 import { APP_HOTKEYS } from './hotkeys'
 
@@ -41,7 +54,9 @@ const handleKeyDown = (ev: KeyboardEvent) =>
   handleHotKeyDown(ev, events.hotKeys, { hotKeys })
 
 const handleHotKey = (event?: HotKeyEvent) => {
-  if (!event) return
+  if (!event) {
+    return
+  }
 
   // We prevent default on open command so we can use it on the web
   if (event.openCommandPalette) {
@@ -61,6 +76,14 @@ onBeforeUnmount(() => {
   events.hotKeys.off(handleHotKey)
 })
 
+const { mediaQueries } = useBreakpoints()
+const { setSidebarOpen } = useSidebar()
+
+// Single watcher instance for handling responsive behavior
+watch(mediaQueries.xl, setSidebarOpen, {
+  immediate: true,
+})
+
 const themeStyleTag = computed(
   () =>
     activeWorkspace.value &&
@@ -68,35 +91,32 @@ const themeStyleTag = computed(
 )
 </script>
 <template>
-  <div
-    id="scalar-client-app"
-    class="contents">
-    <!-- Listen for paste and drop events, and look for `url` query parameters to import collections -->
-    <!-- <ImportCollectionListener> -->
-    <div v-html="themeStyleTag"></div>
-    <TopNav :openNewTab="newTab" />
+  <ScalarTeleportRoot>
+    <div
+      id="scalar-client-app"
+      class="contents">
+      <!-- Listen for paste and drop events, and look for `url` query parameters to import collections -->
+      <!-- <ImportCollectionListener> -->
+      <div v-html="themeStyleTag" />
+      <TopNav :openNewTab="newTab" />
 
-    <!-- Ensure we have the workspace loaded from localStorage above -->
-    <MainLayout v-if="activeWorkspace?.uid">
-      <RouterView
-        v-slot="{ Component }"
-        @newTab="handleNewTab">
-        <keep-alive>
-          <component :is="Component" />
-        </keep-alive>
-      </RouterView>
-    </MainLayout>
+      <!-- Ensure we have the workspace loaded from localStorage above -->
+      <MainLayout v-if="activeWorkspace?.uid">
+        <RouterView
+          v-slot="{ Component }"
+          @newTab="handleNewTab">
+          <keep-alive>
+            <component :is="Component" />
+          </keep-alive>
+        </RouterView>
+      </MainLayout>
 
-    <ScalarToasts />
-    <!-- </ImportCollectionListener> -->
-  </div>
+      <ScalarToasts />
+      <!-- </ImportCollectionListener> -->
+    </div>
+  </ScalarTeleportRoot>
 </template>
 <style>
-@import '@scalar/components/style.css';
-@import '@scalar/themes/style.css';
-@import '@/tailwind/tailwind.css';
-@import '@/tailwind/variables.css';
-
 #scalar-client {
   display: flex;
   flex-direction: column;

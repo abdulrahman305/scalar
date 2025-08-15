@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
-import {
-  ScalarButton,
-  type ScalarComboboxOption,
-  ScalarIcon,
-  ScalarListbox,
-} from '@scalar/components'
+import { ScalarButton, ScalarIcon, ScalarListbox } from '@scalar/components'
 import { useToasts } from '@scalar/use-toasts'
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+import { PathId } from '@/router'
+import { useWorkspace } from '@/store'
+import { useActiveEntities } from '@/store/active-entities'
 
 import CommandActionForm from './CommandActionForm.vue'
 import CommandActionInput from './CommandActionInput.vue'
@@ -25,10 +23,17 @@ const emits = defineEmits<{
   (event: 'back', e: KeyboardEvent): void
 }>()
 
+const router = useRouter()
+
 const { toast } = useToasts()
 
 const { activeCollection, activeWorkspaceCollections } = useActiveEntities()
-const { collectionMutators, serverMutators, events } = useWorkspace()
+const {
+  collectionMutators,
+  serverMutators,
+  events,
+  collections: _collections,
+} = useWorkspace()
 
 const url = ref('')
 
@@ -44,7 +49,7 @@ const collections = computed(() =>
 )
 
 /** Currently selected collection with a reasonable default */
-const selectedCollection = ref<ScalarComboboxOption | undefined>(
+const selectedCollection = ref(
   props.metaData
     ? collections.value.find(
         (collection) =>
@@ -61,16 +66,25 @@ const handleSubmit = () => {
     toast('Please enter a valid url before creating a server.', 'error')
     return
   }
-  const collectionUid = selectedCollection.value?.id
-  if (!collectionUid) {
+  const collection = _collections[selectedCollection.value?.id ?? '']
+  if (!collection) {
     toast('Please select a collection before creating a server.', 'error')
     return
   }
 
-  const server = serverMutators.add({ url: url.value }, collectionUid)
+  const server = serverMutators.add({ url: url.value }, collection.uid)
 
   // Select the server
-  collectionMutators.edit(collectionUid, 'selectedServerUid', server.uid)
+  collectionMutators.edit(collection.uid, 'selectedServerUid', server.uid)
+
+  // Redirect to the server
+  router.push({
+    name: 'collection.servers.edit',
+    params: {
+      [PathId.Collection]: collection.uid,
+      [PathId.Servers]: server.uid,
+    },
+  })
 
   emits('close')
 }
@@ -86,7 +100,7 @@ const redirectToCreateCollection = () => {
     <CommandActionInput
       v-model="url"
       label="Server URL"
-      placeholder="Server URL"
+      placeholder="https://void.scalar.com"
       @onDelete="emits('back', $event)" />
     <template #options>
       <ScalarListbox
@@ -94,7 +108,7 @@ const redirectToCreateCollection = () => {
         :options="collections">
         <ScalarButton
           v-if="collections.length > 0"
-          class="justify-between p-2 max-h-8 w-fit gap-1 text-xs hover:bg-b-2"
+          class="hover:bg-b-2 max-h-8 w-fit justify-between gap-1 p-2 text-xs"
           variant="outlined">
           <span :class="selectedCollection ? 'text-c-1' : 'text-c-3'">{{
             selectedCollection ? selectedCollection.label : 'Select Collection'
@@ -106,13 +120,13 @@ const redirectToCreateCollection = () => {
         </ScalarButton>
         <ScalarButton
           v-else
-          class="justify-between p-2 max-h-8 w-full gap-1 text-xs hover:bg-b-2 w-fit"
+          class="hover:bg-b-2 max-h-8 w-fit justify-between gap-1 p-2 text-xs"
           variant="outlined"
           @click="redirectToCreateCollection">
           <span class="text-c-1">Create Collection</span>
         </ScalarButton>
       </ScalarListbox>
     </template>
-    <template #submit>Create Server</template>
+    <template #submit> Create Server </template>
   </CommandActionForm>
 </template>

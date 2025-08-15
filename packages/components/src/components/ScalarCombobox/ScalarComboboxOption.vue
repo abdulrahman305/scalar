@@ -1,20 +1,9 @@
 <script setup lang="ts">
-import { cva, cx } from '../../cva'
-import { ScalarIcon } from '../ScalarIcon'
-import {
-  ScalarListboxCheckbox,
-  type ScalarListboxOptionStyle,
-} from '../ScalarListbox'
+import { cva, cx } from '@scalar/use-hooks/useBindCx'
 
-defineProps<{
+const { active, selected } = defineProps<{
   active?: boolean
   selected?: boolean
-  style?: ScalarListboxOptionStyle
-  isDeletable?: boolean
-}>()
-
-defineEmits<{
-  (e: 'delete'): void
 }>()
 
 const variants = cva({
@@ -35,17 +24,13 @@ const variants = cva({
 })
 </script>
 <template>
-  <li :class="cx(variants({ active, selected }))">
-    <ScalarListboxCheckbox
-      :selected="selected"
-      :style="style" />
-    <span class="inline-block min-w-0 flex-1 truncate text-c-1"><slot /></span>
-    <ScalarIcon
-      v-if="isDeletable"
-      class="text-c-2 opacity-0 group-hover/item:opacity-100"
-      icon="Delete"
-      size="md"
-      thickness="1.5"
-      @click.stop="$emit('delete')" />
+  <li
+    :aria-selected="selected"
+    :class="cx(variants({ active, selected }))"
+    role="option"
+    tabindex="-1">
+    <slot
+      :active
+      :selected />
   </li>
 </template>

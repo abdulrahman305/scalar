@@ -1,6 +1,14 @@
 import { needsQuotes } from './needsQuotes'
 
 /**
+ * Represents a raw code that should not be quoted, e.g. `JSON.stringify(...)`.
+ * If consists of multiple lines, they will be indented properly.
+ */
+export class Unquoted {
+  constructor(public value: string) {}
+}
+
+/**
  * Converts an object into a string representation with proper formatting and indentation
  *
  * Handles nested objects, arrays, and special string values
@@ -13,47 +21,40 @@ export function objectToString(obj: Record<string, any>, indent = 0): string {
   for (const [key, value] of Object.entries(obj)) {
     const formattedKey = needsQuotes(key) ? `'${key}'` : key
 
-    if (Array.isArray(value)) {
+    if (value instanceof Unquoted) {
+      const lines = value.value.split('\n')
+      let formattedValue = `${value.value}`
+
+      if (lines.length > 1) {
+        formattedValue = lines
+          .map((line, index) => {
+            if (index === 0) {
+              return line
+            }
+
+            return `${innerIndentation}${line}`
+          })
+          .join('\n')
+      }
+
+      parts.push(`${innerIndentation}${formattedKey}: ${formattedValue}`)
+    } else if (Array.isArray(value)) {
       const arrayString = value
         .map((item) => {
           if (typeof item === 'string') {
             return `'${item}'`
-          } else if (item && typeof item === 'object') {
-            return objectToString(item, indent + 2)
-          } else {
-            return item
           }
+          if (item && typeof item === 'object') {
+            return objectToString(item, indent + 2)
+          }
+          return item
         })
         .join(`, ${innerIndentation}`)
       parts.push(`${innerIndentation}${formattedKey}: [${arrayString}]`)
     } else if (value && typeof value === 'object') {
-      parts.push(
-        `${innerIndentation}${formattedKey}: ${objectToString(
-          value,
-          indent + 2,
-        )}`,
-      )
+      parts.push(`${innerIndentation}${formattedKey}: ${objectToString(value, indent + 2)}`)
     } else if (typeof value === 'string') {
-      let formattedValue = `${value}`
-
-      if (value.startsWith('JSON.stringify')) {
-        // If it has more than one line, add indentation to the other lines
-        const lines = value.split('\n')
-
-        if (lines.length > 1) {
-          formattedValue = lines
-            .map((line, index) => {
-              if (index === 0) {
-                return line
-              }
-
-              return `${innerIndentation}${line}`
-            })
-            .join('\n')
-        }
-      } else {
-        formattedValue = `'${value}'`
-      }
+      const formattedValue = `'${value}'`
 
       parts.push(`${innerIndentation}${formattedKey}: ${formattedValue}`)
     } else {

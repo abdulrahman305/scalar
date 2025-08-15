@@ -1,29 +1,49 @@
 <script setup lang="ts">
-import { ScalarIcon, ScalarTooltip } from '@scalar/components'
+import { ScalarPopover } from '@scalar/components'
+import { ScalarIconInfo, ScalarIconWarning } from '@scalar/icons'
 import type { RequestExampleParameter } from '@scalar/oas-utils/entities/spec'
+import { computed } from 'vue'
 
-defineProps<{ item: RequestExampleParameter }>()
+import { parameterIsInvalid } from '../libs/request'
+
+const { item } = defineProps<{ item: RequestExampleParameter }>()
+
+const isInvalid = computed(() => !!parameterIsInvalid(item).value)
 </script>
 <template>
-  <ScalarTooltip
-    align="start"
-    class="w-full pr-px"
-    :delay="0"
-    side="left"
-    triggerClass="before:absolute before:content-[''] before:bg-gradient-to-r before:from-transparent before:to-b-1 before:min-h-[calc(100%-4px)] before:pointer-events-none before:right-[23px] before:top-0.5 before:w-3 absolute h-full right-0 -outline-offset-1">
-    <template #trigger>
-      <div class="bg-b-1 pl-1 pr-1.5 mr-0.25">
-        <ScalarIcon
-          class="text-c-3 group-hover/info:text-c-1"
-          icon="Info"
-          size="sm"
-          thickness="1.5" />
-      </div>
-    </template>
-    <template #content>
+  <ScalarPopover
+    teleport
+    :offset="4"
+    placement="left">
+    <button
+      type="button"
+      :aria-label="isInvalid ? 'Input is invalid' : 'More Information'"
+      class="text-c-2 hover:text-c-1 hover:bg-b-2 rounded p-1"
+      :role="isInvalid ? 'alert' : 'none'">
+      <ScalarIconWarning
+        v-if="isInvalid"
+        class="text-orange size-3.5 brightness-90 hover:brightness-75" />
+      <ScalarIconInfo
+        v-else
+        class="text-c-2 hover:text-c-1 size-3.5" />
+    </button>
+    <template #popover>
       <div
-        class="grid gap-1.5 pointer-events-none min-w-48 w-content shadow-lg rounded bg-b-1 p-2 text-xxs leading-5 text-c-1">
-        <div class="schema flex items-center text-c-2">
+        class="w-content text-xxs text-c-1 grid min-w-48 gap-1.5 rounded px-1.5 pt-2 pb-1.5 leading-none">
+        <div
+          v-if="isInvalid"
+          class="text-error-1">
+          {{ parameterIsInvalid(item).value }}
+        </div>
+        <div
+          v-else-if="
+            item.type ||
+            item.format ||
+            item.minimum ||
+            item.maximum ||
+            item.default
+          "
+          class="schema text-c-2 flex items-center">
           <span v-if="item.type">{{ item.type }}</span>
           <span v-if="item.format">{{ item.format }}</span>
           <span v-if="item.minimum">min: {{ item.minimum }}</span>
@@ -31,14 +51,14 @@ defineProps<{ item: RequestExampleParameter }>()
           <span v-if="item.default">default: {{ item.default }}</span>
         </div>
         <span
-          v-if="item.description"
-          class="leading-snug text-pretty text-sm"
-          :style="{ maxWidth: '16rem' }"
-          >{{ item.description }}</span
-        >
+          v-if="item.description && !isInvalid"
+          class="text-sm leading-snug text-pretty"
+          :style="{ maxWidth: '16rem' }">
+          {{ item.description }}
+        </span>
       </div>
     </template>
-  </ScalarTooltip>
+  </ScalarPopover>
 </template>
 <style scoped>
 .schema > span:not(:first-child)::before {

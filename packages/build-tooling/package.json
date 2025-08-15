@@ -11,55 +11,96 @@
     "directory": "packages/build-tooling"
   },
   "keywords": [],
-  "version": "0.1.12",
+  "version": "0.2.5",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
-    "build": "bash scripts/build-rollup.sh",
+    "build": "node scripts/build-esbuild.js",
     "dev": "vite",
-    "format": "bash scripts/format.sh",
-    "lint:check": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "format": "node scripts/format.js",
+    "lint:check": "node scripts/lint-check.js",
+    "lint:fix": "node scripts/lint-fix.js",
     "preview": "dotenv -o -- vite preview",
-    "types:build": "bash scripts/types-build.sh",
-    "types:check": "bash scripts/types-check.sh"
+    "types:build": "node scripts/types-build.js",
+    "types:check": "node scripts/types-check.js"
   },
   "type": "module",
-  "main": "dist/index.js",
   "exports": {
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./*.css": {
+      "import": "./dist/*.css",
+      "require": "./dist/*.css",
+      "default": "./dist/*.css"
+    },
+    "./css/*.css": {
+      "import": "./dist/css/*.css",
+      "require": "./dist/css/*.css",
+      "default": "./dist/css/*.css"
+    },
+    "./esbuild": {
+      "import": "./dist/esbuild/index.js",
+      "types": "./dist/esbuild/index.d.ts",
+      "default": "./dist/esbuild/index.js"
+    },
+    "./rollup": {
+      "import": "./dist/rollup/index.js",
+      "types": "./dist/rollup/index.d.ts",
+      "default": "./dist/rollup/index.js"
+    },
+    "./rollup/plugins": {
+      "import": "./dist/rollup/plugins/index.js",
+      "types": "./dist/rollup/plugins/index.d.ts",
+      "default": "./dist/rollup/plugins/index.js"
+    },
+    "./vite": {
+      "import": "./dist/vite/index.js",
+      "types": "./dist/vite/index.d.ts",
+      "default": "./dist/vite/index.js"
+    },
+    "./vite/plugins": {
+      "import": "./dist/vite/plugins/index.js",
+      "types": "./dist/vite/plugins/index.d.ts",
+      "default": "./dist/vite/plugins/index.js"
     }
   },
   "bin": {
-    "scalar-format-js": "scripts/format.sh",
-    "scalar-build-rollup": "scripts/build-rollup.sh",
-    "scalar-build-vite": "scripts/build-vite.sh",
-    "scalar-types-check": "scripts/types-check.sh",
-    "scalar-types-build": "scripts/types-build.sh",
-    "scalar-types-check-vue": "scripts/types-check-vue.sh",
-    "scalar-types-build-vue": "scripts/types-build-vue.sh"
+    "scalar-build-esbuild": "scripts/build-esbuild.js",
+    "scalar-build-rollup": "scripts/build-rollup.js",
+    "scalar-build-vite": "scripts/build-vite.js",
+    "scalar-format-check": "scripts/format-check.js",
+    "scalar-format": "scripts/format.js",
+    "scalar-lint-check": "scripts/lint-check.js",
+    "scalar-lint-fix": "scripts/lint-fix.js",
+    "scalar-types-build-vue": "scripts/types-build-vue.js",
+    "scalar-types-build": "scripts/types-build.js",
+    "scalar-types-check-vue": "scripts/types-check-vue.js",
+    "scalar-types-check": "scripts/types-check.js"
   },
   "dependencies": {
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-swc": "^0.3.1",
-    "@rollup/plugin-typescript": "^11.1.6",
+    "@rollup/plugin-swc": "^0.4.0",
+    "@rollup/plugin-typescript": "^12.1.2",
     "@rollup/plugin-yaml": "^4.1.2",
+    "ansis": "catalog:*",
+    "chokidar": "catalog:*",
+    "esbuild": "catalog:*",
     "glob": "^10.3.10",
     "picomatch": "^4.0.2",
-    "rollup": "^4.24.1",
+    "rollup": "catalog:*",
     "rollup-plugin-copy": "^3.5.0",
-    "rollup-plugin-dts": "^6.1.0",
-    "rollup-plugin-import-css": "^3.5.0",
-    "vite": "^5.4.10",
-    "vitest": "^1.6.0"
+    "rollup-plugin-import-css": "^3.5.8",
+    "vite": "catalog:*",
+    "vitest": "catalog:*"
   },
   "devDependencies": {
-    "@types/node": "^20.17.10",
-    "@types/picomatch": "^2.3.3"
+    "@types/node": "catalog:*",
+    "@types/picomatch": "^2.3.3",
+    "vite-node": "^2.1.1"
   }
 }

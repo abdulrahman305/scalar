@@ -1,12 +1,10 @@
-/* eslint-disable @typescript-eslint/no-namespace */
-/* eslint-disable @typescript-eslint/ban-types */
 /**
  * These types are copied from openapi-types, with two modifications:
  *
- * - all attributes are optional, you can’t rely on the specification for user input
+ * - all attributes are optional, you can't rely on the specification for user input
  * - extensions (basically any attributes, not only prefixed with an `x-`) are allowed
  *
- * We deal with user input and can’t assume they really stick to any official specification.
+ * We deal with user input and can't assume they really stick to any official specification.
  */
 
 /** any other attribute, for example x-* extensions */
@@ -17,6 +15,7 @@ type AnyOtherAttribute = {
   [key: string]: any
 }
 
+// biome-ignore lint/style/noNamespace: We want it to be a module here.
 export namespace OpenAPI {
   // OpenAPI extensions can be declared using generics
   // e.g.:
@@ -40,15 +39,9 @@ export namespace OpenAPI {
     query?: object
   }
 
-  export type ResponseObject =
-    | OpenAPIV2.ResponseObject
-    | OpenAPIV3.ResponseObject
-    | OpenAPIV3_1.ResponseObject
+  export type ResponseObject = OpenAPIV2.ResponseObject | OpenAPIV3.ResponseObject | OpenAPIV3_1.ResponseObject
 
-  export type HeaderObject =
-    | OpenAPIV2.HeaderObject
-    | OpenAPIV3.HeaderObject
-    | OpenAPIV3_1.HeaderObject
+  export type HeaderObject = OpenAPIV2.HeaderObject | OpenAPIV3.HeaderObject | OpenAPIV3_1.HeaderObject
 
   export type Parameter =
     | OpenAPIV3_1.ReferenceObject
@@ -63,22 +56,14 @@ export namespace OpenAPI {
     | (OpenAPIV3.ReferenceObject | OpenAPIV3.ParameterObject)[]
     | (OpenAPIV2.ReferenceObject | OpenAPIV2.Parameter)[]
 
-  export type ExampleObject =
-    | OpenAPIV2.ExampleObject
-    | OpenAPIV3.ExampleObject
-    | OpenAPIV3_1.ExampleObject
+  export type ExampleObject = OpenAPIV2.ExampleObject | OpenAPIV3.ExampleObject | OpenAPIV3_1.ExampleObject
 
-  export type SchemaObject =
-    | OpenAPIV2.SchemaObject
-    | OpenAPIV3.SchemaObject
-    | OpenAPIV3_1.SchemaObject
+  export type SchemaObject = OpenAPIV2.SchemaObject | OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject
 
-  export type HttpMethod =
-    | keyof typeof OpenAPIV2.HttpMethods
-    | keyof typeof OpenAPIV3.HttpMethods
-    | OpenAPIV3_1.HttpMethods
+  export type HttpMethod = keyof typeof OpenAPIV2.HttpMethods | OpenAPIV3.HttpMethods | OpenAPIV3_1.HttpMethods
 }
 
+// biome-ignore lint/style/noNamespace: We want it to be a module here.
 export namespace OpenAPIV3_1 {
   type Modify<T, R> = Omit<T, keyof R> & R
 
@@ -101,12 +86,9 @@ export namespace OpenAPIV3_1 {
       jsonSchemaDialect?: string
       servers?: ServerObject[]
     } & (
-      | (Pick<PathsWebhooksComponents<T>, 'paths'> &
-          Omit<Partial<PathsWebhooksComponents<T>>, 'paths'>)
-      | (Pick<PathsWebhooksComponents<T>, 'webhooks'> &
-          Omit<Partial<PathsWebhooksComponents<T>>, 'webhooks'>)
-      | (Pick<PathsWebhooksComponents<T>, 'components'> &
-          Omit<Partial<PathsWebhooksComponents<T>>, 'components'>)
+      | (Pick<PathsWebhooksComponents<T>, 'paths'> & Omit<Partial<PathsWebhooksComponents<T>>, 'paths'>)
+      | (Pick<PathsWebhooksComponents<T>, 'webhooks'> & Omit<Partial<PathsWebhooksComponents<T>>, 'webhooks'>)
+      | (Pick<PathsWebhooksComponents<T>, 'components'> & Omit<Partial<PathsWebhooksComponents<T>>, 'components'>)
     ) &
       T &
       AnyOtherAttribute
@@ -145,10 +127,7 @@ export namespace OpenAPIV3_1 {
     }
   >
 
-  export type PathsObject<T = {}, P extends {} = {}> = Record<
-    string,
-    (PathItemObject<T> & P) | undefined
-  >
+  export type PathsObject<T = {}, P extends {} = {}> = Record<string, (PathItemObject<T> & P) | undefined>
 
   export type HttpMethods = OpenAPIV3.HttpMethods
 
@@ -174,8 +153,7 @@ export namespace OpenAPIV3_1 {
   > &
     T
 
-  export type ExternalDocumentationObject =
-    OpenAPIV3.ExternalDocumentationObject
+  export type ExternalDocumentationObject = OpenAPIV3.ExternalDocumentationObject
 
   export type ParameterObject = OpenAPIV3.ParameterObject
 
@@ -183,9 +161,7 @@ export namespace OpenAPIV3_1 {
 
   export type ParameterBaseObject = OpenAPIV3.ParameterBaseObject
 
-  export type NonArraySchemaObjectType =
-    | OpenAPIV3.NonArraySchemaObjectType
-    | 'null'
+  export type NonArraySchemaObjectType = OpenAPIV3.NonArraySchemaObjectType | 'null'
 
   export type ArraySchemaObjectType = OpenAPIV3.ArraySchemaObjectType
 
@@ -194,12 +170,7 @@ export namespace OpenAPIV3_1 {
    * 'items' will be always visible as optional
    * Casting schema object to ArraySchemaObject or NonArraySchemaObject will work fine
    */
-  export type SchemaObject = (
-    | ArraySchemaObject
-    | NonArraySchemaObject
-    | MixedSchemaObject
-    | boolean
-  ) &
+  export type SchemaObject = (ArraySchemaObject | NonArraySchemaObject | MixedSchemaObject | boolean) &
     AnyOtherAttribute
 
   export type ArraySchemaObject = {
@@ -324,6 +295,7 @@ export namespace OpenAPIV3_1 {
   export type TagObject = OpenAPIV3.TagObject
 }
 
+// biome-ignore lint/style/noNamespace: We want it to be a module here.
 export namespace OpenAPIV3 {
   export type Document<T = {}> = {
     /**
@@ -382,16 +354,7 @@ export namespace OpenAPIV3 {
   // See https://swagger.io/specification/#path-item-object
   // You can use keys or values from it in TypeScript code like this:
   //     for (const method of Object.values(OpenAPIV3.HttpMethods)) { … }
-  export enum HttpMethods {
-    GET = 'get',
-    PUT = 'put',
-    POST = 'post',
-    DELETE = 'delete',
-    OPTIONS = 'options',
-    HEAD = 'head',
-    PATCH = 'patch',
-    TRACE = 'trace',
-  }
+  export type HttpMethods = 'get' | 'put' | 'post' | 'delete' | 'options' | 'head' | 'patch' | 'trace' | 'connect'
 
   export type PathItemObject<T = {}> = {
     $ref?: string
@@ -445,15 +408,9 @@ export namespace OpenAPIV3 {
     examples?: { [media: string]: ReferenceObject | ExampleObject }
     content?: { [media: string]: MediaTypeObject }
   }
-  export type NonArraySchemaObjectType =
-    | 'boolean'
-    | 'object'
-    | 'number'
-    | 'string'
-    | 'integer'
+  export type NonArraySchemaObjectType = 'boolean' | 'object' | 'number' | 'string' | 'integer'
   export type ArraySchemaObjectType = 'array'
-  export type SchemaObject = (ArraySchemaObject | NonArraySchemaObject) &
-    AnyOtherAttribute
+  export type SchemaObject = (ArraySchemaObject | NonArraySchemaObject) & AnyOtherAttribute
 
   export type ArraySchemaObject = {
     type?: ArraySchemaObjectType
@@ -604,14 +561,14 @@ export namespace OpenAPIV3 {
     description?: string
     scheme?: string
     bearerFormat?: string
-  }
+  } & AnyOtherAttribute
 
   export type ApiKeySecurityScheme = {
     type?: 'apiKey'
     description?: string
     name?: string
     in?: string
-  }
+  } & AnyOtherAttribute
 
   export type OAuth2SecurityScheme = {
     type?: 'oauth2'
@@ -621,23 +578,23 @@ export namespace OpenAPIV3 {
         authorizationUrl?: string
         refreshUrl?: string
         scopes?: { [scope: string]: string }
-      }
+      } & AnyOtherAttribute
       password?: {
         tokenUrl?: string
         refreshUrl?: string
         scopes?: { [scope: string]: string }
-      }
+      } & AnyOtherAttribute
       clientCredentials?: {
         tokenUrl?: string
         refreshUrl?: string
         scopes?: { [scope: string]: string }
-      }
+      } & AnyOtherAttribute
       authorizationCode?: {
         authorizationUrl?: string
         tokenUrl?: string
         refreshUrl?: string
         scopes?: { [scope: string]: string }
-      }
+      } & AnyOtherAttribute
     }
   }
 
@@ -645,7 +602,7 @@ export namespace OpenAPIV3 {
     type?: 'openIdConnect'
     description?: string
     openIdConnectUrl?: string
-  }
+  } & AnyOtherAttribute
 
   export type TagObject = {
     name?: string
@@ -654,6 +611,7 @@ export namespace OpenAPIV3 {
   } & AnyOtherAttribute
 }
 
+// biome-ignore lint/style/noNamespace: We want it to be a module here.
 export namespace OpenAPIV2 {
   export type Document<T = {}> = {
     /**
@@ -737,10 +695,7 @@ export namespace OpenAPIV2 {
     tokenUrl?: string
   } & SecuritySchemeOauth2Base
 
-  export type SecuritySchemeObject =
-    | SecuritySchemeBasic
-    | SecuritySchemeApiKey
-    | SecuritySchemeOauth2
+  export type SecuritySchemeObject = SecuritySchemeBasic | SecuritySchemeApiKey | SecuritySchemeOauth2
 
   export type SecurityDefinitionsObject = {
     [index: string]: SecuritySchemeObject

@@ -13,16 +13,10 @@ export const createApiClientModal = async ({
   configuration = {},
   mountOnInitialize = true,
   store,
-}: Partial<
-  Pick<
-    CreateApiClientParams,
-    'el' | 'configuration' | 'mountOnInitialize' | 'store'
-  >
->) => {
+}: Partial<Pick<CreateApiClientParams, 'el' | 'configuration' | 'mountOnInitialize' | 'store'>>) => {
   // Default sidebar to closed in the modal
   const _configuration = {
     ...configuration,
-    showSidebar: false,
   }
 
   const client = createApiClient({
@@ -41,17 +35,18 @@ export const createApiClientModal = async ({
 
   // Import the spec if we don't pass in a store
   if (!store) {
-    if (configuration.spec?.url)
-      await importSpecFromUrl(configuration.spec.url, 'default', {
+    if (configuration.url) {
+      await importSpecFromUrl(configuration.url, 'default', {
         proxyUrl: configuration.proxyUrl,
-        setCollectionSecurity: true,
+        useCollectionSecurity: true,
         ...configuration,
       })
-    else if (configuration.spec?.content)
-      await importSpecFile(configuration.spec?.content, 'default', {
-        setCollectionSecurity: true,
+    } else if (configuration.content) {
+      await importSpecFile(configuration.content, 'default', {
+        useCollectionSecurity: true,
         ...configuration,
       })
+    }
   }
 
   return client
@@ -67,12 +62,7 @@ export const createApiClientModalSync = ({
   configuration = {},
   mountOnInitialize = true,
   store,
-}: Partial<
-  Pick<
-    CreateApiClientParams,
-    'el' | 'configuration' | 'mountOnInitialize' | 'store'
-  >
->) =>
+}: Partial<Pick<CreateApiClientParams, 'el' | 'configuration' | 'mountOnInitialize' | 'store'>>) =>
   createApiClient({
     el,
     appComponent: ApiClientModal,
@@ -82,4 +72,5 @@ export const createApiClientModalSync = ({
     mountOnInitialize,
     store,
     router: createModalRouter(),
+    layout: 'modal',
   })

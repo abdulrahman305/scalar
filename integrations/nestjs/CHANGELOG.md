@@ -1,5 +1,303 @@
 # @scalar/nestjs-api-reference
 
+## 0.5.12
+
+### Patch Changes
+
+- Updated dependencies [ccf875a]
+- Updated dependencies [94d6d0c]
+  - @scalar/types@0.2.11
+
+## 0.5.11
+
+### Patch Changes
+
+- Updated dependencies [fb62e1b]
+  - @scalar/types@0.2.10
+
+## 0.5.10
+
+### Patch Changes
+
+- Updated dependencies [591562f]
+  - @scalar/types@0.2.9
+
+## 0.5.9
+
+### Patch Changes
+
+- Updated dependencies [c10e191]
+  - @scalar/types@0.2.8
+
+## 0.5.8
+
+### Patch Changes
+
+- a7f0209: feat: render title option
+- Updated dependencies [ad2e3e6]
+  - @scalar/types@0.2.7
+
+## 0.5.7
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+- Updated dependencies [2d7f995]
+  - @scalar/types@0.2.6
+
+## 0.5.6
+
+### Patch Changes
+
+- @scalar/types@0.2.5
+
+## 0.5.5
+
+### Patch Changes
+
+- Updated dependencies [1468280]
+  - @scalar/types@0.2.4
+
+## 0.5.4
+
+### Patch Changes
+
+- 161733e: docs: new README
+
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [221e35f]
+  - @scalar/types@0.2.3
+
+## 0.5.2
+
+### Patch Changes
+
+- @scalar/types@0.2.2
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [4440949]
+  - @scalar/types@0.2.1
+
+## 0.5.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- Updated dependencies [483ca93]
+  - @scalar/types@0.2.0
+
+## 0.4.16
+
+### Patch Changes
+
+- Updated dependencies [be8a6ec]
+  - @scalar/types@0.1.16
+
+## 0.4.15
+
+### Patch Changes
+
+- Updated dependencies [f711ab5]
+- Updated dependencies [0222ad4]
+- Updated dependencies [cb9428c]
+- Updated dependencies [67aa0f4]
+  - @scalar/types@0.1.15
+
+## 0.4.14
+
+### Patch Changes
+
+- Updated dependencies [8c7bad8]
+  - @scalar/types@0.1.14
+
+## 0.4.13
+
+### Patch Changes
+
+- Updated dependencies [e8457cb]
+  - @scalar/types@0.1.13
+
+## 0.4.12
+
+### Patch Changes
+
+- Updated dependencies [62c4ce3]
+  - @scalar/types@0.1.12
+
+## 0.4.11
+
+### Patch Changes
+
+- Updated dependencies [eb4854d]
+  - @scalar/types@0.1.11
+
+## 0.4.10
+
+### Patch Changes
+
+- @scalar/types@0.1.10
+
+## 0.4.9
+
+### Patch Changes
+
+- Updated dependencies [17e7d02]
+  - @scalar/types@0.1.9
+
+## 0.4.8
+
+### Patch Changes
+
+- Updated dependencies [feaa314]
+  - @scalar/types@0.1.8
+
+## 0.4.7
+
+### Patch Changes
+
+- Updated dependencies [9def02e]
+- Updated dependencies [3745d77]
+  - @scalar/types@0.1.7
+
+## 0.4.6
+
+### Patch Changes
+
+- Updated dependencies [3783345]
+  - @scalar/types@0.1.6
+
+## 0.4.5
+
+### Patch Changes
+
+- Updated dependencies [e09dab3]
+- Updated dependencies [04e27a1]
+  - @scalar/types@0.1.5
+
+## 0.4.4
+
+### Patch Changes
+
+- eccf147: fix: configuration has too many required attributes
+- Updated dependencies [8efedf3]
+- Updated dependencies [82a4ba8]
+- Updated dependencies [57feba6]
+  - @scalar/types@0.1.4
+
+## 0.4.3
+
+### Patch Changes
+
+- Updated dependencies [543a16c]
+- Updated dependencies [57e96a0]
+  - @scalar/types@0.1.3
+
+## 0.4.2
+
+### Patch Changes
+
+- 2047bf6: fix: apply the previous fix to the nestjs express integration as well
+- 28197f4: fix: missing app.service nest.js playground import
+- Updated dependencies [7a8965c]
+- Updated dependencies [49dffff]
+  - @scalar/types@0.1.2
+
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [39c0f47]
+  - @scalar/types@0.1.1
+
+## 0.4.0
+
+### Minor Changes
+
+- 5f9a8a2: feat!: remove the spec prefix, make content and url top-level attributes
+
+### Patch Changes
+
+- Updated dependencies [5f9a8a2]
+  - @scalar/types@0.1.0
+
+## 0.3.191
+
+### Patch Changes
+
+- Updated dependencies [fc6a45e]
+  - @scalar/types@0.0.41
+
+## 0.3.190
+
+### Patch Changes
+
+- Updated dependencies [4d03e0f]
+  - @scalar/types@0.0.40
+
+## 0.3.189
+
+### Patch Changes
+
+- Updated dependencies [bab7990]
+- Updated dependencies [2c621d4]
+  - @scalar/types@0.0.39
+
+## 0.3.188
+
+### Patch Changes
+
+- Updated dependencies [7f1a40e]
+  - @scalar/types@0.0.38
+
+## 0.3.187
+
+### Patch Changes
+
+- Updated dependencies [89d8b75]
+- Updated dependencies [8a04b8d]
+  - @scalar/types@0.0.37
+
+## 0.3.186
+
+### Patch Changes
+
+- Updated dependencies [4db5161]
+  - @scalar/types@0.0.36
+
+## 0.3.185
+
+### Patch Changes
+
+- c10bbf5: chore: code style
+- Updated dependencies [946a5df]
+- Updated dependencies [cf14cbb]
+  - @scalar/types@0.0.35
+
+## 0.3.184
+
+### Patch Changes
+
+- @scalar/types@0.0.34
+
+## 0.3.183
+
+### Patch Changes
+
+- 54fdfcb: chore: remove spec wording
+- fa6afe8: chore: code formatting
+- Updated dependencies [54fdfcb]
+- Updated dependencies [fa6afe8]
+  - @scalar/types@0.0.33
+
 ## 0.3.182
 
 ### Patch Changes

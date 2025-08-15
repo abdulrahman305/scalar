@@ -2,15 +2,21 @@
 import ServerVariablesSelect from '@/components/Server/ServerVariablesSelect.vue'
 import ServerVariablesTextbox from '@/components/Server/ServerVariablesTextbox.vue'
 import type {
-  ServerVariableValues,
   ServerVariables,
+  ServerVariableValues,
 } from '@/components/Server/types'
 
-const props = defineProps<{
+const {
+  values,
+  variables,
+  layout = 'client',
+} = defineProps<{
   variables?: ServerVariables | undefined
   values?: ServerVariableValues
   /** The ID of the input controlled by the variables form */
   controls?: string
+  /** The layout of the server variables form */
+  layout?: 'client' | 'reference'
 }>()
 
 const emit = defineEmits<{
@@ -22,11 +28,7 @@ function setVariable(name: string, value: string) {
 }
 
 const getVariable = (name: string) => {
-  return (
-    props.values?.[name] ??
-    props.variables?.[name]?.default ??
-    ''
-  ).toString()
+  return (values?.[name] ?? variables?.[name]?.default ?? '').toString()
 }
 </script>
 <template>
@@ -34,9 +36,14 @@ const getVariable = (name: string) => {
     <template
       v-for="name in Object.keys(variables)"
       :key="name">
-      <label class="group/label flex w-full">
+      <label
+        class="group/label flex w-full"
+        :class="
+          layout === 'reference' &&
+          'items-center border-x border-b last:rounded-b-lg'
+        ">
         <span
-          class="flex items-center pl-3 py-1.5 after:content-[':'] mr-1.5 group-has-[input]/label:mr-0">
+          class="flex items-center py-1.5 pl-3 group-has-[input]/label:mr-0 after:content-[':']">
           {{ name }}
         </span>
         <template v-if="variables?.[name]?.enum?.length">

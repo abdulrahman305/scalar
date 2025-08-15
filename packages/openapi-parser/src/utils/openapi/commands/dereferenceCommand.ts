@@ -1,14 +1,13 @@
-import type { DereferenceResult, Queue, Task } from '../../../types/index.ts'
-import type { DereferenceOptions } from '../../dereference.ts'
-import { details } from '../actions/details.ts'
-import { files } from '../actions/files.ts'
-import { get } from '../actions/get.ts'
-import { toJson } from '../actions/toJson.ts'
-import { toYaml } from '../actions/toYaml.ts'
-import { queueTask } from '../utils/queueTask.ts'
+import type { DereferenceResult, Queue, Task } from '@/types/index'
+import type { DereferenceOptions } from '@/utils/dereference'
+import { details } from '../actions/details'
+import { files } from '../actions/files'
+import { get } from '../actions/get'
+import { toJson } from '../actions/toJson'
+import { toYaml } from '../actions/toYaml'
+import { queueTask } from '../utils/queueTask'
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
   interface Commands {
     dereference: {
       task: {
@@ -23,10 +22,7 @@ declare global {
 /**
  * Dereference the given OpenAPI document
  */
-export function dereferenceCommand<T extends Task[]>(
-  previousQueue: Queue<T>,
-  options?: DereferenceOptions,
-) {
+export function dereferenceCommand<T extends Task[]>(previousQueue: Queue<T>, options?: DereferenceOptions) {
   const task: Task = {
     name: 'dereference',
     options: {

@@ -1,12 +1,18 @@
+import path from 'node:path'
 import type { LoadContext, Plugin } from '@docusaurus/types'
-import type { ReferenceProps } from '@scalar/api-reference-react'
-import path from 'path'
+import type { AnyApiReferenceConfiguration } from '@scalar/types'
 
 export type ScalarOptions = {
   label: string
   route: string
+  /**
+   * If you wish to pin a specific CDN version instead of the latest (default)
+   * @example https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.28.11
+   */
+  cdn?: string
   showNavLink?: boolean
-} & ReferenceProps
+  configuration?: AnyApiReferenceConfiguration
+}
 
 /**
  * Used to set default options from the user-provided options
@@ -27,11 +33,28 @@ const createDefaultScalarOptions = (options: ScalarOptions): ScalarOptions => ({
 const ScalarDocusaurus = (
   context: LoadContext,
   options: ScalarOptions,
-): Plugin<ReferenceProps> => {
+): Plugin<{ configuration?: AnyApiReferenceConfiguration }> => {
   const defaultOptions = createDefaultScalarOptions(options)
 
   return {
     name: '@scalar/docusaurus',
+
+    /**
+     * Load the Standalone API Reference script
+     * This is loaded into the dom once for every plugin thats loaded BUT it only downloads the script once
+     */
+    injectHtmlTags() {
+      return {
+        preBodyTags: [
+          {
+            tagName: 'script',
+            attributes: {
+              src: options.cdn ?? 'https://cdn.jsdelivr.net/npm/@scalar/api-reference',
+            },
+          },
+        ],
+      }
+    },
 
     async loadContent() {
       return defaultOptions
@@ -53,23 +76,13 @@ const ScalarDocusaurus = (
         })
       }
 
-      if (typeof require === 'function') {
-        addRoute({
-          path: defaultOptions.route,
-          component: path.resolve(__dirname, './ScalarDocusaurusCommonJS'),
-          // Provide the path to the loaded spec as a prop to your component
-          exact: true,
-          ...content,
-        })
-      } else {
-        addRoute({
-          path: defaultOptions.route,
-          component: path.resolve(__dirname, './ScalarDocusaurus'),
-          // Provide the path to the loaded spec as a prop to your component
-          exact: true,
-          ...content,
-        })
-      }
+      // Add the appropriate route based on the module system
+      addRoute({
+        path: defaultOptions.route,
+        component: path.resolve(__dirname, './ScalarDocusaurus'),
+        exact: true,
+        ...content,
+      })
     },
   }
 }

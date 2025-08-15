@@ -1,8 +1,9 @@
 <script lang="ts" setup>
+import { computed, ref, toRef } from 'vue'
+
 import ViewLayoutCollapse from '@/components/ViewLayout/ViewLayoutCollapse.vue'
 import { useResponseBody } from '@/hooks/useResponseBody'
-import { mediaTypes } from '@/views/Request/consts'
-import { computed, ref } from 'vue'
+import { getMediaTypeConfig } from '@/views/Request/consts'
 
 import ResponseBodyDownload from './ResponseBodyDownload.vue'
 import ResponseBodyInfo from './ResponseBodyInfo.vue'
@@ -12,6 +13,7 @@ import ResponseBodyToggle from './ResponseBodyToggle.vue'
 
 const props = defineProps<{
   title: string
+  layout: 'client' | 'reference'
   data: unknown
   headers: { name: string; value: string; required: boolean }[]
 }>()
@@ -27,14 +29,16 @@ const showPreview = computed(() => toggle.value || !showToggle.value)
 const showRaw = computed(() => !toggle.value || !showToggle.value)
 
 const { mimeType, attachmentFilename, dataUrl } = useResponseBody({
-  data: props.data,
-  headers: props.headers,
+  data: toRef(props, 'data'),
+  headers: toRef(props, 'headers'),
 })
 
-const mediaConfig = computed(() => mediaTypes[mimeType.value.essence])
+const mediaConfig = computed(() => getMediaTypeConfig(mimeType.value.essence))
 </script>
 <template>
-  <ViewLayoutCollapse class="max-h-content overflow-x-auto">
+  <ViewLayoutCollapse
+    class="max-h-content overflow-y-hidden"
+    :layout="layout">
     <template #title>{{ title }}</template>
     <template
       v-if="data && dataUrl"
@@ -46,9 +50,10 @@ const mediaConfig = computed(() => mediaTypes[mimeType.value.essence])
     </template>
     <div
       v-if="data"
-      class="max-h-[calc(100%-32px)] border-t-1/2 flex flex-col bg-b-1 overflow-hidden">
-      <div class="flex justify-between items-center border-b-1/2 px-3 py-1.5">
-        <span class="text-xxs leading-3 font-code">
+      class="bg-b-1 flex max-h-[calc(100%-32px)] flex-col overflow-hidden">
+      <div
+        class="box-content flex min-h-8 items-center justify-between border-y px-3">
+        <span class="text-xxs font-code leading-3">
           {{ mimeType.essence }}
         </span>
         <ResponseBodyToggle
@@ -75,6 +80,6 @@ const mediaConfig = computed(() => mediaTypes[mimeType.value.essence])
 </template>
 <style scoped>
 .scalar-code-block:deep(.hljs *) {
-  font-size: var(--scalar-mini);
+  font-size: var(--scalar-small);
 }
 </style>

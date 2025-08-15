@@ -1,5 +1,178 @@
 # @scalar/openapi-parser
 
+## 0.19.1
+
+### Patch Changes
+
+- e203e90: fix: can’t import plugins from parser package anymore
+  - @scalar/openapi-types@0.3.7
+
+## 0.19.0
+
+### Minor Changes
+
+- 952bde2: feat(json-magic): move json tooling to the new package
+- 2888e18: feat(openapi-parser): partial bundle to a depth
+
+## 0.18.3
+
+### Patch Changes
+
+- c345d2c: fix: added dependency on @scalar/openapi-types
+- Updated dependencies [ccf875a]
+  - @scalar/openapi-types@0.3.7
+
+## 0.18.2
+
+### Patch Changes
+
+- 1c2b9f3: feat: add application and accessCode to swagger 2 upgrader
+
+## 0.18.1
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+
+## 0.18.0
+
+### Minor Changes
+
+- 291f09d: feat(openapi-parser): ensure unique hashes and support custom compression
+
+## 0.17.0
+
+### Minor Changes
+
+- f823d45: feat(openapi-parser): introduce parseJson and parseYaml plugins for bundler
+
+### Patch Changes
+
+- 166e298: feat(openapi-parser): correctly set the base origin for string inputs for the bundler
+- 4156f1d: Expand workspace store integration
+- 37c90b8: feat: add x-webhooks upgrade to the upgrader
+
+## 0.16.0
+
+### Minor Changes
+
+- 11fabae: fix(openapi-parser): webpack bundle errors because of the barrel files
+
+## 0.15.0
+
+### Minor Changes
+
+- b9dacba: fix(openapi-parser): multi entry build for bundler plugins
+- a73e9be: chore(openapi-parser): bring back pipeline syntax
+- f4332eb: feat: external reference resolution and partial bundle of the openapi document
+
+### Patch Changes
+
+- 17bc0d8: fix: collectionFormat is not migrated to new style and explode keywords
+- 49c04cf: fix(openapi-parser): use dynamic imports inside the plugin
+
+## 0.14.0
+
+### Minor Changes
+
+- ee3eb77: feat(openapi-parser): bundle openapi documents
+
+## 0.13.0
+
+### Minor Changes
+
+- 1e87feb: fix: normalize doesn’t handle empty documents well
+
+## 0.12.0
+
+### Minor Changes
+
+- edf694b: feat: remove wildcard exports
+
+## 0.11.1
+
+### Patch Changes
+
+- ea20eb4: fix: swagger upgrade fails if you pass something that is not an object
+
+## 0.11.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+### Patch Changes
+
+- bd602d3: chore: mark pipeline syntax as deprecated
+- 1d1470c: feat: speed up the upgrade utility
+
+## 0.10.17
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+
+## 0.10.16
+
+### Patch Changes
+
+- c5047ee: fix: hotfix to revert the external reference commit
+
+## 0.10.15
+
+### Patch Changes
+
+- 4abe4f8: feat: add resolveInternalRefs to bundle documents
+- 4abe4f8: feat: external $ref’s (absolute and relative URLs)
+
+## 0.10.14
+
+### Patch Changes
+
+- cf5bf65: fix: migrate file type, basic auth, parameters and responses headers correctly
+
+## 0.10.13
+
+### Patch Changes
+
+- d5a687f: fix: byte format is ignored when upgrading from OpenAPI 3.0 to OpenAPI 3.1
+
+## 0.10.12
+
+### Patch Changes
+
+- cbc1d08: fix: swagger 2.0 basePath is ignored, if there’s no host
+
+## 0.10.11
+
+### Patch Changes
+
+- 0f13162: chore: enable more Biome flags, apply linter fixes
+
+## 0.10.10
+
+### Patch Changes
+
+- 0d8a24f: chore: remove Swagger 2.0 upgrade warning
+
+## 0.10.9
+
+### Patch Changes
+
+- c10bbf5: chore: code style
+
+## 0.10.8
+
+### Patch Changes
+
+- e350f23: chore: code style
+
+## 0.10.7
+
+### Patch Changes
+
+- 1223c1f: chore: code style
+
 ## 0.10.6
 
 ### Patch Changes

@@ -1,6 +1,6 @@
-import { type ClientConfiguration, createApiClient } from '@/libs'
+import { createApiClient } from '@/libs'
 import { createWebHistoryRouter, saveActiveWorkspace } from '@/router'
-
+import type { ApiClientConfiguration } from '@scalar/types/api-reference'
 import ApiClientApp from './ApiClientApp.vue'
 
 /**
@@ -10,7 +10,7 @@ export const createApiClientApp = async (
   /** Element to mount the references to */
   el: HTMLElement | null,
   /** Configuration object for API client */
-  configuration: ClientConfiguration = {},
+  configuration: Partial<ApiClientConfiguration> = {},
   /**
    * Will attempt to mount the references immediately
    * For SSR this may need to be blocked and done client side
@@ -32,12 +32,12 @@ export const createApiClientApp = async (
   router.afterEach(saveActiveWorkspace)
 
   // Import the spec if needed
-  if (configuration.spec?.url) {
-    await importSpecFromUrl(configuration.spec.url, 'default', {
+  if (configuration.url) {
+    await importSpecFromUrl(configuration.url, 'default', {
       proxyUrl: configuration.proxyUrl,
     })
-  } else if (configuration.spec?.content) {
-    await importSpecFile(configuration.spec?.content, 'default')
+  } else if (configuration.content) {
+    await importSpecFile(configuration.content, 'default')
   }
 
   return client

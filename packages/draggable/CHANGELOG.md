@@ -1,5 +1,23 @@
 # @scalar/draggable
 
+## 0.2.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+## 0.1.11
+
+### Patch Changes
+
+- c10bbf5: chore: code style
+
+## 0.1.10
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+
 ## 0.1.9
 
 ### Patch Changes

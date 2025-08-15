@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
+import { useBindCx } from '@scalar/use-hooks/useBindCx'
 import { ref } from 'vue'
 
-import { useBindCx } from '../../hooks/useBindCx'
 import {
   ScalarFloating,
   ScalarFloatingBackdrop,
@@ -22,7 +22,9 @@ const popoverButtonRef = ref<typeof PopoverButton | null>(null)
 
 /** Open the popover of the up or down arrows are pressed */
 const handleKeydown = (e: KeyboardEvent) => {
-  if (!['ArrowUp', 'ArrowDown'].includes(e.key)) return
+  if (!['ArrowUp', 'ArrowDown'].includes(e.key)) {
+    return
+  }
   e.preventDefault()
   e.target?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
 }
@@ -38,22 +40,21 @@ defineExpose({ popoverButtonRef })
         ref="popoverButtonRef"
         as="template"
         @keydown="handleKeydown">
-        <slot :open="open" />
+        <slot :open />
       </PopoverButton>
       <template
         v-if="open"
         #floating="{ width }">
         <PopoverPanel
           v-slot="{ close }"
-          focus
           :style="{ width }"
           v-bind="
             cx('relative flex flex-col max-h-[inherit] w-40 rounded text-sm')
           ">
           <slot
-            :close="close"
+            :close
             name="popover"
-            :open="open" />
+            :open />
           <ScalarFloatingBackdrop />
         </PopoverPanel>
       </template>

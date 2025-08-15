@@ -17,26 +17,25 @@
 export default {}
 </script>
 <script setup lang="ts">
-import type { Component } from 'vue'
+import type { ScalarSidebarItemProps } from '@/components/ScalarSidebar/types'
+import { useBindCx } from '@scalar/use-hooks/useBindCx'
 
-import { useBindCx } from '../../hooks/useBindCx'
 import ScalarSidebarButton from './ScalarSidebarButton.vue'
 import ScalarSidebarGroupToggle from './ScalarSidebarGroupToggle.vue'
-import { useSidebarGroups } from './useSidebarGroups'
+import ScalarSidebarIndent from './ScalarSidebarIndent.vue'
+import { type SidebarGroupLevel, useSidebarGroups } from './useSidebarGroups'
 
-const { is = 'ul' } = defineProps<{
-  is?: Component | string
-}>()
+const { is = 'ul' } = defineProps<ScalarSidebarItemProps>()
 
-const open = defineModel<boolean>()
+const open = defineModel<boolean>({ default: false })
 
 defineSlots<{
   /** The text content of the toggle */
-  default?: () => any
+  default?(props: { open: boolean }): unknown
   /** Override the entire toggle button */
-  button?: () => any
+  button?(props: { open: boolean; level: SidebarGroupLevel }): unknown
   /** The list of sidebar subitems */
-  items?: () => any
+  items?(props: { open: boolean }): unknown
 }>()
 
 const { level } = useSidebarGroups({ increment: true })
@@ -45,28 +44,41 @@ defineOptions({ inheritAttrs: false })
 const { cx } = useBindCx()
 </script>
 <template>
-  <li class="contents">
+  <li class="group/item contents">
     <slot
+      :level="level"
       name="button"
-      :open="open">
+      :open="!!open">
       <ScalarSidebarButton
         is="button"
+        class="group/group-button"
         :aria-expanded="open"
         :indent="level"
+        :active
+        :selected
+        :disabled
+        :icon
         @click="open = !open">
-        <template #icon>
-          <ScalarSidebarGroupToggle :open="open" />
+        <template #indent>
+          <ScalarSidebarIndent
+            class="mr-0"
+            :indent="level" />
         </template>
-        <slot :open="open" />
+        <template #icon>
+          <ScalarSidebarGroupToggle
+            class="text-c-3"
+            :open="open" />
+        </template>
+        <slot :open="!!open" />
       </ScalarSidebarButton>
     </slot>
     <component
       :is="is"
       v-if="open"
-      v-bind="cx('flex flex-col')">
+      v-bind="cx('group/items flex flex-col gap-px')">
       <slot
         name="items"
-        :open="open" />
+        :open="!!open" />
     </component>
   </li>
 </template>

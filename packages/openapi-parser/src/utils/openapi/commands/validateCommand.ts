@@ -1,23 +1,17 @@
-import type {
-  AnyObject,
-  Queue,
-  Task,
-  ValidateResult,
-} from '../../../types/index.ts'
-import type { DereferenceOptions } from '../../dereference.ts'
-import type { ValidateOptions } from '../../validate.ts'
-import { details } from '../actions/details.ts'
-import { files } from '../actions/files.ts'
-import { get } from '../actions/get.ts'
-import { toJson } from '../actions/toJson.ts'
-import { toYaml } from '../actions/toYaml.ts'
-import { queueTask } from '../utils/queueTask.ts'
-import { dereferenceCommand } from './dereferenceCommand.ts'
-import { filterCommand } from './filterCommand.ts'
-import { upgradeCommand } from './upgradeCommand.ts'
+import type { AnyObject, Queue, Task, ValidateResult } from '@/types/index'
+import type { DereferenceOptions } from '@/utils/dereference'
+import type { ValidateOptions } from '@/utils/validate'
+import { details } from '../actions/details'
+import { files } from '../actions/files'
+import { get } from '../actions/get'
+import { toJson } from '../actions/toJson'
+import { toYaml } from '../actions/toYaml'
+import { queueTask } from '../utils/queueTask'
+import { dereferenceCommand } from './dereferenceCommand'
+import { filterCommand } from './filterCommand'
+import { upgradeCommand } from './upgradeCommand'
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
   interface Commands {
     validate: {
       task: {
@@ -32,10 +26,7 @@ declare global {
 /**
  * Validate the given OpenAPI document
  */
-export function validateCommand<T extends Task[]>(
-  previousQueue: Queue<T>,
-  options?: ValidateOptions,
-) {
+export function validateCommand<T extends Task[]>(previousQueue: Queue<T>, options?: ValidateOptions) {
   const task: Task = {
     name: 'validate',
     options: {
@@ -47,12 +38,10 @@ export function validateCommand<T extends Task[]>(
   const queue = queueTask<[...T, typeof task]>(previousQueue, task as Task)
 
   return {
-    dereference: (dereferenceOptions?: DereferenceOptions) =>
-      dereferenceCommand(queue, dereferenceOptions),
+    dereference: (dereferenceOptions?: DereferenceOptions) => dereferenceCommand(queue, dereferenceOptions),
     details: () => details(queue),
     files: () => files(queue),
-    filter: (callback: (specification: AnyObject) => boolean) =>
-      filterCommand(queue, callback),
+    filter: (callback: (specification: AnyObject) => boolean) => filterCommand(queue, callback),
     get: () => get(queue),
     toJson: () => toJson(queue),
     toYaml: () => toYaml(queue),

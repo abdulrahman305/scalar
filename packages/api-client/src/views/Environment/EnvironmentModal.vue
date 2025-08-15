@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import CommandActionForm from '@/components/CommandPalette/CommandActionForm.vue'
-import CommandActionInput from '@/components/CommandPalette/CommandActionInput.vue'
-import { useWorkspace } from '@/store'
 import {
-  type ModalState,
   ScalarButton,
-  type ScalarComboboxOption,
   ScalarIcon,
   ScalarListbox,
   ScalarModal,
+  type ModalState,
 } from '@scalar/components'
 import type { Collection } from '@scalar/oas-utils/entities/spec'
 import { useToasts } from '@scalar/use-toasts'
 import { computed, ref, watch } from 'vue'
+
+import CommandActionForm from '@/components/CommandPalette/CommandActionForm.vue'
+import CommandActionInput from '@/components/CommandPalette/CommandActionInput.vue'
+import { useWorkspace } from '@/store'
 
 import EnvironmentColors from './EnvironmentColors.vue'
 
@@ -30,7 +30,7 @@ const emit = defineEmits<{
       name: string
       color: string
       type: string
-      collectionId: string | undefined
+      collectionId: Collection['uid'] | undefined
     },
   ): void
 }>()
@@ -38,7 +38,7 @@ const emit = defineEmits<{
 const { events } = useWorkspace()
 
 const environmentName = ref('')
-const selectedColor = ref('#8E8E8E')
+const selectedColor = ref('#FFFFFF')
 
 const collections = computed(() => [
   ...props.activeWorkspaceCollections
@@ -49,7 +49,7 @@ const collections = computed(() => [
     })),
 ])
 
-const selectedEnvironment = ref<ScalarComboboxOption | undefined>(
+const selectedEnvironment = ref(
   collections.value.find((collection) => collection.id === props.collectionId),
 )
 
@@ -65,7 +65,7 @@ watch(
   (isOpen) => {
     if (isOpen) {
       environmentName.value = ''
-      selectedColor.value = '#8E8E8E'
+      selectedColor.value = '#FFFFFF'
       if (props.collectionId) {
         selectedEnvironment.value = collections.value.find(
           (collection) => collection.id === props.collectionId,
@@ -78,6 +78,10 @@ watch(
 )
 
 const handleSubmit = () => {
+  if (!environmentName.value.trim()) {
+    toast('Please enter a name before adding an environment.', 'error')
+    return
+  }
   if (!selectedEnvironment.value?.id) {
     toast('Please select a collection before adding an environment.', 'error')
     return
@@ -105,10 +109,10 @@ const redirectToCreateCollection = () => {
     size="xs"
     :state="state">
     <CommandActionForm
-      :disabled="!selectedEnvironment"
+      :disabled="!selectedEnvironment || !environmentName.trim()"
       @cancel="emit('cancel')"
       @submit="handleSubmit">
-      <div class="flex gap-2 items-start">
+      <div class="flex items-start gap-2">
         <EnvironmentColors
           :activeColor="selectedColor"
           class="peer"
@@ -116,7 +120,7 @@ const redirectToCreateCollection = () => {
           @select="handleColorSelect" />
         <CommandActionInput
           v-model="environmentName"
-          class="!p-0 peer-has-[.color-selector]:hidden -mt-[.5px]"
+          class="-mt-[.5px] !p-0 peer-has-[.color-selector]:hidden"
           placeholder="Environment name" />
       </div>
       <template #options>
@@ -126,7 +130,7 @@ const redirectToCreateCollection = () => {
           placeholder="Select Type">
           <ScalarButton
             v-if="collections.length > 0"
-            class="justify-between p-2 max-h-8 gap-1 text-xs hover:bg-b-2 w-fit"
+            class="hover:bg-b-2 max-h-8 w-fit justify-between gap-1 p-2 text-xs"
             variant="outlined">
             <span :class="selectedEnvironment ? 'text-c-1' : 'text-c-3'">{{
               selectedEnvironment
@@ -140,14 +144,14 @@ const redirectToCreateCollection = () => {
           </ScalarButton>
           <ScalarButton
             v-else
-            class="justify-between p-2 max-h-8 gap-1 text-xs hover:bg-b-2"
+            class="hover:bg-b-2 max-h-8 justify-between gap-1 p-2 text-xs"
             variant="outlined"
             @click="redirectToCreateCollection">
             <span class="text-c-1">Create Collection</span>
           </ScalarButton>
         </ScalarListbox>
       </template>
-      <template #submit>Add Environment</template>
+      <template #submit> Add Environment </template>
     </CommandActionForm>
   </ScalarModal>
 </template>

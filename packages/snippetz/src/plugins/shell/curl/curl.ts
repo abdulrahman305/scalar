@@ -1,4 +1,4 @@
-import type { Plugin } from '@/types'
+import type { Plugin } from '@scalar/types/snippetz'
 
 /**
  * shell/curl
@@ -33,7 +33,7 @@ export const shellCurl: Plugin = {
           .join('&')
       : ''
     const url = `${normalizedRequest.url}${queryString}`
-    const hasSpecialChars = /[\s<>[\]{}|\\^%]/.test(url)
+    const hasSpecialChars = /[\s<>[\]{}|\\^%$]/.test(url)
     const urlPart = queryString || hasSpecialChars ? `'${url}'` : url
     parts[0] = `curl ${urlPart}`
 
@@ -44,9 +44,7 @@ export const shellCurl: Plugin = {
 
     // Basic Auth
     if (configuration?.auth?.username && configuration?.auth?.password) {
-      parts.push(
-        `--user '${configuration.auth.username}:${configuration.auth.password}'`,
-      )
+      parts.push(`--user '${configuration.auth.username}:${configuration.auth.password}'`)
     }
 
     // Headers
@@ -56,9 +54,7 @@ export const shellCurl: Plugin = {
       })
 
       // Add compressed flag if Accept-Encoding header includes compression
-      const acceptEncoding = normalizedRequest.headers.find(
-        (header) => header.name.toLowerCase() === 'accept-encoding',
-      )
+      const acceptEncoding = normalizedRequest.headers.find((header) => header.name.toLowerCase() === 'accept-encoding')
       if (acceptEncoding && /gzip|deflate/.test(acceptEncoding.value)) {
         parts.push('--compressed')
       }
@@ -82,29 +78,26 @@ export const shellCurl: Plugin = {
       if (normalizedRequest.postData.mimeType === 'application/json') {
         // Pretty print JSON data
         if (normalizedRequest.postData.text) {
-          const jsonData = JSON.parse(normalizedRequest.postData.text)
-          const prettyJson = JSON.stringify(jsonData, null, 2)
-          parts.push(`--data '${prettyJson}'`)
+          try {
+            const jsonData = JSON.parse(normalizedRequest.postData.text)
+            const prettyJson = JSON.stringify(jsonData, null, 2)
+            parts.push(`--data '${prettyJson}'`)
+          } catch {
+            // If JSON parsing fails, use the original text
+            parts.push(`--data '${normalizedRequest.postData.text}'`)
+          }
         }
-      } else if (
-        normalizedRequest.postData.mimeType === 'application/octet-stream'
-      ) {
+      } else if (normalizedRequest.postData.mimeType === 'application/octet-stream') {
         parts.push(`--data-binary '${normalizedRequest.postData.text}'`)
       } else if (
-        normalizedRequest.postData.mimeType ===
-          'application/x-www-form-urlencoded' &&
+        normalizedRequest.postData.mimeType === 'application/x-www-form-urlencoded' &&
         normalizedRequest.postData.params
       ) {
         // Handle URL-encoded form data
         normalizedRequest.postData.params.forEach((param) => {
-          parts.push(
-            `--data-urlencode '${encodeURIComponent(param.name)}=${param.value}'`,
-          )
+          parts.push(`--data-urlencode '${encodeURIComponent(param.name)}=${param.value}'`)
         })
-      } else if (
-        normalizedRequest.postData.mimeType === 'multipart/form-data' &&
-        normalizedRequest.postData.params
-      ) {
+      } else if (normalizedRequest.postData.mimeType === 'multipart/form-data' && normalizedRequest.postData.params) {
         // Handle multipart form data
         normalizedRequest.postData.params.forEach((param) => {
           if (param.fileName !== undefined) {
@@ -114,7 +107,14 @@ export const shellCurl: Plugin = {
           }
         })
       } else {
-        parts.push(`--data "${normalizedRequest.postData.text}"`)
+        // Try to parse and pretty print if it's JSON, otherwise use raw text
+        try {
+          const jsonData = JSON.parse(normalizedRequest.postData.text ?? '')
+          const prettyJson = JSON.stringify(jsonData, null, 2)
+          parts.push(`--data '${prettyJson}'`)
+        } catch {
+          parts.push(`--data '${normalizedRequest.postData.text}'`)
+        }
       }
     }
 

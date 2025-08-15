@@ -1,94 +1,129 @@
 <script setup lang="ts">
-import ContextBar from '@/components/ContextBar.vue'
+import { ScalarErrorBoundary } from '@scalar/components'
+import type { Environment } from '@scalar/oas-utils/entities/environment'
+import type { SelectedSecuritySchemeUids } from '@scalar/oas-utils/entities/shared'
+import type {
+  Collection,
+  Operation,
+  RequestExample,
+  Server,
+} from '@scalar/oas-utils/entities/spec'
+import type { Workspace } from '@scalar/oas-utils/entities/workspace'
+import { canMethodHaveBody, isDefined, REGEX } from '@scalar/oas-utils/helpers'
+import { computed, ref, useId, watch } from 'vue'
+
+import SectionFilter from '@/components/SectionFilter.vue'
 import ViewLayoutSection from '@/components/ViewLayout/ViewLayoutSection.vue'
 import { useLayout } from '@/hooks'
 import { matchesDomain } from '@/libs/send-request/set-request-cookies'
+import { usePluginManager } from '@/plugins'
 import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
+import type { EnvVariable } from '@/store/active-entities'
 import RequestBody from '@/views/Request/RequestSection/RequestBody.vue'
 import RequestParams from '@/views/Request/RequestSection/RequestParams.vue'
 import RequestPathParams from '@/views/Request/RequestSection/RequestPathParams.vue'
-import { ScalarErrorBoundary } from '@scalar/components'
-import type { SelectedSecuritySchemeUids } from '@scalar/oas-utils/entities/shared'
-import { canMethodHaveBody, isDefined } from '@scalar/oas-utils/helpers'
-import { computed, ref, watch } from 'vue'
 
 import RequestAuth from './RequestAuth/RequestAuth.vue'
 import RequestCodeExample from './RequestCodeExample.vue'
 
-defineProps<{
+const {
+  collection,
+  environment,
+  envVariables,
+  example,
+  operation,
+  selectedSecuritySchemeUids,
+  server,
+  workspace,
+} = defineProps<{
+  collection: Collection
+  environment: Environment
+  envVariables: EnvVariable[]
+  example: RequestExample
+  invalidParams: Set<string>
+  operation: Operation
   selectedSecuritySchemeUids: SelectedSecuritySchemeUids
+  server: Server | undefined
+  workspace: Workspace
 }>()
 
-const {
-  activeRequest,
-  activeCollection,
-  activeExample,
-  activeWorkspace,
-  activeServer,
-} = useActiveEntities()
+const requestSections = [
+  'Auth',
+  'Variables',
+  'Cookies',
+  'Headers',
+  'Query',
+  'Body',
+  // 'Scripts',
+] as const
+
+type Filter = 'All' | (typeof requestSections)[number]
+
 const { requestMutators, cookies, securitySchemes } = useWorkspace()
 const { layout } = useLayout()
 
-const sections = computed(() => {
-  const allSections = new Set([
-    'All',
-    'Query',
-    'Auth',
-    'Variables',
-    'Cookies',
-    'Headers',
-    'Body',
-  ])
+const filters = computed<Filter[]>(() => {
+  const allSections = new Set<Filter>(['All', ...requestSections])
 
-  if (!activeExample.value?.parameters.path.length)
+  if (!example.parameters.path.length) {
     allSections.delete('Variables')
-  if (!canMethodHaveBody(activeRequest.value?.method ?? 'get'))
+  }
+  if (!canMethodHaveBody(operation.method ?? 'get')) {
     allSections.delete('Body')
-  if (isAuthHidden.value) allSections.delete('Auth')
+  }
+  if (isAuthHidden.value) {
+    allSections.delete('Auth')
+  }
 
   return [...allSections]
 })
 
-// If security = [] or [{}] just hide it on readOnly mode
-const isAuthHidden = computed(
-  () => layout === 'modal' && activeRequest.value?.security?.length === 0,
+/** A list of section ids */
+const filterIds = computed(
+  () =>
+    Object.fromEntries(
+      filters.value.map((section) => [section, useId()]),
+    ) as Record<Filter, string>,
 )
 
-type ActiveSections = (typeof sections.value)[number]
+// If security = [] or [{}] just hide it on readOnly mode
+const isAuthHidden = computed(
+  () =>
+    layout === 'modal' &&
+    !operation.security &&
+    !Object.keys(securitySchemes ?? {}).length,
+)
 
-const activeSection = ref<ActiveSections>('All')
+const selectedFilter = ref<Filter>('All')
 
-watch(activeRequest, (newRequest) => {
-  if (
-    activeSection.value === 'Body' &&
-    newRequest &&
-    !canMethodHaveBody(newRequest.method)
-  ) {
-    activeSection.value = 'All'
-  }
-})
+watch(
+  () => operation,
+  (newOperation) => {
+    if (
+      selectedFilter.value === 'Body' &&
+      newOperation &&
+      !canMethodHaveBody(newOperation.method)
+    ) {
+      selectedFilter.value = 'All'
+    }
+  },
+)
 
 const updateRequestNameHandler = (event: Event) => {
-  if (!activeRequest.value) return
-
   const target = event.target as HTMLInputElement
-  requestMutators.edit(activeRequest.value.uid, 'summary', target.value)
+  requestMutators.edit(operation.uid, 'summary', target.value)
 }
 
 /**
  * Add the global cookies as static entries to the cookies section
  */
 const activeWorkspaceCookies = computed(() =>
-  (activeWorkspace.value?.cookies ?? [])
+  (workspace.cookies ?? [])
     .map((uid) => cookies[uid])
     .filter(isDefined)
     .filter((cookie) => cookie.name)
     .filter((cookie) =>
-      matchesDomain(
-        activeServer?.value?.url || activeRequest.value?.path,
-        cookie.domain,
-      ),
+      matchesDomain(server?.url || operation.path, cookie.domain),
     )
     .map((cookie) => ({
       key: cookie.name,
@@ -102,87 +137,189 @@ const activeWorkspaceCookies = computed(() =>
       enabled: true,
     })),
 )
+
+// If the request has no summary, use the path or fallback
+const handleRequestNamePlaceholder = () => {
+  return operation.summary
+    ? operation.summary
+    : operation.path.replace(REGEX.PROTOCOL, '')
+      ? operation.path.replace(REGEX.PROTOCOL, '')
+      : 'Request Name'
+}
+
+const labelRequestNameId = useId()
+
+// Plugins
+const pluginManager = usePluginManager()
+
+const requestSectionViews = pluginManager.getViewComponents('request.section')
+
+const updateOperationHandler = (key: keyof Operation, value: string) =>
+  requestMutators.edit(operation.uid, key, value)
+
+// Sets to all when auth filter is hidden but was previously selected to prevent empty section
+watch(
+  () => isAuthHidden.value,
+  (authHidden) => {
+    if (authHidden && selectedFilter.value === 'Auth') {
+      selectedFilter.value = 'All'
+    }
+  },
+)
 </script>
 <template>
-  <ViewLayoutSection :aria-label="`Request: ${activeRequest?.summary}`">
+  <ViewLayoutSection :aria-label="`Request: ${operation.summary}`">
     <template #title>
       <div
-        class="flex-1 flex gap-1 items-center lg:pr-24 pointer-events-none group">
+        class="group pointer-events-none flex flex-1 items-center gap-1 lg:pr-24">
         <label
           v-if="layout !== 'modal'"
-          class="absolute w-full h-full top-0 left-0 pointer-events-auto opacity-0 cursor-text"
-          for="requestname" />
+          class="pointer-events-auto absolute top-0 left-0 h-full w-full cursor-text opacity-0"
+          :for="labelRequestNameId" />
         <input
           v-if="layout !== 'modal'"
-          id="requestname"
-          class="text-c-1 rounded pointer-events-auto relative w-full pl-1.25 -ml-0.5 md:-ml-1.25 h-8 group-hover-input has-[:focus-visible]:outline z-10"
-          placeholder="Request Name"
-          :value="activeRequest?.summary"
+          :id="labelRequestNameId"
+          class="text-c-1 group-hover-input pointer-events-auto relative z-10 -ml-0.5 h-8 w-full rounded pl-1.25 has-[:focus-visible]:outline md:-ml-1.25"
+          :placeholder="handleRequestNamePlaceholder()"
+          :value="operation.summary"
           @input="updateRequestNameHandler" />
         <span
           v-else
-          class="flex items-center text-c-1 h-8">
-          {{ activeRequest?.summary }}
+          class="text-c-1 flex h-8 items-center">
+          {{ operation.summary }}
         </span>
       </div>
-      <ContextBar
-        :activeSection="activeSection"
-        :sections="sections"
-        @setActiveSection="activeSection = $event" />
+      <SectionFilter
+        v-model="selectedFilter"
+        :filterIds="filterIds"
+        :filters="filters" />
     </template>
     <div
-      class="request-section-content custom-scroll flex flex-1 flex-col relative">
+      :id="filterIds.All"
+      class="request-section-content custom-scroll relative flex flex-1 flex-col"
+      :role="selectedFilter === 'All' ? 'tabpanel' : 'none'">
       <RequestAuth
         v-if="
-          activeCollection &&
-          activeWorkspace &&
+          collection &&
+          workspace &&
           (layout !== 'modal' || Object.keys(securitySchemes ?? {}).length)
         "
         v-show="
-          !isAuthHidden && (activeSection === 'All' || activeSection === 'Auth')
+          !isAuthHidden &&
+          (selectedFilter === 'All' || selectedFilter === 'Auth')
         "
-        :collection="activeCollection"
+        :id="filterIds.Auth"
+        class="request-section-content-auth"
+        :collection="collection"
+        :envVariables="envVariables"
+        :environment="environment"
         layout="client"
-        :operation="activeRequest"
+        :operation="operation"
+        :role="selectedFilter === 'All' ? 'none' : 'tabpanel'"
         :selectedSecuritySchemeUids="selectedSecuritySchemeUids"
-        :server="activeServer"
+        :server="server"
         title="Authentication"
-        :workspace="activeWorkspace" />
+        :workspace="workspace" />
       <RequestPathParams
         v-show="
-          (activeSection === 'All' || activeSection === 'Variables') &&
-          activeExample?.parameters?.path?.length
+          (selectedFilter === 'All' || selectedFilter === 'Variables') &&
+          example.parameters.path.length
         "
+        :id="filterIds.Variables"
+        class="request-section-content-path-params"
+        :envVariables="envVariables"
+        :environment="environment"
+        :example="example"
+        :invalidParams="invalidParams"
+        :operation="operation"
         paramKey="path"
-        title="Variables" />
+        :role="selectedFilter === 'All' ? 'none' : 'tabpanel'"
+        title="Variables"
+        :workspace="workspace" />
       <RequestParams
-        v-show="activeSection === 'All' || activeSection === 'Cookies'"
+        v-show="selectedFilter === 'All' || selectedFilter === 'Cookies'"
+        :id="filterIds.Cookies"
+        class="request-section-content-cookies"
+        :envVariables="envVariables"
+        :environment="environment"
+        :example="example"
+        :invalidParams="invalidParams"
+        label="Cookie"
+        :operation="operation"
         paramKey="cookies"
         :readOnlyEntries="activeWorkspaceCookies"
+        :role="selectedFilter === 'All' ? 'none' : 'tabpanel'"
         title="Cookies"
-        workspaceParamKey="cookies" />
+        :workspace="workspace" />
       <RequestParams
-        v-show="activeSection === 'All' || activeSection === 'Headers'"
+        v-show="selectedFilter === 'All' || selectedFilter === 'Headers'"
+        :id="filterIds.Headers"
+        class="request-section-content-headers"
+        :envVariables="envVariables"
+        :environment="environment"
+        :example="example"
+        :invalidParams="invalidParams"
+        label="Header"
+        :operation="operation"
         paramKey="headers"
-        title="Headers" />
+        :role="selectedFilter === 'All' ? 'none' : 'tabpanel'"
+        title="Headers"
+        :workspace="workspace" />
       <RequestParams
-        v-show="activeSection === 'All' || activeSection === 'Query'"
+        v-show="selectedFilter === 'All' || selectedFilter === 'Query'"
+        :id="filterIds.Query"
+        class="request-section-content-query"
+        :envVariables="envVariables"
+        :environment="environment"
+        :example="example"
+        :invalidParams="invalidParams"
+        label="Parameter"
+        :operation="operation"
         paramKey="query"
-        title="Query Parameters" />
+        :role="selectedFilter === 'All' ? 'none' : 'tabpanel'"
+        title="Query Parameters"
+        :workspace="workspace" />
       <RequestBody
-        v-show="
-          activeRequest?.method &&
-          (activeSection === 'All' || activeSection === 'Body') &&
-          canMethodHaveBody(activeRequest.method)
+        v-if="
+          operation.method &&
+          (selectedFilter === 'All' || selectedFilter === 'Body') &&
+          canMethodHaveBody(operation.method)
         "
-        title="Body" />
+        :id="filterIds.Body"
+        class="request-section-content-body"
+        :envVariables="envVariables"
+        :environment="environment"
+        :example="example"
+        :operation="operation"
+        :role="selectedFilter === 'All' ? 'none' : 'tabpanel'"
+        title="Body"
+        :workspace="workspace" />
+
+      <template
+        v-for="view in requestSectionViews"
+        :key="view.component">
+        <ScalarErrorBoundary>
+          <component
+            :is="view.component"
+            v-show="selectedFilter === 'All' || selectedFilter === view.title"
+            @update:operation="updateOperationHandler"
+            :operation="operation" />
+        </ScalarErrorBoundary>
+      </template>
 
       <!-- Spacer -->
       <div class="flex flex-grow" />
 
       <!-- Code Snippet -->
       <ScalarErrorBoundary>
-        <RequestCodeExample />
+        <RequestCodeExample
+          class="request-section-content-code-example -mt-1/2 border-t"
+          :collection="collection"
+          :example="example"
+          :operation="operation"
+          :server="server"
+          :workspace="workspace"
+          :environment="envVariables" />
       </ScalarErrorBoundary>
     </div>
   </ViewLayoutSection>

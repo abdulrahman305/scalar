@@ -17,9 +17,10 @@
 export default {}
 </script>
 <script setup lang="ts">
-import { useBindCx } from '../../hooks/useBindCx'
-import { ScalarFloatingBackdrop } from '../ScalarFloating'
+import { useBindCx } from '@scalar/use-hooks/useBindCx'
 import type { Component } from 'vue'
+
+import { ScalarFloatingBackdrop } from '../ScalarFloating'
 
 defineProps<{
   /** The component to render */
@@ -28,9 +29,9 @@ defineProps<{
 
 defineSlots<{
   /** The menu contents */
-  default(): any
+  default(): unknown
   /** Overrides the backdrop for the dropdown */
-  backdrop?(): any
+  backdrop?(): unknown
 }>()
 
 defineOptions({ inheritAttrs: false })

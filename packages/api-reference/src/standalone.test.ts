@@ -1,7 +1,7 @@
 import galaxyContent from '@scalar/galaxy/latest.yaml?raw'
 import { describe, expect, it } from 'vitest'
 
-import { waitFor } from './helpers/waitFor'
+import { waitFor } from '@test/utils/wait-for'
 import type { ReferenceProps } from './types'
 
 describe.sequential('standalone', { retry: 3, timeout: 10000 }, () => {
@@ -15,9 +15,7 @@ describe.sequential('standalone', { retry: 3, timeout: 10000 }, () => {
     script.id = 'api-reference'
     script.type = 'application/json'
 
-    const inlineCode = document.createTextNode(
-      `{ "openapi": "3.1.0", "info": { "title": "Example" }, "paths": {} }`,
-    )
+    const inlineCode = document.createTextNode(`{ "openapi": "3.1.0", "info": { "title": "Example" }, "paths": {} }`)
     script.appendChild(inlineCode)
     document.body.appendChild(script)
 
@@ -50,6 +48,7 @@ describe.sequential('standalone', { retry: 3, timeout: 10000 }, () => {
     const event = new CustomEvent('scalar:update-references-config', {
       detail: {
         configuration: {
+          // @ts-expect-error old format
           spec: {
             content: galaxyContent,
           },

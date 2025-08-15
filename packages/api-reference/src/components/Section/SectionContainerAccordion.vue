@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import { ScalarIcon } from '@scalar/components'
+import { ScalarIconCaretRight } from '@scalar/icons'
 </script>
 <template>
   <div class="section-accordion-wrapper">
@@ -10,9 +10,9 @@ import { ScalarIcon } from '@scalar/components'
       class="section-accordion"
       defaultOpen>
       <DisclosureButton class="section-accordion-button">
-        <ScalarIcon
-          class="section-accordion-chevron"
-          :icon="open ? 'ChevronDown' : 'ChevronRight'" />
+        <ScalarIconCaretRight
+          class="section-accordion-chevron size-5 transition-transform"
+          :class="{ 'rotate-90': open }" />
         <div class="section-accordion-title">
           <slot name="title" />
         </div>
@@ -51,11 +51,9 @@ import { ScalarIcon } from '@scalar/components'
   border-radius: var(--scalar-radius);
 }
 .section-accordion-chevron {
-  width: 24px;
   position: absolute;
-  left: -24px;
-  height: auto;
-  top: 10px;
+  left: -22px;
+  top: 12px;
   color: var(--scalar-color-3);
 }
 

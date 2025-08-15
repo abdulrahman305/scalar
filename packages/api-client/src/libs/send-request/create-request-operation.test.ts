@@ -1,6 +1,3 @@
-/**
- * @vitest-environment jsdom
- */
 import {
   type RequestPayload,
   type ServerPayload,
@@ -13,11 +10,14 @@ import {
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import type { z } from 'zod'
 
+import type { SelectedSecuritySchemeUids } from '@scalar/oas-utils/entities/shared'
+import * as electron from '../electron'
 import { createRequestOperation } from './create-request-operation'
 
 const PROXY_PORT = 5051
 const VOID_PORT = 5052
 const PROXY_URL = `http://127.0.0.1:${PROXY_PORT}`
+// biome-ignore lint/suspicious/noExportsInTest: yolo
 export const VOID_URL = `http://127.0.0.1:${VOID_PORT}`
 
 type RequestExamplePayload = z.input<typeof requestExampleSchema>
@@ -30,21 +30,18 @@ type MetaRequestPayload = {
 }
 
 /** Creates the payload for createRequestOperation */
-export const createRequestPayload = (
-  metaRequestPayload: MetaRequestPayload = {},
-) => {
+export const createRequestPayload = (metaRequestPayload: MetaRequestPayload = {}) => {
   const request = requestSchema.parse(metaRequestPayload.requestPayload ?? {})
-  const server = metaRequestPayload.serverPayload
-    ? serverSchema.parse(metaRequestPayload.serverPayload)
-    : undefined
+  const server = metaRequestPayload.serverPayload ? serverSchema.parse(metaRequestPayload.serverPayload) : undefined
   let example = createExampleFromRequest(request, 'example')
 
   // Overwrite any example properties
-  if (metaRequestPayload.requestExamplePayload)
+  if (metaRequestPayload.requestExamplePayload) {
     example = requestExampleSchema.parse({
       ...example,
       ...metaRequestPayload.requestExamplePayload,
     })
+  }
 
   return {
     auth: {},
@@ -66,10 +63,10 @@ beforeAll(async () => {
     if (result.ok) {
       return
     }
-  } catch (error) {
+  } catch (_error) {
     throw new Error(`
 
-[sendRequest.test.ts] Looks like you’re not running @scalar/proxy-server on <http://127.0.0.1:${PROXY_PORT}>, but it’s required for this test file.
+[sendRequest.test.ts] Looks like you're not running @scalar/proxy-server on <http://127.0.0.1:${PROXY_PORT}>, but it's required for this test file.
 
 Try to run it like this:
 
@@ -84,10 +81,10 @@ $ pnpm dev:proxy-server
     if (result.ok) {
       return
     }
-  } catch (error) {
+  } catch (_error) {
     throw new Error(`
 
-[sendRequest.test.ts] Looks like you’re not running @scalar/void-server on <http://127.0.0.1:${VOID_PORT}>, but it’s required for this test file.
+[sendRequest.test.ts] Looks like you're not running @scalar/void-server on <http://127.0.0.1:${VOID_PORT}>, but it's required for this test file.
 
 Try to run it like this:
 
@@ -106,7 +103,7 @@ describe('create-request-operation', () => {
 
     const [error, requestOperation] = createRequestOperation(
       createRequestPayload({
-        serverPayload: { url: `/api` },
+        serverPayload: { url: '/api' },
         requestPayload: {
           path: '/{path}',
           parameters: [
@@ -129,10 +126,15 @@ describe('create-request-operation', () => {
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       method: 'GET',
       path: '/api/example',
@@ -144,14 +146,19 @@ describe('create-request-operation', () => {
     const [error, requestOperation] = createRequestOperation(
       createRequestPayload({
         requestPayload: {
-          path: 'https://void.scalar.com/me',
+          path: `${VOID_URL}/me`,
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       method: 'GET',
       path: '/me',
@@ -163,14 +170,19 @@ describe('create-request-operation', () => {
     const [error, requestOperation] = createRequestOperation(
       createRequestPayload({
         requestPayload: {
-          path: 'https://void.scalar.com',
+          path: `${VOID_URL}`,
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       method: 'GET',
       path: '/',
@@ -184,31 +196,17 @@ describe('create-request-operation', () => {
         serverPayload: { url: VOID_URL },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(result?.response.data).not.toContain('ECONNREFUSED')
-    expect(requestError).toBe(null)
-    expect(JSON.parse(result?.response.data as string)).toMatchObject({
-      method: 'GET',
-      path: '/',
-    })
-  })
-
-  // TODO: this doesn't actually hit the proxy due to 127.0.0.1
-  it('reaches the echo server *with* the proxy', async () => {
-    const [error, requestOperation] = createRequestOperation(
-      createRequestPayload({
-        serverPayload: { url: VOID_URL },
-        proxyUrl: PROXY_URL,
-      }),
-    )
-    if (error) throw error
-
-    const [requestError, result] = await requestOperation.sendRequest()
-
     expect(requestError).toBe(null)
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       method: 'GET',
@@ -242,11 +240,16 @@ describe('create-request-operation', () => {
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       method: 'GET',
       path: '/example',
@@ -270,11 +273,16 @@ describe('create-request-operation', () => {
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       query: {
         foo: 'bar',
@@ -291,7 +299,9 @@ describe('create-request-operation', () => {
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     expect(requestOperation.request.url).toBe(`${VOID_URL}/path?test=query`)
   })
@@ -306,11 +316,16 @@ describe('create-request-operation', () => {
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       method: 'POST',
     })
@@ -344,14 +359,54 @@ describe('create-request-operation', () => {
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string).query).toMatchObject({
       foo: ['foo', 'bar'],
     })
+  })
+
+  it('builds a request with User-Agent header', async () => {
+    const spy = vi.spyOn(electron, 'isElectron').mockReturnValue(true)
+
+    const [error, requestOperation] = createRequestOperation({
+      ...createRequestPayload({
+        serverPayload: { url: VOID_URL },
+        requestExamplePayload: {
+          parameters: {
+            headers: [
+              {
+                key: 'User-Agent',
+                value: 'custom-user-agent',
+                enabled: true,
+              },
+            ],
+          },
+        },
+      }),
+    })
+    if (error) {
+      throw error
+    }
+
+    const [requestError, result] = await requestOperation.sendRequest()
+
+    expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
+    const responseHeaders = JSON.parse(result?.response.data as string).headers
+    expect(responseHeaders['x-scalar-user-agent']).toBe('custom-user-agent')
+
+    spy.mockRestore()
   })
 
   describe('merges query parameters', () => {
@@ -377,11 +432,16 @@ describe('create-request-operation', () => {
           },
         }),
       )
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       const [requestError, result] = await requestOperation.sendRequest()
 
       expect(requestError).toBe(null)
+      if (!result || !('data' in result.response)) {
+        throw new Error('No data')
+      }
       expect(JSON.parse(result?.response.data as string).query).toStrictEqual({
         example: 'parameter',
         foo: 'bar',
@@ -411,11 +471,16 @@ describe('create-request-operation', () => {
           },
         }),
       )
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       const [requestError, result] = await requestOperation.sendRequest()
 
       expect(requestError).toBe(null)
+      if (!result || !('data' in result.response)) {
+        throw new Error('No data')
+      }
       expect(JSON.parse(result?.response.data as string).query).toStrictEqual({
         example: 'parameter',
         foo: 'bar',
@@ -423,7 +488,7 @@ describe('create-request-operation', () => {
     })
   })
 
-  it('doesn’t have any query parameters', async () => {
+  it(`doesn't have any query parameters`, async () => {
     const [error, requestOperation] = createRequestOperation(
       createRequestPayload({
         serverPayload: {
@@ -431,11 +496,16 @@ describe('create-request-operation', () => {
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string).query).toStrictEqual({})
   })
 
@@ -458,11 +528,16 @@ describe('create-request-operation', () => {
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string).query).toStrictEqual({})
   })
 
@@ -485,11 +560,16 @@ describe('create-request-operation', () => {
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string).query).toStrictEqual({
       foo: '',
     })
@@ -501,11 +581,16 @@ describe('create-request-operation', () => {
         serverPayload: { url: `${VOID_URL}/204` },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(result?.response.data).toBe('')
   })
 
@@ -515,11 +600,16 @@ describe('create-request-operation', () => {
         serverPayload: { url: `http://127.0.0.1:${VOID_PORT}/v1` },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       method: 'GET',
       path: '/v1',
@@ -532,11 +622,16 @@ describe('create-request-operation', () => {
         serverPayload: { url: `${VOID_URL}/v1/` },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       method: 'GET',
       path: '/v1/',
@@ -565,11 +660,16 @@ describe('create-request-operation', () => {
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       method: 'POST',
       path: '/',
@@ -584,9 +684,9 @@ describe('create-request-operation', () => {
    * the void-server doesn't receive the body properly.
    * It does work on other echo servers such as https://echo.free.beeceptor.com
    *
-   * It’s not clear to me, whether we need to make the void-server handle that, or
+   * It's not clear to me, whether we need to make the void-server handle that, or
    * if we should disable the streaming, or
-   * if there’s another way to test this properly.
+   * if there's another way to test this properly.
    *
    * - @hanspagel
    */
@@ -620,11 +720,16 @@ describe('create-request-operation', () => {
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       method: 'POST',
       path: '/',
@@ -647,14 +752,19 @@ describe('create-request-operation', () => {
     const [error, requestOperation] = createRequestOperation(
       createRequestPayload({
         requestPayload: {
-          path: 'void.scalar.com/me',
+          path: `${VOID_URL}/me`,
         },
       }),
     )
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)).toMatchObject({
       method: 'GET',
       path: '/me',
@@ -666,7 +776,6 @@ describe('create-request-operation', () => {
     const [error, requestOperation] = createRequestOperation({
       ...createRequestPayload({
         serverPayload: { url: VOID_URL },
-        proxyUrl: PROXY_URL,
         requestExamplePayload: {
           parameters: {
             cookies: [
@@ -697,19 +806,70 @@ describe('create-request-operation', () => {
           description: 'API key',
         }),
       },
-      selectedSecuritySchemeUids: ['api-key'],
+      selectedSecuritySchemeUids: ['api-key'] as SelectedSecuritySchemeUids,
     })
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const [requestError, result] = await requestOperation.sendRequest()
 
     expect(requestError).toBe(null)
+    if (!result || !('data' in result.response)) {
+      throw new Error('No data')
+    }
     expect(JSON.parse(result?.response.data as string)?.cookies).toStrictEqual({
       'cookie': 'custom-value',
       'auth-cookie': 'super-secret-token',
       'cookie-header': 'example-value',
     })
+  })
+
+  it('should safely create a new response when body is empty', async () => {
+    const originalFetch = global.fetch
+    try {
+      const mockEmptyStream = new ReadableStream({
+        start(controller) {
+          controller.close()
+        },
+      })
+
+      const mockResponse = {
+        status: 204,
+        headers: new Headers(),
+        body: mockEmptyStream,
+        ok: true,
+        statusText: 'No Content',
+        // Add the methods your code uses
+        clone: () => mockResponse,
+        text: async () => '',
+        json: async () => ({}),
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } as unknown as Response
+
+      global.fetch = vi.fn().mockResolvedValue(mockResponse)
+
+      const [error, requestOperation] = createRequestOperation({
+        ...createRequestPayload({
+          serverPayload: { url: VOID_URL },
+        }),
+      })
+
+      if (error) {
+        throw error
+      }
+
+      const [requestError, result] = await requestOperation.sendRequest()
+
+      expect(requestError).toBe(null)
+      if (!result || !('data' in result.response)) {
+        throw new Error('No data')
+      }
+      expect(result?.response.data).toBe('')
+    } finally {
+      global.fetch = originalFetch
+    }
   })
 
   describe('authentication', () => {
@@ -719,27 +879,30 @@ describe('create-request-operation', () => {
           serverPayload: { url: VOID_URL },
         }),
         securitySchemes: {
-          'api-key': {
+          'api-key': securitySchemeSchema.parse({
             type: 'apiKey',
             name: 'X-API-KEY',
             in: 'header',
             value: 'test-key',
             uid: 'api-key',
             nameKey: 'X-API-KEY',
-          },
+          }),
         },
-        selectedSecuritySchemeUids: ['api-key'],
+        selectedSecuritySchemeUids: ['api-key'] as SelectedSecuritySchemeUids,
       })
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       const [requestError, result] = await requestOperation.sendRequest()
 
       expect(requestError).toBe(null)
-      expect(JSON.parse(result?.response.data as string).headers).toMatchObject(
-        {
-          'x-api-key': 'test-key',
-        },
-      )
+      if (!result || !('data' in result.response)) {
+        throw new Error('No data')
+      }
+      expect(JSON.parse(result?.response.data as string).headers).toMatchObject({
+        'x-api-key': 'test-key',
+      })
     })
 
     it('adds apiKey auth in query', async () => {
@@ -748,22 +911,27 @@ describe('create-request-operation', () => {
           serverPayload: { url: VOID_URL },
         }),
         securitySchemes: {
-          'api-key': {
+          'api-key': securitySchemeSchema.parse({
             type: 'apiKey',
             name: 'api_key',
             in: 'query',
             value: 'test-key',
             uid: 'api-key',
             nameKey: 'api_key',
-          },
+          }),
         },
-        selectedSecuritySchemeUids: ['api-key'],
+        selectedSecuritySchemeUids: ['api-key'] as SelectedSecuritySchemeUids,
       })
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       const [requestError, result] = await requestOperation.sendRequest()
 
       expect(requestError).toBe(null)
+      if (!result || !('data' in result.response)) {
+        throw new Error('No data')
+      }
       expect(JSON.parse(result?.response.data as string).query).toMatchObject({
         api_key: 'test-key',
       })
@@ -775,7 +943,7 @@ describe('create-request-operation', () => {
           serverPayload: { url: VOID_URL },
         }),
         securitySchemes: {
-          'basic-auth': {
+          'basic-auth': securitySchemeSchema.parse({
             type: 'http',
             scheme: 'basic',
             bearerFormat: 'Basic',
@@ -784,20 +952,23 @@ describe('create-request-operation', () => {
             password: 'pass',
             uid: 'basic-auth',
             nameKey: 'Authorization',
-          },
+          }),
         },
-        selectedSecuritySchemeUids: ['basic-auth'],
+        selectedSecuritySchemeUids: ['basic-auth'] as SelectedSecuritySchemeUids,
       })
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       const [requestError, result] = await requestOperation.sendRequest()
 
       expect(requestError).toBe(null)
-      expect(JSON.parse(result?.response.data as string).headers).toMatchObject(
-        {
-          authorization: `Basic ${btoa('user:pass')}`,
-        },
-      )
+      if (!result || !('data' in result.response)) {
+        throw new Error('No data')
+      }
+      expect(JSON.parse(result?.response.data as string).headers).toMatchObject({
+        authorization: `Basic ${btoa('user:pass')}`,
+      })
     })
 
     it('adds bearer token header', async () => {
@@ -806,29 +977,30 @@ describe('create-request-operation', () => {
           serverPayload: { url: VOID_URL },
         }),
         securitySchemes: {
-          'bearer-auth': {
+          'bearer-auth': securitySchemeSchema.parse({
             type: 'http',
             scheme: 'bearer',
             bearerFormat: 'Bearer',
-            username: '',
-            password: '',
             uid: 'bearer-auth',
             nameKey: 'Authorization',
             token: 'xxxx',
-          },
+          }),
         },
-        selectedSecuritySchemeUids: ['bearer-auth'],
+        selectedSecuritySchemeUids: ['bearer-auth'] as SelectedSecuritySchemeUids,
       })
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       const [requestError, result] = await requestOperation.sendRequest()
 
       expect(requestError).toBe(null)
-      expect(JSON.parse(result?.response.data as string).headers).toMatchObject(
-        {
-          authorization: 'Bearer xxxx',
-        },
-      )
+      if (!result || !('data' in result.response)) {
+        throw new Error('No data')
+      }
+      expect(JSON.parse(result?.response.data as string).headers).toMatchObject({
+        authorization: 'Bearer xxxx',
+      })
     })
 
     it('handles complex auth', async () => {
@@ -837,15 +1009,15 @@ describe('create-request-operation', () => {
           serverPayload: { url: VOID_URL },
         }),
         securitySchemes: {
-          'api-key': {
+          'api-key': securitySchemeSchema.parse({
             type: 'apiKey',
             name: 'api_key',
             in: 'query',
             value: 'xxxx',
             uid: 'api-key',
             nameKey: 'api_key',
-          },
-          'bearer-auth': {
+          }),
+          'bearer-auth': securitySchemeSchema.parse({
             type: 'http',
             scheme: 'bearer',
             bearerFormat: 'Bearer',
@@ -854,15 +1026,20 @@ describe('create-request-operation', () => {
             uid: 'bearer-auth',
             nameKey: 'Authorization',
             token: 'xxxx',
-          },
+          }),
         },
-        selectedSecuritySchemeUids: [['bearer-auth', 'api-key']],
+        selectedSecuritySchemeUids: [['bearer-auth', 'api-key']] as SelectedSecuritySchemeUids,
       })
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       const [requestError, result] = await requestOperation.sendRequest()
 
       expect(requestError).toBe(null)
+      if (!result || !('data' in result.response)) {
+        throw new Error('No data')
+      }
       const parsed = JSON.parse(result?.response.data as string)
       expect(parsed.headers.authorization).toEqual('Bearer xxxx')
       expect(parsed.query.api_key).toEqual('xxxx')
@@ -874,7 +1051,7 @@ describe('create-request-operation', () => {
           serverPayload: { url: VOID_URL },
         }),
         securitySchemes: {
-          'oauth2-auth': {
+          'oauth2-auth': securitySchemeSchema.parse({
             type: 'oauth2',
             uid: 'oauth2-auth',
             nameKey: 'Authorization',
@@ -890,20 +1067,23 @@ describe('create-request-operation', () => {
                 'x-scalar-redirect-uri': 'https://example.com/callback',
               },
             },
-          },
+          }),
         },
-        selectedSecuritySchemeUids: ['oauth2-auth'],
+        selectedSecuritySchemeUids: ['oauth2-auth'] as SelectedSecuritySchemeUids,
       })
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       const [requestError, result] = await requestOperation.sendRequest()
 
       expect(requestError).toBe(null)
-      expect(JSON.parse(result?.response.data as string).headers).toMatchObject(
-        {
-          authorization: 'Bearer oauth-token',
-        },
-      )
+      if (!result || !('data' in result.response)) {
+        throw new Error('No data')
+      }
+      expect(JSON.parse(result?.response.data as string).headers).toMatchObject({
+        authorization: 'Bearer oauth-token',
+      })
     })
 
     it('accepts a lowercase auth header', () => {
@@ -912,19 +1092,246 @@ describe('create-request-operation', () => {
           serverPayload: { url: VOID_URL },
         }),
         securitySchemes: {
-          'api-key': {
+          'api-key': securitySchemeSchema.parse({
             type: 'apiKey',
             name: 'x-api-key',
             in: 'header',
             value: 'test-key',
             uid: 'api-key',
             nameKey: 'api-key',
-          },
+          }),
         },
-        selectedSecuritySchemeUids: ['api-key'],
+        selectedSecuritySchemeUids: ['api-key'] as SelectedSecuritySchemeUids,
       })
-      if (error) throw error
+      if (error) {
+        throw error
+      }
       expect(requestOperation.request.headers.get('x-api-key')).toBe('test-key')
     })
+  })
+
+  describe('response streaming', () => {
+    it('streams the response body', async () => {
+      // Store original fetch
+      const originalFetch = global.fetch
+      try {
+        // Create a TextEncoder to convert strings to Uint8Arrays
+        const encoder = new TextEncoder()
+
+        // Mock fetch to return a ReadableStream response
+        const mockStream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(encoder.encode('chunk 1'))
+            controller.enqueue(encoder.encode('chunk 2'))
+            controller.close()
+          },
+        })
+
+        const mockResponse = new Response(mockStream, {
+          status: 200,
+          headers: new Headers({
+            'content-type': 'text/event-stream',
+          }),
+        })
+
+        global.fetch = vi.fn().mockResolvedValue(mockResponse)
+
+        const [error, requestOperation] = createRequestOperation({
+          ...createRequestPayload({
+            serverPayload: { url: VOID_URL },
+          }),
+        })
+
+        if (error) {
+          throw error
+        }
+
+        const [requestError, result] = await requestOperation.sendRequest()
+
+        expect(requestError).toBe(null)
+        if (!result || !('reader' in result.response)) {
+          throw new Error('No reader')
+        }
+        expect(result?.response.reader).toBeInstanceOf(ReadableStreamDefaultReader)
+
+        // Read and verify the stream contents
+        const chunks = []
+        const decoder = new TextDecoder()
+
+        while (true) {
+          const { done, value } = await result.response.reader.read()
+          if (done) {
+            break
+          }
+          chunks.push(decoder.decode(value, { stream: true }))
+        }
+
+        expect(chunks).toEqual(['chunk 1', 'chunk 2'])
+      } finally {
+        // Restore original fetch
+        global.fetch = originalFetch
+      }
+    })
+  })
+
+  it('executes onBeforeRequest hook when plugin manager is provided', async () => {
+    const mockPluginManager = {
+      executeHook: vi.fn().mockResolvedValue(undefined),
+      getViewComponents: vi.fn().mockReturnValue([]),
+    }
+
+    const [error, requestOperation] = createRequestOperation({
+      ...createRequestPayload({
+        serverPayload: { url: 'https://api.example.com' },
+        requestPayload: {
+          path: '/test',
+        },
+      }),
+      pluginManager: mockPluginManager,
+    })
+
+    if (error) {
+      throw error
+    }
+
+    await requestOperation.sendRequest()
+
+    expect(mockPluginManager.executeHook).toHaveBeenCalledWith('onBeforeRequest', {
+      request: expect.any(Request),
+    })
+    expect(mockPluginManager.executeHook).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not execute onBeforeRequest hook when plugin manager is not provided', async () => {
+    // Store original fetch
+    const originalFetch = global.fetch
+    try {
+      // Mock fetch to return a successful response
+      const mockResponse = new Response('{"test": "data"}', {
+        status: 200,
+        headers: new Headers({
+          'content-type': 'application/json',
+        }),
+      })
+
+      global.fetch = vi.fn().mockResolvedValue(mockResponse)
+
+      const [error, requestOperation] = createRequestOperation(
+        createRequestPayload({
+          serverPayload: { url: 'https://api.example.com' },
+          requestPayload: {
+            path: '/test',
+          },
+        }),
+      )
+
+      if (error) {
+        throw error
+      }
+
+      const [requestError] = await requestOperation.sendRequest()
+
+      // Should not throw any errors related to plugin manager
+      expect(requestError).toBe(null)
+    } finally {
+      // Restore original fetch
+      global.fetch = originalFetch
+    }
+  })
+
+  it('executes onBeforeRequest hook before making the request', async () => {
+    let hookExecuted = false
+
+    const mockPluginManager = {
+      executeHook: vi.fn().mockImplementation(async () => {
+        hookExecuted = true
+        return Promise.resolve()
+      }),
+      getViewComponents: vi.fn().mockReturnValue([]),
+    }
+
+    // Store original fetch
+    const originalFetch = global.fetch
+    try {
+      // Mock fetch to return a successful response
+      const mockResponse = new Response('{"test": "data"}', {
+        status: 200,
+        headers: new Headers({
+          'content-type': 'application/json',
+        }),
+      })
+
+      global.fetch = vi.fn().mockResolvedValue(mockResponse)
+
+      const [error, requestOperation] = createRequestOperation({
+        ...createRequestPayload({
+          serverPayload: { url: 'https://api.example.com' },
+          requestPayload: {
+            path: '/test',
+          },
+        }),
+        pluginManager: mockPluginManager,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      await requestOperation.sendRequest()
+
+      expect(hookExecuted).toBe(true)
+      expect(mockPluginManager.executeHook).toHaveBeenCalledWith('onBeforeRequest', {
+        request: expect.any(Request),
+      })
+    } finally {
+      // Restore original fetch
+      global.fetch = originalFetch
+    }
+  })
+
+  it('executes onResponseReceived hook when plugin manager is provided', async () => {
+    const mockPluginManager = {
+      executeHook: vi.fn().mockResolvedValue(undefined),
+      getViewComponents: vi.fn().mockReturnValue([]),
+    }
+
+    // Store original fetch
+    const originalFetch = global.fetch
+    try {
+      // Mock fetch to return a successful response
+      const mockResponse = new Response('{"test": "data"}', {
+        status: 200,
+        headers: new Headers({
+          'content-type': 'application/json',
+        }),
+      })
+
+      global.fetch = vi.fn().mockResolvedValue(mockResponse)
+
+      const [error, requestOperation] = createRequestOperation({
+        ...createRequestPayload({
+          serverPayload: { url: 'https://api.example.com' },
+          requestPayload: {
+            path: '/test',
+          },
+        }),
+        pluginManager: mockPluginManager,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      await requestOperation.sendRequest()
+
+      expect(mockPluginManager.executeHook).toHaveBeenCalledWith('onResponseReceived', {
+        response: expect.any(Response),
+        operation: expect.any(Object),
+      })
+      expect(mockPluginManager.executeHook).toHaveBeenCalledTimes(2) // onBeforeRequest + onResponseReceived
+    } finally {
+      // Restore original fetch
+      global.fetch = originalFetch
+    }
   })
 })

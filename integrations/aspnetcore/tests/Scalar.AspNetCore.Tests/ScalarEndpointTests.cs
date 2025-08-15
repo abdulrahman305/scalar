@@ -1,4 +1,6 @@
+using System.IO.Compression;
 using System.Net;
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -20,34 +22,33 @@ public class ScalarEndpointTests(WebApplicationFactory<Program> factory) : IClas
         var response = await client.GetAsync("/scalar", TestContext.Current.CancellationToken);
 
         // Assert
-        const string expected = $$"""
-                                  <!doctype html>
-                                  <html>
-                                  <head>
-                                      <title>Scalar API Reference</title>
-                                      <meta charset="utf-8" />
-                                      <meta name="viewport" content="width=device-width, initial-scale=1" />
-                                      
-                                  </head>
-                                  <body>
-                                      
-                                      <script id="api-reference"></script>
-                                      <script src="scalar.aspnetcore.js"></script>
-                                      <script>
-                                          const basePath = getBasePath('/scalar/');
-                                          console.log(basePath)
-                                          const openApiUrl = `${window.location.origin}${basePath}*`
-                                          const reference = document.getElementById('api-reference')
-                                          reference.dataset.url = openApiUrl;
-                                          reference.dataset.configuration = JSON.stringify(*)
-                                      </script>
-                                      <script src="{{ScalarEndpointRouteBuilderExtensions.ScalarJavaScriptFile}}"></script>
-                                  </body>
-                                  </html>
-                                  """;
+        const string expected = """
+                                <!doctype html>
+                                <html>
+                                <head>
+                                    <title>Scalar API Reference</title>
+                                    <meta charset="utf-8" />
+                                    <meta name="viewport" content="width=device-width, initial-scale=1" />
+                                    
+                                </head>
+                                <body>
+                                    
+                                    <div id="app"></div>
+                                    <script src="scalar.js"></script>
+                                    <script type="module" src="scalar.aspnetcore.js"></script>
+                                    <script type="module">
+                                        import { initialize } from './scalar.aspnetcore.js'
+                                        initialize(
+                                        '/scalar/',
+                                        false,
+                                        *)
+                                    </script>
+                                </body>
+                                </html>
+                                """;
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        content.ReplaceLineEndings().Should().Match(expected);
+        content.Should().Match(expected);
     }
 
     [Fact]
@@ -70,10 +71,10 @@ public class ScalarEndpointTests(WebApplicationFactory<Program> factory) : IClas
 
     [Theory]
     [InlineData("/scalar/scalar.aspnetcore.js", "getBasePath")]
-#if CI_RUN
+#if RELEASE
     [InlineData($"/scalar/{ScalarEndpointRouteBuilderExtensions.ScalarJavaScriptFile}", "@scalar/api-reference")]
 #endif
-    public async Task MapScalarApiReference_ShouldReturnStaticAssets_WhenRequested(string assetUrl, string expectedContent)
+    public async Task MapScalarApiReference_ShouldReturnUncompressedStaticAssets_WhenRequested(string assetUrl, string expectedContent)
     {
         // Arrange
         var client = factory.CreateClient();
@@ -87,7 +88,34 @@ public class ScalarEndpointTests(WebApplicationFactory<Program> factory) : IClas
         response.Headers.CacheControl!.NoCache.Should().BeTrue();
         response.Headers.ETag.Should().NotBeNull();
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        content.ReplaceLineEndings().Should().Contain(expectedContent);
+        content.Should().Contain(expectedContent);
+    }
+
+#if RELEASE
+    [Theory]
+    [InlineData("/scalar/scalar.aspnetcore.js", "getBasePath")]
+    [InlineData($"/scalar/{ScalarEndpointRouteBuilderExtensions.ScalarJavaScriptFile}", "@scalar/api-reference")]
+#endif
+#pragma warning disable xUnit1013
+    public async Task MapScalarApiReference_ShouldReturnCompressedStaticAssets_WhenAcceptEncodingContainsGzip(string assetUrl, string expectedContent)
+#pragma warning restore xUnit1013
+    {
+        // Arrange
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+
+        // Act
+        var response = await client.GetAsync(assetUrl, HttpCompletionOption.ResponseContentRead, TestContext.Current.CancellationToken);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentEncoding.Should().ContainSingle(x => x == "gzip");
+        var stream = await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken);
+        var gZipStream = new GZipStream(stream, CompressionMode.Decompress);
+        using var reader = new StreamReader(gZipStream);
+        var decompressedContent = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
+        decompressedContent.Should().Contain(expectedContent);
+        response.Headers.Vary.Should().Contain("Accept-Encoding");
     }
 
     [Fact]
@@ -112,21 +140,6 @@ public class ScalarEndpointTests(WebApplicationFactory<Program> factory) : IClas
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotModified);
     }
-    
-    [Fact]
-    public async Task MapScalarApiReference_ShouldNotPrefixOpenApiUrlWithOrigin_WhenRouteIsUrl()
-    {
-        // Arrange
-        var client = factory.CreateClient();
-
-        // Act
-        var response = await client.GetAsync("/external/document/scalar", TestContext.Current.CancellationToken);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        content.ReplaceLineEndings().Should().Contain("`https://example.com/openapi.json`");
-    }
 
     [Fact]
     public async Task MapScalarApiReference_ShouldAddDefaultOpenApiDocument_WhenNotSpecified()
@@ -140,7 +153,7 @@ public class ScalarEndpointTests(WebApplicationFactory<Program> factory) : IClas
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        content.ReplaceLineEndings().Should().Contain("/openapi/v1.json");
+        content.Should().Contain("openapi/v1.json");
     }
 
     [Fact]
@@ -155,28 +168,7 @@ public class ScalarEndpointTests(WebApplicationFactory<Program> factory) : IClas
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        content.ReplaceLineEndings().Should().Contain("/openapi/v3.json").And.NotContain("/openapi/v1.json");
-    }
-
-    [Fact]
-    public async Task MapScalarApiReference_ShouldUseDocumentProvider_WhenSpecified()
-    {
-        // Arranges
-        var client = factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureTestServices(services =>
-            {
-                services.Configure<ScalarOptions>(options => options.WithDocumentNamesProvider(_ => ["v2"]));
-            });
-        }).CreateClient();
-
-        // Act
-        var response = await client.GetAsync("/scalar/", TestContext.Current.CancellationToken);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        content.ReplaceLineEndings().Should().Contain("/openapi/v2.json").And.NotContain("/openapi/v1.json");
+        content.Should().Contain("openapi/v3.json").And.NotContain("v1");
     }
 
     [Fact]
@@ -193,12 +185,12 @@ public class ScalarEndpointTests(WebApplicationFactory<Program> factory) : IClas
         }).CreateClient();
 
         // Act
-        var index = await client.GetAsync($"/scalar", TestContext.Current.CancellationToken);
+        var index = await client.GetAsync("/scalar", TestContext.Current.CancellationToken);
 
         // Assert
         index.StatusCode.Should().Be(HttpStatusCode.OK);
         var indexContent = await index.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        indexContent.ReplaceLineEndings().Should().Contain($"<script src=\"{cdnUrl}\"></script>");
+        indexContent.Should().Contain($"<script src=\"{cdnUrl}\"></script>");
     }
 
     [Fact]
@@ -270,7 +262,7 @@ public class ScalarEndpointTests(WebApplicationFactory<Program> factory) : IClas
 
         localFactory.Services.GetRequiredService<IOptions<ScalarOptions>>().Value.Theme.Should().Be(ScalarTheme.Mars);
     }
-    
+
     [Fact]
     public async Task MapScalarApiReference_ShouldReplaceDocumentNamePlaceholder_WhenOnlyOneDocumentWasAdded()
     {
@@ -292,7 +284,7 @@ public class ScalarEndpointTests(WebApplicationFactory<Program> factory) : IClas
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        content.ReplaceLineEndings().Should().Contain("<title>Scalar API Reference | v1</title>");
+        content.Should().Contain("<title>Scalar API Reference | v1</title>");
     }
 
     [Fact]

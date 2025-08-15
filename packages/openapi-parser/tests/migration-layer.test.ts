@@ -2,11 +2,11 @@
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchUrls } from '../src/plugins/fetch-urls/fetchUrls.ts'
-import { readFiles } from '../src/plugins/read-files/readFiles.ts'
-import { dereference } from '../src/utils/dereference.ts'
-import { load } from '../src/utils/load/load.ts'
-import { validate } from '../src/utils/validate.ts'
+import { fetchUrls } from '../src/plugins/fetch-urls/fetch-urls'
+import { readFiles } from '../src/plugins/read-files/read-files'
+import { dereference } from '../src/utils/dereference'
+import { load } from '../src/utils/load/load'
+import { validate } from '../src/utils/validate'
 
 global.fetch = vi.fn()
 
@@ -124,9 +124,7 @@ describe('dereference', () => {
       },
     }))
 
-    const api = await SwaggerParser.dereference(
-      'http://example.com/specification/openapi.yaml',
-    )
+    const api = await SwaggerParser.dereference('http://example.com/specification/openapi.yaml')
 
     // The `api` object is a normal JavaScript object,
     // so you can easily access any part of the API using simple dot notation
@@ -134,10 +132,7 @@ describe('dereference', () => {
   })
 
   it('dereferences files', async () => {
-    const EXAMPLE_FILE = path.join(
-      new URL(import.meta.url).pathname,
-      '../../tests/migration-layer.json',
-    )
+    const EXAMPLE_FILE = path.join(new URL(import.meta.url).pathname, '../../tests/migration-layer.json')
 
     const api = await SwaggerParser.dereference(EXAMPLE_FILE)
 

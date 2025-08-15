@@ -1,6 +1,33 @@
 <script setup lang="ts">
+import {
+  ScalarButton,
+  ScalarComboboxMultiselect,
+  ScalarIconButton,
+  ScalarListboxCheckbox,
+  useModal,
+  type Icon,
+  type ScalarButton as ScalarButtonType,
+} from '@scalar/components'
+import {
+  CLIENT_LS_KEYS,
+  safeLocalStorage,
+} from '@scalar/helpers/object/local-storage'
+import { ScalarIconCaretDown, ScalarIconTrash } from '@scalar/icons'
+import type { Environment } from '@scalar/oas-utils/entities/environment'
+import type { SelectedSecuritySchemeUids } from '@scalar/oas-utils/entities/shared'
+import type {
+  Collection,
+  Operation,
+  SecurityScheme,
+  Server,
+} from '@scalar/oas-utils/entities/spec'
+import type { Workspace } from '@scalar/oas-utils/entities/workspace'
+import { isDefined } from '@scalar/oas-utils/helpers'
+import { computed, ref, useId } from 'vue'
+
 import ViewLayoutCollapse from '@/components/ViewLayout/ViewLayoutCollapse.vue'
 import { useLayout } from '@/hooks/useLayout'
+import type { EnvVariable } from '@/store/active-entities'
 import { useWorkspace } from '@/store/store'
 import type { SecuritySchemeOption } from '@/views/Request/consts'
 import {
@@ -9,39 +36,28 @@ import {
   getSchemeOptions,
   getSecurityRequirements,
 } from '@/views/Request/libs'
-import {
-  type Icon,
-  ScalarButton,
-  type ScalarButton as ScalarButtonType,
-  ScalarComboboxMultiselect,
-  ScalarIcon,
-  useModal,
-} from '@scalar/components'
-import type { SelectedSecuritySchemeUids } from '@scalar/oas-utils/entities/shared'
-import type {
-  Collection,
-  Operation,
-  Server,
-} from '@scalar/oas-utils/entities/spec'
-import type { Workspace } from '@scalar/oas-utils/entities/workspace'
-import { isDefined } from '@scalar/oas-utils/helpers'
-import { computed, ref } from 'vue'
 
 import DeleteRequestAuthModal from './DeleteRequestAuthModal.vue'
 import RequestAuthDataTable from './RequestAuthDataTable.vue'
 
 const {
   collection,
+  environment,
+  envVariables,
   layout,
   operation,
+  persistAuth = false,
   selectedSecuritySchemeUids,
   server,
   title,
   workspace,
 } = defineProps<{
   collection: Collection
+  environment: Environment
+  envVariables: EnvVariable[]
   layout: 'client' | 'reference'
   operation?: Operation | undefined
+  persistAuth?: boolean
   selectedSecuritySchemeUids: SelectedSecuritySchemeUids
   server: Server | undefined
   title: string
@@ -56,9 +72,14 @@ const {
   collectionMutators,
 } = useWorkspace()
 
+const titleId = useId()
+
 const comboboxButtonRef = ref<typeof ScalarButtonType | null>(null)
 const deleteSchemeModal = useModal()
-const selectedScheme = ref<{ id: string; label: string } | null>(null)
+const selectedScheme = ref<{ id: SecurityScheme['uid']; label: string } | null>(
+  null,
+)
+const isViewLayoutOpen = ref(false)
 
 /** Security requirements for the request */
 const securityRequirements = computed(() => {
@@ -73,19 +94,24 @@ const securityRequirements = computed(() => {
 /** Indicates if auth is required */
 const authIndicator = computed(() => {
   const { filteredRequirements, requirements } = securityRequirements.value
-  if (!requirements.length) return null
+  if (!requirements.length) {
+    return null
+  }
 
-  /** Security is optional if one empty object exists in the array */
-  const isOptional = filteredRequirements.length < requirements.length
+  /**
+   * Security is optional if one empty object exists in the array &
+   * no complex auth requirements (with multiple auth)
+   */
+  const hasComplexRequirement = requirements.some(
+    (req) => Object.keys(req).length > 1,
+  )
+  const isOptional =
+    !hasComplexRequirement && filteredRequirements.length < requirements.length
+
   const icon: Icon = isOptional ? 'Unlock' : 'Lock'
 
-  /** Dynamic text to indicate auth requirements */
-  const requiredText = isOptional ? 'Optional' : 'Required'
-  const nameKey =
-    filteredRequirements.length === 1
-      ? Object.keys(filteredRequirements[0] || {})[0]
-      : ''
-  const text = `${nameKey} ${requiredText}`
+  /** Text to indicate auth requirements */
+  const text = isOptional ? 'Optional' : 'Required'
 
   return { icon, text }
 })
@@ -94,12 +120,16 @@ const authIndicator = computed(() => {
  * Currently selected auth schemes on the collection, we store complex auth joined by a comma to represent the array
  * in the string
  */
-const selectedSchemeOptions = computed(() =>
+const selectedSchemeOptions = computed<SecuritySchemeOption[]>(() =>
   selectedSecuritySchemeUids
     .map((s) => {
-      if (Array.isArray(s)) return formatComplexScheme(s, securitySchemes)
+      if (Array.isArray(s)) {
+        return formatComplexScheme(s, securitySchemes)
+      }
       const scheme = securitySchemes[s ?? '']
-      if (!scheme) return undefined
+      if (!scheme) {
+        return undefined
+      }
       return formatScheme(scheme)
     })
     .filter(isDefined),
@@ -112,7 +142,9 @@ function updateSelectedAuth(entries: SecuritySchemeOption[]) {
     .filter((e) => !e.payload)
     .map(({ id }) => {
       const arr = id.split(',')
-      return arr.length > 1 ? arr : id
+      return arr.length > 1
+        ? (arr as SecurityScheme['uid'][])
+        : (id as SecurityScheme['uid'])
     })
 
   // Adding new auth
@@ -122,7 +154,9 @@ function updateSelectedAuth(entries: SecuritySchemeOption[]) {
       addNewOption.payload,
       collection?.uid,
     )
-    if (scheme) _entries.push(scheme.uid)
+    if (scheme) {
+      _entries.push(scheme.uid)
+    }
   }
 
   editSelectedSchemeUids(_entries)
@@ -130,8 +164,27 @@ function updateSelectedAuth(entries: SecuritySchemeOption[]) {
 
 const editSelectedSchemeUids = (uids: SelectedSecuritySchemeUids) => {
   // Set as selected on the collection for the modal
-  if (clientLayout === 'modal' || layout === 'reference') {
+  if (collection.useCollectionSecurity) {
     collectionMutators.edit(collection.uid, 'selectedSecuritySchemeUids', uids)
+
+    if (!persistAuth) {
+      return
+    }
+
+    // We must convert the uids to nameKeys first
+    const nameKeys = uids.map((uids) => {
+      // Handle complex auth
+      if (Array.isArray(uids)) {
+        return uids.map((uid) => securitySchemes[uid]?.nameKey)
+      }
+
+      return securitySchemes[uids]?.nameKey
+    })
+
+    safeLocalStorage().setItem(
+      CLIENT_LS_KEYS.SELECTED_SECURITY_SCHEMES,
+      JSON.stringify(nameKeys),
+    )
   }
   // Set as selected on request
   else if (operation?.uid) {
@@ -139,13 +192,16 @@ const editSelectedSchemeUids = (uids: SelectedSecuritySchemeUids) => {
   }
 }
 
-function handleDeleteScheme(option: { id: string; label: string }) {
-  selectedScheme.value = option
+function handleDeleteScheme({ id, label }: { id: string; label: string }) {
+  // We cast the type here just to make the combobox happy, TODO: we should make ID be string-like and accept brands
+  selectedScheme.value = { id: id as SecurityScheme['uid'], label }
   deleteSchemeModal.show()
 }
 
 const unselectAuth = (unSelectUid?: string) => {
-  if (!unSelectUid) return
+  if (!unSelectUid) {
+    return
+  }
   const newUids = selectedSecuritySchemeUids.filter((uid) => {
     const arr = unSelectUid.split(',')
     // Handle complex auth
@@ -169,59 +225,97 @@ const schemeOptions = computed(() =>
     clientLayout === 'modal' || layout === 'reference',
   ),
 )
+
+const openAuthCombobox = (event: Event) => {
+  // If the layout is open, we don't want it to close on auth label click
+  if (isViewLayoutOpen.value) {
+    event.stopPropagation()
+  }
+
+  comboboxButtonRef.value?.$el.click()
+}
 </script>
 <template>
   <ViewLayoutCollapse
-    class="group/params"
+    class="group/params relative"
     :itemCount="selectedSchemeOptions.length"
-    :layout="layout">
+    :layout="layout"
+    @update:modelValue="isViewLayoutOpen = $event">
     <template #title>
-      <div class="inline-flex gap-1 items-center">
+      <div
+        :id="titleId"
+        class="inline-flex items-center gap-0.5 leading-[20px]">
         <span>{{ title }}</span>
         <!-- Authentication indicator -->
         <span
           v-if="authIndicator"
-          class="text-c-3 text-xs leading-[normal]"
-          :class="{ 'text-c-1': authIndicator.text === 'Required' }">
+          class="text-c-3 hover:bg-b-3 hover:text-c-1 -mr-1 cursor-pointer rounded px-1 py-0.5 text-xs leading-[normal]"
+          :class="{ 'text-c-1': authIndicator.text === 'Required' }"
+          @click="openAuthCombobox">
           {{ authIndicator.text }}
         </span>
       </div>
     </template>
     <template #actions>
-      <div class="flex flex-1 -mx-1">
+      <div class="flex flex-1">
         <ScalarComboboxMultiselect
-          class="text-xs w-72"
-          :isDeletable="clientLayout !== 'modal' && layout !== 'reference'"
+          class="w-72 text-xs"
           :modelValue="selectedSchemeOptions"
+          teleport
           multiple
+          placement="bottom-end"
           :options="schemeOptions"
           @delete="handleDeleteScheme"
           @update:modelValue="updateSelectedAuth">
           <ScalarButton
             ref="comboboxButtonRef"
-            class="h-auto px-1.5 py-0.75 hover:bg-b-3 text-c-1 hover:text-c-1 font-normal"
+            :aria-describedby="titleId"
+            class="group/combobox-button hover:text-c-1 text-c-2 flex h-fit items-center gap-1 px-0.75 py-0.25 text-base font-normal transition-transform"
             fullWidth
             variant="ghost">
-            <div class="text-c-1">
-              {{
-                selectedSchemeOptions.length === 0
-                  ? 'Auth Type'
-                  : selectedSchemeOptions.length === 1
-                    ? selectedSchemeOptions[0]?.label
-                    : 'Multiple'
-              }}
-            </div>
-            <ScalarIcon
-              class="ml-1 shrink-0"
-              icon="ChevronDown"
-              size="sm" />
+            <template v-if="selectedSchemeOptions.length === 1">
+              <span class="sr-only">Selected Auth Type:</span>
+              {{ selectedSchemeOptions[0]?.label }}
+            </template>
+            <template v-else-if="selectedSchemeOptions.length > 1">
+              Multiple
+              <span class="sr-only">Auth Types Selected</span>
+            </template>
+            <template v-else>
+              <span class="sr-only">Select</span>
+              Auth Type
+            </template>
+            <ScalarIconCaretDown
+              weight="bold"
+              class="size-3 shrink-0 transition-transform duration-100 group-aria-expanded/combobox-button:rotate-180" />
           </ScalarButton>
+          <template #option="{ option, selected }">
+            <ScalarListboxCheckbox
+              :selected="selected"
+              multiselect />
+            <div class="min-w-0 flex-1 truncate">
+              {{ option.label }}
+            </div>
+            <ScalarIconButton
+              v-if="
+                option.isDeletable ??
+                (clientLayout !== 'modal' && layout !== 'reference')
+              "
+              size="xs"
+              :label="`Delete ${option.label}`"
+              :icon="ScalarIconTrash"
+              @click.stop="handleDeleteScheme(option)"
+              class="-m-0.5 shrink-0 p-0.5 opacity-0 group-hover/item:opacity-100" />
+          </template>
         </ScalarComboboxMultiselect>
       </div>
     </template>
     <RequestAuthDataTable
       :collection="collection"
+      :envVariables="envVariables"
+      :environment="environment"
       :layout="layout"
+      :persistAuth="persistAuth"
       :selectedSchemeOptions="selectedSchemeOptions"
       :server="server"
       :workspace="workspace" />

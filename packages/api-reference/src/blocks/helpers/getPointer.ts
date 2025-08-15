@@ -12,7 +12,7 @@ import type { OpenAPI } from '@scalar/openapi-types'
  * ['components', 'schemas', 'Planet] > '#/components/schemas/Planet'
  */
 type ValidOpenApiPaths =
-  | ['paths', string, Lowercase<OpenAPI.HttpMethod> | string]
+  | ['paths' | 'webhooks', string, Lowercase<OpenAPI.HttpMethod> | string]
   | ['components', 'schemas', string]
 
 /**

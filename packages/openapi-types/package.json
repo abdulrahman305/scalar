@@ -16,17 +16,16 @@
     "swagger",
     "typescript"
   ],
-  "version": "0.1.7",
+  "version": "0.3.7",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
-    "build": "pnpm types:check && rollup -c --configPlugin typescript && pnpm types:build",
-    "format": "prettier --write .",
+    "build": "scalar-build-esbuild",
     "lint:check": "eslint .",
     "lint:fix": "eslint .  --fix",
+    "test": "vite-node scripts/load-files.ts && vitest",
     "test:prepare": "vite-node scripts/load-files.ts",
-    "test:unit": "vite-node scripts/load-files.ts && vitest",
     "types:build": "scalar-types-build",
     "types:check": "scalar-types-check"
   },
@@ -36,6 +35,26 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./helpers": {
+      "import": "./dist/helpers/index.js",
+      "types": "./dist/helpers/index.d.ts",
+      "default": "./dist/helpers/index.js"
+    },
+    "./schemas/3.1/processed": {
+      "import": "./dist/schemas/3.1/processed/index.js",
+      "types": "./dist/schemas/3.1/processed/index.d.ts",
+      "default": "./dist/schemas/3.1/processed/index.js"
+    },
+    "./schemas/3.1/unprocessed": {
+      "import": "./dist/schemas/3.1/unprocessed/index.js",
+      "types": "./dist/schemas/3.1/unprocessed/index.d.ts",
+      "default": "./dist/schemas/3.1/unprocessed/index.js"
+    },
+    "./schemas/extensions": {
+      "import": "./dist/schemas/extensions/index.js",
+      "types": "./dist/schemas/extensions/index.d.ts",
+      "default": "./dist/schemas/extensions/index.js"
     }
   },
   "files": [
@@ -44,6 +63,9 @@
     "CHANGELOG.md"
   ],
   "sideEffects": false,
+  "dependencies": {
+    "zod": "catalog:*"
+  },
   "devDependencies": {
     "@scalar/build-tooling": "workspace:*"
   }

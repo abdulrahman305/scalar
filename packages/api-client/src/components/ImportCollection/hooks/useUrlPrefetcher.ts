@@ -1,9 +1,6 @@
 import { isUrl } from '@/libs'
 import { resolve } from '@scalar/import'
-import {
-  fetchWithProxyFallback,
-  redirectToProxy,
-} from '@scalar/oas-utils/helpers'
+import { fetchWithProxyFallback, redirectToProxy } from '@scalar/oas-utils/helpers'
 import { reactive } from 'vue'
 
 export type PrefetchResult = {
@@ -36,7 +33,7 @@ export function useUrlPrefetcher() {
     })
   }
 
-  async function prefetchUrl(input: string | null, proxy?: string) {
+  async function prefetchUrl(input: string | null, proxyUrl?: string) {
     if (!input) {
       return {
         state: 'idle',
@@ -51,13 +48,13 @@ export function useUrlPrefetcher() {
       // If we try hard enough, we might find the actual OpenAPI document URL even if the input isn't one directly.
       const urlOrDocument = await resolve(input, {
         fetch: (url) => {
-          return fetch(proxy ? redirectToProxy(proxy, url) : url, {
+          return fetch(proxyUrl ? redirectToProxy(proxyUrl, url) : url, {
             cache: 'no-cache',
           })
         },
       })
 
-      // If the input is an object, we’re done
+      // If the input is an object, we're done
       if (typeof urlOrDocument === 'object' && urlOrDocument !== null) {
         const json = JSON.stringify(urlOrDocument, null, 2)
 
@@ -86,7 +83,7 @@ export function useUrlPrefetcher() {
           content: null,
           url: null,
           input,
-          error: `Oops, we got invalid content for the given URL.`,
+          error: 'Oops, we got invalid content for the given URL.',
         }
       }
 
@@ -94,7 +91,7 @@ export function useUrlPrefetcher() {
 
       // Okay, we've got an URL. Let's fetch it:
       const result = await fetchWithProxyFallback(url, {
-        proxy,
+        proxyUrl,
         cache: 'no-cache',
       })
 
@@ -129,10 +126,7 @@ export function useUrlPrefetcher() {
     }
   }
 
-  async function prefetchUrlAndUpdateState(
-    input: string | null,
-    proxy?: string,
-  ) {
+  async function prefetchUrlAndUpdateState(input: string | null, proxyUrl?: string) {
     Object.assign(prefetchResult, {
       state: 'loading',
       content: null,
@@ -141,7 +135,7 @@ export function useUrlPrefetcher() {
       error: null,
     })
 
-    const result = await prefetchUrl(input, proxy)
+    const result = await prefetchUrl(input, proxyUrl)
     Object.assign(prefetchResult, result)
     return result
   }

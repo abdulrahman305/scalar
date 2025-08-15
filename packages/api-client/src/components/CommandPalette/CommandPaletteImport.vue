@@ -1,14 +1,4 @@
 <script setup lang="ts">
-import { useFileDialog } from '@/hooks'
-import {
-  convertPostmanToOpenApi,
-  getOpenApiDocumentDetails,
-  getPostmanDocumentDetails,
-  isPostmanCollection,
-  isUrl,
-} from '@/libs'
-import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
 import {
   ScalarButton,
   ScalarCodeBlock,
@@ -18,6 +8,20 @@ import {
 } from '@scalar/components'
 import { useToasts } from '@scalar/use-toasts'
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+
+import { useFileDialog } from '@/hooks'
+import {
+  convertPostmanToOpenApi,
+  getOpenApiDocumentDetails,
+  getPostmanDocumentDetails,
+  isPostmanCollection,
+  isUrl,
+} from '@/libs'
+import { importCurlCommand } from '@/libs/importers/curl'
+import { PathId } from '@/router'
+import { useWorkspace } from '@/store'
+import { useActiveEntities } from '@/store/active-entities'
 
 import CommandActionForm from './CommandActionForm.vue'
 import CommandActionInput from './CommandActionInput.vue'
@@ -28,8 +32,10 @@ const emits = defineEmits<{
   (event: 'back', e: KeyboardEvent): void
 }>()
 
-const { activeWorkspace } = useActiveEntities()
-const { importSpecFile, importSpecFromUrl } = useWorkspace()
+const router = useRouter()
+
+const { activeWorkspace, activeCollection } = useActiveEntities()
+const { importSpecFile, importSpecFromUrl, events } = useWorkspace()
 const { toast } = useToasts()
 const loader = useLoadingState()
 
@@ -39,14 +45,27 @@ const watchMode = ref(true)
 const documentDetails = computed(() => {
   if (isPostmanCollection(inputContent.value)) {
     return getPostmanDocumentDetails(inputContent.value)
-  } else {
-    return getOpenApiDocumentDetails(inputContent.value)
   }
+  return getOpenApiDocumentDetails(inputContent.value)
 })
 
 const documentType = computed(() =>
   documentDetails.value ? documentDetails.value.type : 'json',
 )
+
+function navigateToCollectionPage(collection?: { uid: string }) {
+  if (!collection) {
+    return
+  }
+
+  router.push({
+    name: 'collection',
+    params: {
+      [PathId.Workspace]: activeWorkspace.value?.uid,
+      [PathId.Collection]: collection.uid,
+    },
+  })
+}
 
 const isInputUrl = computed(() => isUrl(inputContent.value))
 const isInputDocument = computed(() => !!documentDetails.value)
@@ -60,12 +79,17 @@ const { open: openSpecFileDialog } = useFileDialog({
         const text = e.target?.result as string
         try {
           if (isPostmanCollection(text)) {
-            await importSpecFile(
+            const workspace = await importSpecFile(
               await convertPostmanToOpenApi(text),
               activeWorkspace.value?.uid ?? '',
             )
+            navigateToCollectionPage(workspace?.collection)
           } else {
-            await importSpecFile(text, activeWorkspace.value?.uid ?? '')
+            const workspace = await importSpecFile(
+              text,
+              activeWorkspace.value?.uid ?? '',
+            )
+            navigateToCollectionPage(workspace?.collection)
           }
           toast('Import successful', 'info')
           emits('close')
@@ -84,21 +108,27 @@ const { open: openSpecFileDialog } = useFileDialog({
 
 // Enable watch mode if the input is a URL
 watch(isInputUrl, (newVal) => {
-  if (!newVal) watchMode.value = false
+  if (!newVal) {
+    watchMode.value = false
+  }
 })
 
 // Disable watch mode if the input is not a URL
 watch(inputContent, (newVal) => {
-  if (!isUrl(newVal)) watchMode.value = false
+  if (!isUrl(newVal)) {
+    watchMode.value = false
+  }
 })
 
 async function importCollection() {
-  if (!inputContent.value || loader.isLoading) return
+  if (!inputContent.value || loader.isLoading) {
+    return
+  }
 
   loader.startLoading()
   try {
     if (isInputUrl.value) {
-      const [error] = await importSpecFromUrl(
+      const [error, workspace] = await importSpecFromUrl(
         inputContent.value,
         activeWorkspace.value?.uid ?? '',
         {
@@ -106,6 +136,8 @@ async function importCollection() {
           watchMode: watchMode.value,
         },
       )
+
+      navigateToCollectionPage(workspace?.collection)
 
       if (error) {
         toast(
@@ -118,16 +150,18 @@ async function importCollection() {
       }
     } else if (isInputDocument.value) {
       if (isPostmanCollection(inputContent.value)) {
-        await importSpecFile(
+        const workspace = await importSpecFile(
           await convertPostmanToOpenApi(inputContent.value),
           activeWorkspace.value?.uid ?? '',
         )
+        navigateToCollectionPage(workspace?.collection)
         toast('Successfully converted Postman collection', 'info')
       } else {
-        await importSpecFile(
+        const workspace = await importSpecFile(
           inputContent.value,
           activeWorkspace.value?.uid ?? '',
         )
+        navigateToCollectionPage(workspace?.collection)
       }
     } else {
       toast('Import failed: Invalid URL or OpenAPI document', 'error')
@@ -146,6 +180,20 @@ async function importCollection() {
     toast(`Import failed: ${errorMessage}`, 'error')
   }
 }
+
+const handleInput = (value: string) => {
+  if (value.trim().toLowerCase().startsWith('curl')) {
+    events.commandPalette.emit({
+      commandName: 'Import from cURL',
+      metaData: {
+        parsedCurl: importCurlCommand(value),
+        collectionUid: activeCollection.value?.uid,
+      },
+    })
+    return
+  }
+  inputContent.value = value
+}
 </script>
 <template>
   <CommandActionForm
@@ -154,16 +202,19 @@ async function importCollection() {
     @submit="importCollection">
     <template v-if="!documentDetails || isUrl(inputContent)">
       <CommandActionInput
-        v-model="inputContent"
-        placeholder="OpenAPI/Swagger/Postman URL or document"
-        @onDelete="emits('back', $event)" />
+        :modelValue="inputContent"
+        placeholder="OpenAPI/Swagger/Postman URL or cURL"
+        @onDelete="emits('back', $event)"
+        @update:modelValue="handleInput" />
     </template>
     <template v-else>
       <!-- OpenAPI document preview -->
       <div class="flex justify-between">
-        <div class="pl-8 text-xs min-h-8 py-2 text-c-2">Preview</div>
+        <div class="text-c-2 min-h-8 w-full py-2 pl-12 text-center text-xs">
+          Preview
+        </div>
         <ScalarButton
-          class="ml-auto p-2 max-h-8 gap-1.5 text-xs hover:bg-b-2 relative"
+          class="hover:bg-b-2 relative ml-auto max-h-8 gap-1.5 p-2 text-xs"
           variant="ghost"
           @click="inputContent = ''">
           Clear
@@ -171,55 +222,36 @@ async function importCollection() {
       </div>
       <ScalarCodeBlock
         v-if="documentDetails && !isUrl(inputContent)"
-        class="border max-h-[40dvh] mt-1 bg-b-2 rounded [--scalar-small:--scalar-font-size-4]"
+        class="bg-b-2 mt-1 max-h-[40dvh] rounded border px-2 py-1 text-sm"
         :content="inputContent"
         :copy="false"
         :lang="documentType" />
     </template>
     <template #options>
-      <div class="flex flex-row items-center justify-between gap-3 w-full">
+      <div class="flex w-full flex-row items-center justify-between gap-3">
         <!-- Upload -->
         <ScalarButton
-          class="p-2 max-h-8 gap-1.5 text-xs hover:bg-b-2 relative"
+          class="hover:bg-b-2 relative max-h-8 gap-1.5 p-2 text-xs"
           variant="outlined"
           @click="openSpecFileDialog">
           JSON, or YAML File
           <ScalarIcon
             class="text-c-3"
-            icon="UploadSimple"
+            icon="Upload"
             size="md" />
         </ScalarButton>
 
         <!-- Watch -->
         <ScalarTooltip
-          as="div"
-          class="z-[10001]"
-          side="bottom"
-          :sideOffset="5">
-          <template #trigger>
-            <WatchModeToggle
-              v-model="watchMode"
-              :disabled="!isInputUrl" />
-          </template>
-          <template #content>
-            <div
-              class="grid gap-1.5 pointer-events-none max-w-[320px] w-content shadow-lg rounded bg-b-1 z-100 p-2 text-xxs leading-5 z-10 text-c-1">
-              <div class="flex items-center text-c-2">
-                <span
-                  v-if="isInputUrl"
-                  class="text-pretty">
-                  Automatically updates the API client when the OpenAPI URL
-                  content changes, ensuring your client remains up-to-date.
-                </span>
-                <span
-                  v-else
-                  class="text-pretty">
-                  Watch Mode is only available for URL imports. It automatically
-                  updates the API client when the OpenAPI URL content changes.
-                </span>
-              </div>
-            </div>
-          </template>
+          :content="
+            isInputUrl
+              ? 'Watch mode automatically updates the API client when the OpenAPI URL content changes, ensuring your client remains up-to-date.'
+              : 'Watch mode is only available for URL imports. When enabled it automatically updates the API client when the OpenAPI URL content changes.'
+          "
+          placement="bottom">
+          <WatchModeToggle
+            v-model="watchMode"
+            :disabled="!isInputUrl" />
         </ScalarTooltip>
       </div>
     </template>
@@ -230,9 +262,11 @@ async function importCollection() {
         <template v-if="documentDetails.title">
           "{{ documentDetails.title }}"
         </template>
-        <template v-else>{{ documentDetails.version }} Spec</template>
+        <template v-else>
+          {{ documentDetails.version }}
+        </template>
       </template>
-      <template v-else>Collection</template>
+      <template v-else> Collection </template>
     </template>
   </CommandActionForm>
 </template>

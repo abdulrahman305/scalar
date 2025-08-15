@@ -1,9 +1,6 @@
 import type { StoreContext } from '@/store/store-context'
-import {
-  type Environment,
-  environmentSchema,
-} from '@scalar/oas-utils/entities/environment'
-import { LS_KEYS } from '@scalar/oas-utils/helpers'
+import { type Environment, environmentSchema } from '@scalar/oas-utils/entities/environment'
+import { LS_KEYS } from '@scalar/helpers/object/local-storage'
 import { mutationFactory } from '@scalar/object-utils/mutator-record'
 import { reactive } from 'vue'
 
@@ -11,18 +8,14 @@ import { reactive } from 'vue'
 export function createStoreEnvironments(useLocalStorage: boolean) {
   /** Initialize default environment */
   const environments = reactive<Record<string, Environment>>({})
-  const environmentMutators = mutationFactory(
-    environments,
-    reactive({}),
-    useLocalStorage && LS_KEYS.ENVIRONMENT,
-  )
+  const environmentMutators = mutationFactory(environments, reactive({}), useLocalStorage && LS_KEYS.ENVIRONMENT)
 
   // Add default environment
   environmentMutators.add(
     environmentSchema.parse({
       uid: 'default',
       name: 'Default Environment',
-      color: '#0082D0',
+      color: '#FFFFFF',
       value: JSON.stringify({ exampleKey: 'exampleValue' }, null, 2),
       isDefault: true,
     }),
@@ -35,11 +28,9 @@ export function createStoreEnvironments(useLocalStorage: boolean) {
 }
 
 /** Extended environment data factory where workspace access is needed */
-export function extendedEnvironmentDataFactory({
-  environmentMutators,
-}: StoreContext) {
+export function extendedEnvironmentDataFactory({ environmentMutators }: StoreContext) {
   /** prevent deletion of the default environment */
-  const deleteEnvironment = (uid: string) => {
+  const deleteEnvironment = (uid: Environment['uid']) => {
     if (uid === 'default') {
       console.warn('Default environment cannot be deleted.')
       return

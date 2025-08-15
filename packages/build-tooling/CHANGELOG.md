@@ -1,5 +1,85 @@
 # @scalar/build-tooling
 
+## 0.2.5
+
+### Patch Changes
+
+- 4502b11: Move to .js bin scripts to avoid vite-node conflicts
+
+## 0.2.4
+
+### Patch Changes
+
+- 2d7f995: refactor: use more common straight apostrophe ' instead of the real apostrophe ’
+
+## 0.2.3
+
+### Patch Changes
+
+- 4156f1d: Expand workspace store integration
+
+## 0.2.2
+
+### Patch Changes
+
+- 8165b3b: feat(helpers): added new helpers package
+
+## 0.2.1
+
+### Patch Changes
+
+- 84719d0: fix: exclude test files from esbuild entry points
+
+## 0.2.0
+
+### Minor Changes
+
+- 483ca93: chore: require Node 20 (or above)
+
+## 0.1.19
+
+### Patch Changes
+
+- 8c7bad8: chore: move build tooling to esbuild
+
+## 0.1.18
+
+### Patch Changes
+
+- c7c061c: Added ESBuild configs
+
+## 0.1.17
+
+### Patch Changes
+
+- 5cf4908: Remove file extension
+
+## 0.1.16
+
+### Patch Changes
+
+- f48d65f: fix: update turbo cache key
+- 3283fc6: Add cssFilename fallback for Vite6->Vite5 alignment
+
+## 0.1.15
+
+### Patch Changes
+
+- c10bbf5: chore: code style
+
+## 0.1.14
+
+### Patch Changes
+
+- e350f23: chore: code style
+
+## 0.1.13
+
+### Patch Changes
+
+- fa6afe8: chore: code formatting
+- 1223c1f: chore: code style
+
 ## 0.1.12
 
 ### Patch Changes

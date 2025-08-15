@@ -1,12 +1,10 @@
-import {
-  nanoidSchema,
-  selectedSecuritySchemeUidSchema,
-} from '@/entities/shared/utility'
+import { selectedSecuritySchemeUidSchema } from '@/entities/shared/utility'
 import { xScalarEnvironmentsSchema } from '@/entities/spec/x-scalar-environments'
 import { xScalarSecretsSchema } from '@/entities/spec/x-scalar-secrets'
+import { oasSecurityRequirementSchema } from '@scalar/types/entities'
+import { type ENTITY_BRANDS, nanoidSchema } from '@scalar/types/utils'
 import { z } from 'zod'
 
-import { oasSecurityRequirementSchema } from './security'
 import { oasExternalDocumentationSchema, oasInfoSchema } from './spec-objects'
 
 export const oasCollectionSchema = z.object({
@@ -17,16 +15,14 @@ export const oasCollectionSchema = z.object({
    */
   'type': z.literal('collection').optional().default('collection'),
   'openapi': z
-    .union([
-      z.string(),
-      z.literal('3.0.0'),
-      z.literal('3.1.0'),
-      z.literal('4.0.0'),
-    ])
+    .union([z.string(), z.literal('3.0.0'), z.literal('3.1.0'), z.literal('4.0.0')])
     .optional()
     .default('3.1.0'),
   'jsonSchemaDialect': z.string().optional(),
-  'info': oasInfoSchema.optional(),
+  'info': oasInfoSchema.catch({
+    title: 'API',
+    version: '1.0',
+  }),
   /**
    * A declaration of which security mechanisms can be used across the API. The list of
    * values includes alternative security requirement objects that can be used. Only
@@ -35,7 +31,7 @@ export const oasCollectionSchema = z.object({
    * security requirement ({}) can be included in the array.
    */
   'security': z.array(oasSecurityRequirementSchema).optional().default([]),
-  'externalDocs': oasExternalDocumentationSchema.optional(),
+  'externalDocs': oasExternalDocumentationSchema.optional().catch(undefined),
   /** TODO: Type these */
   'components': z.record(z.string(), z.unknown()).optional(),
   /** TODO: Type these */
@@ -54,21 +50,24 @@ export const oasCollectionSchema = z.object({
 })
 
 export const extendedCollectionSchema = z.object({
-  uid: nanoidSchema,
+  uid: nanoidSchema.brand<ENTITY_BRANDS['COLLECTION']>(),
   /** A list of security schemes UIDs associated with the collection */
   securitySchemes: z.string().array().default([]),
   /** List of currently selected security scheme UIDs, these can be overridden per request */
   selectedSecuritySchemeUids: selectedSecuritySchemeUidSchema,
   /** The currently selected server */
-  selectedServerUid: z.string().default(''),
+  selectedServerUid: z.string().brand<ENTITY_BRANDS['SERVER']>().optional(),
   /** UIDs which refer to servers on the workspace base */
-  servers: nanoidSchema.array().default([]),
+  servers: z.string().brand<ENTITY_BRANDS['SERVER']>().array().default([]),
   /** Request UIDs associated with a collection */
-  requests: nanoidSchema.array().default([]),
+  requests: z.string().brand<ENTITY_BRANDS['OPERATION']>().array().default([]),
   /** Tag UIDs associated with the collection */
-  tags: nanoidSchema.array().default([]),
+  tags: z.string().brand<ENTITY_BRANDS['TAG']>().array().default([]),
   /** List of requests without tags and top level tag "folders" */
-  children: nanoidSchema.array().default([]),
+  children: z
+    .union([z.string().brand<ENTITY_BRANDS['OPERATION']>(), z.string().brand<ENTITY_BRANDS['TAG']>()])
+    .array()
+    .default([]),
   /**
    * A link to where this document is stored
    *
@@ -85,18 +84,19 @@ export const extendedCollectionSchema = z.object({
   /** Keeps track of which integration is associated with the specific collection */
   integration: z.string().nullable().optional(),
   /**
+   * Selected authentication will be set at the collection level instead of the request level
+   *
+   * @default false
+   */
+  useCollectionSecurity: z.boolean().optional().default(false),
+  /**
    * Status of the watcher from above
    *
    * @defaults to idle for all collections, doesn't mean that it can watch for changes
    */
-  watchModeStatus: z
-    .enum(['IDLE', 'WATCHING', 'ERROR'])
-    .optional()
-    .default('IDLE'),
+  watchModeStatus: z.enum(['IDLE', 'WATCHING', 'ERROR']).optional().default('IDLE'),
 })
 
-export const collectionSchema = oasCollectionSchema.merge(
-  extendedCollectionSchema,
-)
+export const collectionSchema = oasCollectionSchema.merge(extendedCollectionSchema)
 export type Collection = z.infer<typeof collectionSchema>
 export type CollectionPayload = z.input<typeof collectionSchema>

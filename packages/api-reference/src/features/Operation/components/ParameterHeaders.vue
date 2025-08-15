@@ -1,17 +1,19 @@
 <script lang="ts" setup>
-import SchemaProperty from '@/components/Content/Schema/SchemaProperty.vue'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import { ScalarIcon } from '@scalar/components'
-import type { OpenAPI, OpenAPIV3, OpenAPIV3_1 } from '@scalar/openapi-types'
+import type { OpenAPIV3_1 } from '@scalar/openapi-types'
+
+import SchemaProperty from '@/components/Content/Schema/SchemaProperty.vue'
 
 defineProps<{
-  headers: { [key: string]: OpenAPI.HeaderObject }
+  headers: { [key: string]: OpenAPIV3_1.HeaderObject }
+  breadcrumb?: string[]
 }>()
 
 function hasSchema(
-  header: OpenAPI.HeaderObject,
-): header is OpenAPIV3.HeaderObject | OpenAPIV3_1.HeaderObject {
-  return (header as OpenAPIV3.HeaderObject).schema !== undefined
+  header: OpenAPIV3_1.HeaderObject,
+): header is OpenAPIV3_1.HeaderObject {
+  return (header as OpenAPIV3_1.HeaderObject).schema !== undefined
 }
 </script>
 <template>
@@ -37,6 +39,7 @@ function hasSchema(
         </DisclosureButton>
         <DisclosurePanel>
           <SchemaProperty
+            :breadcrumb="breadcrumb ? [...breadcrumb, 'headers'] : undefined"
             v-for="(header, key) in headers"
             :key="key"
             :description="header.description"
@@ -58,11 +61,9 @@ function hasSchema(
 
   align-self: flex-start;
 }
-
 .headers-card.headers-card--open {
   align-self: initial;
 }
-
 .headers-card-title {
   padding: 6px 10px;
 
@@ -85,15 +86,6 @@ button.headers-card-title:hover {
 .headers-card-title-icon--open {
   transform: rotate(45deg);
 }
-.headers-properties-open > .headers-card-title {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  border-bottom: var(--scalar-border-width) solid var(--scalar-border-color);
-}
-.headers-properties-open {
-  width: 100%;
-}
-
 .headers-properties {
   display: flex;
   flex-direction: column;
@@ -103,11 +95,18 @@ button.headers-card-title:hover {
   border-radius: 13.5px;
   width: fit-content;
 }
-
+.headers-properties-open > .headers-card-title {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: var(--scalar-border-width) solid var(--scalar-border-color);
+}
+.headers-properties-open {
+  border-radius: var(--scalar-radius-lg);
+  width: 100%;
+}
 .headers-card .property:last-of-type {
   padding-bottom: 10px;
 }
-
 .headers-card-title > .headers-card-title-icon {
   width: 10px;
   height: 10px;

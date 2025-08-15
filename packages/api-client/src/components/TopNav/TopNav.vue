@@ -1,63 +1,98 @@
 <script setup lang="ts">
-import ScalarHotkey from '@/components/ScalarHotkey.vue'
-import { ROUTES } from '@/constants'
-import type { HotKeyEvent } from '@/libs'
-import { useWorkspace } from '@/store'
-import { useActiveEntities } from '@/store/active-entities'
 import {
-  type Icon,
   ScalarContextMenu,
   ScalarDropdownButton,
   ScalarDropdownMenu,
   ScalarFloating,
+  ScalarHotkey,
   ScalarIcon,
+  type Icon,
 } from '@scalar/components'
-import { capitalize } from '@scalar/oas-utils/helpers'
+import { LibraryIcon } from '@scalar/icons/library'
+import type { Collection } from '@scalar/oas-utils/entities/spec'
 import { useClipboard } from '@scalar/use-hooks/useClipboard'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+
+import { ROUTES } from '@/constants'
+import type { HotKeyEvent } from '@/libs'
+import { useWorkspace } from '@/store'
+import { useActiveEntities } from '@/store/active-entities'
 
 import TopNavItem from './TopNavItem.vue'
 
 const props = defineProps<{
   openNewTab: { name: string; uid: string } | null
 }>()
-const { activeRequest } = useActiveEntities()
+const { activeRequest, activeCollection } = useActiveEntities()
 const router = useRouter()
 const { events } = useWorkspace()
 const { copyToClipboard } = useClipboard()
 
 /** Nav Items list */
-const topNavItems = reactive([{ label: '', path: '', icon: 'Add' as Icon }])
+const topNavItems = reactive([
+  {
+    label: '',
+    path: '',
+    icon: 'Add' as Icon | Collection['x-scalar-icon'],
+    isCollection: false,
+  },
+])
 const activeNavItemIdx = ref(0)
 const activeNavItemIdxValue = computed(() => activeNavItemIdx.value)
+
+/**
+ * Check if the current route is a collection
+ */
+const isCollection = computed(() => {
+  return router.currentRoute.value.name?.toString().startsWith('collection.')
+})
 
 /**
  * Logic to handle adding a nav item
  * based on the current route
  */
 function handleNavLabelAdd() {
-  const activeRoute = ROUTES.find((route) => {
-    return router.currentRoute.value.name == route.name
-  })
+  // Collection
+  if (isCollection.value) {
+    topNavItems[activeNavItemIdx.value] = {
+      label: activeCollection.value?.info?.title || 'Untitled Collection',
+      path: router.currentRoute.value.path,
+      icon: activeCollection.value?.['x-scalar-icon'] || 'Collection',
+      isCollection: true,
+    }
 
-  if (!activeRoute) return
+    return
+  }
 
-  // if it's a request we can push in a request
-  if (activeRoute?.name === 'request') {
+  // Request
+  if (router.currentRoute.value.name?.toString().startsWith('request')) {
     topNavItems[activeNavItemIdx.value] = {
       label: activeRequest.value?.summary || '',
       path: router.currentRoute.value.path,
-      icon: activeRoute.icon,
+      icon: 'ExternalLink',
+      isCollection: false,
     }
-  } else {
-    // not requests so its the other nav items
-    // we can eventually be more granular
+
+    return
+  }
+
+  // Something from the sidebar
+  const activeRoute = ROUTES.find((route) => {
+    return route.to.name.startsWith(
+      router.currentRoute.value.name?.toString() ?? '',
+    )
+  })
+
+  if (activeRoute) {
     topNavItems[activeNavItemIdx.value] = {
-      label: capitalize(activeRoute?.name) || '',
+      label: activeRoute.displayName,
       path: router.currentRoute.value.path,
       icon: activeRoute.icon,
+      isCollection: false,
     }
+
+    return
   }
 }
 
@@ -73,7 +108,12 @@ function handleNavRoute() {
  * based on the route
  */
 function addNavItem() {
-  topNavItems.push({ label: '', path: '', icon: 'Add' })
+  topNavItems.push({
+    label: '',
+    path: '',
+    icon: 'Add' as Icon,
+    isCollection: false,
+  })
   activeNavItemIdx.value = topNavItems.length - 1
   handleNavLabelAdd()
 }
@@ -102,7 +142,9 @@ function removeNavItem(idx: number) {
 }
 
 const copyUrl = (idx: number) => {
-  if (!topNavItems[idx]?.path) return
+  if (!topNavItems[idx]?.path) {
+    return
+  }
 
   const fullUrl = new URL(window.location.href)
   fullUrl.pathname = topNavItems[idx].path
@@ -118,20 +160,30 @@ const closeOtherTabs = (idx: number) => {
 
 /** Handle hotkeys */
 const handleHotKey = (event?: HotKeyEvent) => {
-  if (!event) return
-  if (event.addTopNav) addNavItem()
-  if (event.closeTopNav) removeNavItem(activeNavItemIdx.value)
-  if (event.navigateTopNavLeft)
+  if (!event) {
+    return
+  }
+  if (event.addTopNav) {
+    addNavItem()
+  }
+  if (event.closeTopNav) {
+    removeNavItem(activeNavItemIdx.value)
+  }
+  if (event.navigateTopNavLeft) {
     setNavItemIdx(Math.max(activeNavItemIdx.value - 1, 0))
-  if (event.navigateTopNavRight)
+  }
+  if (event.navigateTopNavRight) {
     setNavItemIdx(Math.min(activeNavItemIdx.value + 1, topNavItems.length - 1))
+  }
   if (event.jumpToTab) {
     const tabIndex = Number(event.jumpToTab.key) - 1
     if (tabIndex >= 0 && tabIndex < topNavItems.length) {
       setNavItemIdx(tabIndex)
     }
   }
-  if (event.jumpToLastTab) setNavItemIdx(topNavItems.length - 1)
+  if (event.jumpToLastTab) {
+    setNavItemIdx(topNavItems.length - 1)
+  }
 }
 
 const addTopNavTab = (item: { name: string; uid: string }) => {
@@ -139,6 +191,7 @@ const addTopNavTab = (item: { name: string; uid: string }) => {
     label: item.name,
     path: item.uid,
     icon: 'ExternalLink',
+    isCollection: false,
   })
 }
 
@@ -156,19 +209,23 @@ onMounted(() => events.hotKeys.on(handleHotKey))
 onBeforeUnmount(() => events.hotKeys.off(handleHotKey))
 </script>
 <template>
-  <nav class="flex relative h-10 pl-2 mac:pl-[72px] t-app__top-nav">
+  <nav class="mac:pl-[72px] t-app__top-nav relative flex h-10 pl-2">
     <!-- Add a draggable overlay -->
-    <div class="absolute inset-0 app-drag-region" />
+    <div class="app-drag-region absolute inset-0" />
     <div
-      class="flex h-10 flex-1 items-center gap-1.5 text-sm font-medium pr-2.5 relative overflow-hidden">
+      class="relative flex h-10 flex-1 items-center gap-1.5 overflow-hidden pr-2.5 text-base font-medium">
       <template v-if="topNavItems.length === 1">
         <div class="h-full w-full overflow-hidden">
           <ScalarContextMenu
             triggerClass="flex custom-scroll gap-1.5 h-full items-center justify-center w-full whitespace-nowrap">
             <template #trigger>
+              <LibraryIcon
+                v-if="isCollection"
+                class="size-3.5 min-w-3.5 stroke-2"
+                :src="activeCollection?.['x-scalar-icon'] || 'Collection'" />
               <ScalarIcon
-                v-if="topNavItems[0]?.icon"
-                :icon="topNavItems[0]?.icon"
+                v-else-if="topNavItems[0]?.icon"
+                :icon="topNavItems[0]?.icon as Icon"
                 size="xs"
                 thickness="2.5" />
               <span>{{ topNavItems[0]?.label }}</span>
@@ -211,7 +268,12 @@ onBeforeUnmount(() => events.hotKeys.off(handleHotKey))
           :key="topNavItem.path"
           :active="index === activeNavItemIdxValue"
           :hotkey="(index + 1).toString()"
-          :icon="topNavItem.icon"
+          :icon="
+            topNavItem.isCollection
+              ? ((activeCollection?.['x-scalar-icon'] || 'Collection') as Icon)
+              : (topNavItem.icon as Icon)
+          "
+          :isCollection="topNavItem.isCollection || false"
           :label="topNavItem.label"
           @click="setNavItemIdx(index)"
           @close="removeNavItem(index)"
@@ -220,12 +282,12 @@ onBeforeUnmount(() => events.hotKeys.off(handleHotKey))
           @newTab="addNavItem" />
       </template>
       <button
-        class="text-c-3 hover:bg-b-3 p-1.5 rounded app-no-drag-region"
+        class="text-c-3 hover:bg-b-3 app-no-drag-region rounded p-1.5"
         type="button"
         @click="addNavItem">
         <ScalarIcon
           icon="Add"
-          size="xs"
+          size="sm"
           thickness="2.5" />
       </button>
     </div>

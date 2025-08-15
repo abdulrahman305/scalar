@@ -1,11 +1,12 @@
 <script lang="ts" setup>
-import HelpfulLink from '@/components/HelpfulLink.vue'
-import { useWorkspace } from '@/store'
 import type { ResponseInstance } from '@scalar/oas-utils/entities/spec'
-import { type HttpStatusCode, httpStatusCodes } from '@scalar/oas-utils/helpers'
+import { httpStatusCodes, type HttpStatusCode } from '@scalar/oas-utils/helpers'
 import prettyBytes from 'pretty-bytes'
 import prettyMilliseconds from 'pretty-ms'
 import { computed, ref } from 'vue'
+
+import HelpfulLink from '@/components/HelpfulLink.vue'
+import { useWorkspace } from '@/store'
 
 const props = defineProps<{ response: ResponseInstance }>()
 
@@ -14,17 +15,18 @@ const interval = ref<ReturnType<typeof setInterval>>()
 const stopwatch = ref(0)
 
 events.requestStatus.on((status) => {
-  if (status === 'start')
+  if (status === 'start') {
     interval.value = setInterval(() => (stopwatch.value += 1000), 1000)
-  else
+  } else {
     clearInterval(interval.value),
       (interval.value = undefined),
       (stopwatch.value = 0)
+  }
 })
 
 /** Size of the response */
 const getContentLength = (response: ResponseInstance) => {
-  const contentLength = parseInt(
+  const contentLength = Number.parseInt(
     response.headers?.['Content-Length'] ||
       response.headers?.['content-length'] ||
       '0',
@@ -46,7 +48,7 @@ const statusCodeInformation = computed((): HttpStatusCode | undefined => {
 })
 </script>
 <template>
-  <div class="flex gap-1.5 text-c-1">
+  <div class="text-c-1 flex gap-1.5">
     <span v-if="interval && stopwatch">{{
       prettyMilliseconds(stopwatch)
     }}</span>

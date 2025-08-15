@@ -1,7 +1,7 @@
 import { bench, describe, expect } from 'vitest'
 
-import { resolveNew } from './utils/resolveNew.ts'
-import { resolveOld } from './utils/resolveOld.ts'
+import { resolveNew } from './utils/resolveNew'
+import { resolveOld } from './utils/resolveOld'
 
 describe('single reference', () => {
   const specification = {
@@ -41,11 +41,9 @@ describe('single reference', () => {
     const result = await resolveOld(specification)
 
     // Check whether the reference was resolved
-    expect(
-      (result as any).paths['/foobar'].post.requestBody.content[
-        'application/json'
-      ].schema.example,
-    ).toBe('Hello World!')
+    expect((result as any).paths['/foobar'].post.requestBody.content['application/json'].schema.example).toBe(
+      'Hello World!',
+    )
   })
 
   bench('@scalar/openapi-parser', async () => {
@@ -53,10 +51,8 @@ describe('single reference', () => {
     const { schema } = await resolveNew(specification)
 
     // Check whether the reference was resolved
-    expect(
-      (schema as any).paths['/foobar'].post.requestBody.content[
-        'application/json'
-      ].schema.example,
-    ).toBe('Hello World!')
+    expect((schema as any).paths['/foobar'].post.requestBody.content['application/json'].schema.example).toBe(
+      'Hello World!',
+    )
   })
 })

@@ -5,11 +5,8 @@ import { getCookie } from 'hono/cookie'
 /**
  * Handles authentication for incoming requests based on the OpenAPI specification.
  */
-export function handleAuthentication(
-  schema?: OpenAPI.Document,
-  operation?: OpenAPI.Operation,
-) {
-  return async (c: Context, next: () => Promise<void>) => {
+export function handleAuthentication(schema?: OpenAPI.Document, operation?: OpenAPI.Operation) {
+  return async (c: Context, next: () => Promise<void>): Promise<Response | void> => {
     const operationSecuritySchemes = operation?.security || schema?.security
 
     if (operationSecuritySchemes && operationSecuritySchemes.length > 0) {
@@ -97,8 +94,7 @@ export function handleAuthentication(
 
         switch (authScheme) {
           case 'Basic':
-            wwwAuthenticateValue +=
-              ' realm="Scalar Mock Server", charset="UTF-8"'
+            wwwAuthenticateValue += ' realm="Scalar Mock Server", charset="UTF-8"'
             break
           case 'Bearer':
             wwwAuthenticateValue +=

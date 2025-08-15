@@ -6,18 +6,14 @@ import {
   collectionSchema,
 } from '@scalar/oas-utils/entities/spec'
 import type { Workspace } from '@scalar/oas-utils/entities/workspace'
-import { LS_KEYS } from '@scalar/oas-utils/helpers'
+import { LS_KEYS } from '@scalar/helpers/object/local-storage'
 import { mutationFactory } from '@scalar/object-utils/mutator-record'
 import { reactive } from 'vue'
 
 /** Initiate the workspace collections */
 export function createStoreCollections(useLocalStorage: boolean) {
   const collections = reactive<Record<string, Collection>>({})
-  const collectionMutators = mutationFactory(
-    collections,
-    reactive({}),
-    useLocalStorage && LS_KEYS.COLLECTION,
-  )
+  const collectionMutators = mutationFactory(collections, reactive({}), useLocalStorage && LS_KEYS.COLLECTION)
 
   return {
     collections,
@@ -38,14 +34,11 @@ export function extendedCollectionDataFactory({
   tagMutators,
   serverMutators,
 }: StoreContext) {
-  const addCollection = (payload: CollectionPayload, workspaceUid: string) => {
+  const addCollection = (payload: CollectionPayload, workspaceUid: Workspace['uid']) => {
     const collection = collectionSchema.parse(payload)
     const workspace = workspaces[workspaceUid]
     if (workspace) {
-      workspaceMutators.edit(workspaceUid, 'collections', [
-        ...workspace.collections,
-        collection.uid,
-      ])
+      workspaceMutators.edit(workspaceUid, 'collections', [...workspace.collections, collection.uid])
     }
 
     collectionMutators.add(collection)
@@ -54,7 +47,9 @@ export function extendedCollectionDataFactory({
   }
 
   const deleteCollection = (collection: Collection, workspace: Workspace) => {
-    if (!workspace.uid) return
+    if (!workspace.uid) {
+      return
+    }
 
     if (collections[collection.uid]?.info?.title === 'Drafts') {
       console.warn('The drafts collection cannot be deleted')
@@ -75,12 +70,12 @@ export function extendedCollectionDataFactory({
     // Remove requests
     collection.requests.forEach((uid) => {
       const request = requests[uid]
-      if (!request) return
+      if (!request) {
+        return
+      }
 
       requestMutators.delete(uid)
-      request.examples.forEach(
-        (e) => requestExamples[e] && requestExampleMutators.delete(e),
-      )
+      request.examples.forEach((e) => requestExamples[e] && requestExampleMutators.delete(e))
     })
 
     // Remove servers
@@ -103,7 +98,7 @@ export function extendedCollectionDataFactory({
   const addCollectionEnvironment = (
     environmentName: string,
     environment: XScalarEnvironment,
-    collectionUid: string,
+    collectionUid: Collection['uid'],
   ) => {
     const collection = collections[collectionUid]
     if (collection) {
@@ -115,20 +110,13 @@ export function extendedCollectionDataFactory({
     }
   }
 
-  const removeCollectionEnvironment = (
-    environmentName: string,
-    collectionUid: string,
-  ) => {
+  const removeCollectionEnvironment = (environmentName: string, collectionUid: Collection['uid']) => {
     const collection = collections[collectionUid]
     if (collection) {
       const currentEnvironments = collection['x-scalar-environments'] || {}
       if (environmentName in currentEnvironments) {
         delete currentEnvironments[environmentName]
-        collectionMutators.edit(
-          collectionUid,
-          'x-scalar-environments',
-          currentEnvironments,
-        )
+        collectionMutators.edit(collectionUid, 'x-scalar-environments', currentEnvironments)
       }
     }
   }

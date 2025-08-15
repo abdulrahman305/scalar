@@ -1,10 +1,6 @@
-import {
-  autocompletion,
-  closeBrackets,
-  closeBracketsKeymap,
-  completionKeymap,
-} from '@codemirror/autocomplete'
+import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
 import { indentWithTab, insertNewline } from '@codemirror/commands'
+import { history, historyKeymap } from '@codemirror/commands'
 import { css } from '@codemirror/lang-css'
 import { html } from '@codemirror/lang-html'
 import { json } from '@codemirror/lang-json'
@@ -30,17 +26,7 @@ import {
   placeholder as placeholderExtension,
 } from '@codemirror/view'
 import { ScalarIcon } from '@scalar/components'
-import {
-  type MaybeRefOrGetter,
-  type Ref,
-  computed,
-  h,
-  onBeforeUnmount,
-  ref,
-  render,
-  toValue,
-  watch,
-} from 'vue'
+import { type MaybeRefOrGetter, type Ref, computed, h, onBeforeUnmount, ref, render, toValue, watch } from 'vue'
 
 import { customTheme } from '../themes'
 import type { CodeMirrorLanguage } from '../types'
@@ -117,10 +103,14 @@ export const useCodeMirror = (
 
   /** Set the codemirror content value */
   const setCodeMirrorContent = (newValue = '') => {
-    if (!codeMirror.value) return
+    if (!codeMirror.value) {
+      return
+    }
 
     // No need to set the CodeMirror content if nothing has changed
-    if (codeMirror.value.state.doc.toString() === newValue) return
+    if (codeMirror.value.state.doc.toString() === newValue) {
+      return
+    }
 
     codeMirror.value.dispatch({
       changes: {
@@ -129,10 +119,7 @@ export const useCodeMirror = (
         insert: newValue,
       },
       selection: {
-        anchor: Math.min(
-          codeMirror.value.state.selection.main.anchor,
-          newValue.length,
-        ),
+        anchor: Math.min(codeMirror.value.state.selection.main.anchor, newValue.length),
       },
     })
   }
@@ -157,7 +144,7 @@ export const useCodeMirror = (
     placeholder: toValue(params.placeholder),
   }))
 
-  // Unmounts CodeMirror if it’s mounted already, and mounts CodeMirror, if the given ref exists.
+  // Unmounts CodeMirror if it's mounted already, and mounts CodeMirror, if the given ref exists.
   watch(
     params.codeMirrorRef,
     () => {
@@ -185,7 +172,9 @@ export const useCodeMirror = (
       })
 
       // Set the initial content if a provider is not in use
-      if (!hasProvider(params)) setCodeMirrorContent(toValue(params.content))
+      if (!hasProvider(params)) {
+        setCodeMirrorContent(toValue(params.content))
+      }
     }
   }
 
@@ -206,21 +195,22 @@ export const useCodeMirror = (
   watch(
     extensionConfig,
     () => {
-      if (!codeMirror.value) return
-      // If a provider is
-      else {
-        const provider = hasProvider(params) ? toValue(params.provider) : null
-        const extensions = getCodeMirrorExtensions({
-          ...extensionConfig.value,
-          provider,
-        })
-
-        requestAnimationFrame(() => {
-          codeMirror.value?.dispatch({
-            effects: StateEffect.reconfigure.of(extensions),
-          })
-        })
+      if (!codeMirror.value) {
+        return
       }
+      // If a provider is
+
+      const provider = hasProvider(params) ? toValue(params.provider) : null
+      const extensions = getCodeMirrorExtensions({
+        ...extensionConfig.value,
+        provider,
+      })
+
+      requestAnimationFrame(() => {
+        codeMirror.value?.dispatch({
+          effects: StateEffect.reconfigure.of(extensions),
+        })
+      })
     },
     { immediate: true },
   )
@@ -232,7 +222,9 @@ export const useCodeMirror = (
     () => toValue(params.content),
     () => {
       // When a provider is in use we do not map the content value back to the codemirror instance
-      if (hasProvider(params)) return
+      if (hasProvider(params)) {
+        return
+      }
 
       setCodeMirrorContent(toValue(params.content))
     },
@@ -299,14 +291,16 @@ function getCodeMirrorExtensions({
 }) {
   const extensions: Extension[] = [
     highlightSpecialChars(),
+    history(),
+    keymap.of(historyKeymap),
     syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
     EditorView.theme({
       '.cm-line': {
-        lineHeight: '20px',
+        lineHeight: '22px',
         padding: '0 2px 0 4px',
       },
       '.cm-gutterElement': {
-        lineHeight: '20px',
+        lineHeight: '22px',
       },
       '.cm-tooltip': {
         border: '1px solid #f5c6cb',
@@ -327,14 +321,16 @@ function getCodeMirrorExtensions({
     }),
     // Listen to updates
     EditorView.updateListener.of((v) => {
-      if (!v.docChanged) return
+      if (!v.docChanged) {
+        return
+      }
       onChange?.(v.state.doc.toString())
     }),
     EditorView.domEventHandlers({
-      blur: (event, view) => {
+      blur: (_event, view) => {
         onBlur?.(view.state.doc.toString())
       },
-      focus: (event, view) => {
+      focus: (_event, view) => {
         onFocus?.(view.state.doc.toString())
       },
     }),
@@ -344,10 +340,14 @@ function getCodeMirrorExtensions({
   ]
 
   // Enable the provider
-  if (provider) extensions.push(provider)
+  if (provider) {
+    extensions.push(provider)
+  }
 
   // Add the theme as needed
-  if (!withoutTheme) extensions.push(customTheme)
+  if (!withoutTheme) {
+    extensions.push(customTheme)
+  }
 
   // Read only
   if (readOnly) {
@@ -361,8 +361,9 @@ function getCodeMirrorExtensions({
       bracketMatching(),
     )
 
-    if (!disableCloseBrackets)
+    if (!disableCloseBrackets) {
       extensions.push(closeBrackets(), keymap.of([...closeBracketsKeymap]))
+    }
 
     if (disableTabIndent) {
       extensions.push(
@@ -452,7 +453,9 @@ function getCodeMirrorExtensions({
   }
 
   // Highlight variables
-  if (withVariables) extensions.push(variables())
+  if (withVariables) {
+    extensions.push(variables())
+  }
 
   if (disableEnter) {
     extensions.push(

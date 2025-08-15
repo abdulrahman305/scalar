@@ -50,35 +50,29 @@ Then, you can use the components in your Vue components. For example:
 <script
   setup
   lang="ts">
-  import { ScalarIcon } from '@scalar/components'
+  import { ScalarButton } from '@scalar/components'
 </script>
 <template>
-  <ScalarIcon
-    icon="Logo"
-    size="lg" />
+  <ScalarButton />
 </template>
 ```
 
 ## Customizing Components
 
-Most components can be customized using props. For example, the `ScalarIcon` component can be customized with the `size` prop to change the size of the icon.
+Most components can be customized using props. For example, the `ScalarButton` component can be customized with the `variant` prop to change the variant of the button.
 
 ```html
-<ScalarIcon
-  icon="Logo"
-  size="lg" />
+<ScalarButton variant="ghost" />
 ```
 
 However, sometimes you need to override the default styles. Most components (soon to be all) use the `useBindCx` function to apply the Tailwind classes to the component. The function intelligently merges the component's classes with the provided classes allowing you to override preset classes.
 
 ```html
-<!-- An icon you need to be really big -->
-<ScalarIcon
-  icon="Logo"
-  class="size-24" />
+<!-- A button you need to be really big -->
+<ScalarButton class="h-24 w-48" />
 ```
 
-This will apply the `size-24` class to the icon and remove the `size-full` class that would normally be applied by default. For more information see the [useBindCx](https://github.com/scalar/scalar/blob/main/packages/components/src/hooks/useBindCx.ts) function.
+This will apply the `h-24 w-48` classes to the button and remove the sizing classes that would normally be applied by default. For more information see the [useBindCx](https://github.com/scalar/scalar/blob/main/packages/use-hooks/src/useBindCx/useBindCx.ts) function.
 
 ## Floating Components
 
@@ -111,6 +105,12 @@ Since you can directly target the reference element with Tailwind classes any cl
 
 The components package uses the same [CSS Layers](https://developer.mozilla.org/en-US/docs/Web/CSS/@layer) as the themes package to apply the theme styles. For more information see the [themes README](https://github.com/scalar/scalar/tree/main/packages/themes).
 
+## Testing
+
+The components library uses both unit testing (vitest) and snapshot testing to ensure quality and visual consistency. Snapshot tests are written using Playwright and capture screenshots of Storybook stories to detect visual regressions.
+
+For detailed information about the testing setup, see the [test README](./test/README.md).
+
 ## Contributing
 
 All pull requests should include the following checklist:
@@ -129,4 +129,5 @@ All pull requests should include the following checklist:
 - [ ] Allows overriding of Tailwind classes where applicable (see useBindCx)
 - [ ] Has stories showcasing any applicable variants
 - [ ] Has unit tests covering any applicable interactions
+- [ ] Has snapshot tests covering any visual variations
 ```

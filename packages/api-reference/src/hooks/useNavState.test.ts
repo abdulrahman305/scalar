@@ -1,24 +1,76 @@
 import { useConfig } from '@/hooks/useConfig'
 import type { Heading, Tag } from '@scalar/types/legacy'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { apiReferenceConfigurationSchema } from '@scalar/types/api-reference'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { computed, inject, ref } from 'vue'
 
 import { useNavState } from './useNavState'
 
+declare global {
+  interface Window {
+    location: Location
+  }
+}
+
 // Mock the useConfig hook
 vi.mock('@/hooks/useConfig', () => ({
-  useConfig: vi.fn().mockReturnValue({}),
+  useConfig: vi.fn().mockReturnValue({ value: {} }),
 }))
+
+// Mock vue's inject
+vi.mock('vue', () => {
+  const actual = require('vue')
+  return {
+    ...actual,
+    inject: vi.fn(),
+  }
+})
+
+// Save original window.location
+const originalLocation = window.location
 
 describe('useNavState', () => {
   let navState: ReturnType<typeof useNavState>
 
   beforeEach(() => {
-    // Reset URL between tests
-    window.history.pushState({}, '', '/')
+    // Mock window.location
+    delete (window as any).location
+    window.location = {
+      ...originalLocation,
+      pathname: '/',
+      hash: '',
+      assign: vi.fn(),
+      replace: vi.fn(),
+      reload: vi.fn(),
+    }
+
+    // Reset the mock state for each test
+    vi.mocked(inject).mockReturnValue({
+      isIntersectionEnabled: ref(false),
+      hash: ref(''),
+      hashPrefix: ref(''),
+    })
+
     navState = useNavState()
   })
 
+  afterEach(() => {
+    // Restore original window.location
+    window.location = originalLocation
+  })
+
   describe('hash management', () => {
+    it('should handle custom hash prefix', () => {
+      vi.mocked(inject).mockReturnValue({
+        isIntersectionEnabled: ref(false),
+        hash: ref('test-hash'),
+        hashPrefix: ref('custom-prefix-'),
+      })
+
+      const navState = useNavState()
+      expect(navState.getFullHash('test')).toBe('custom-prefix-test')
+    })
+
     it('should update hash correctly', () => {
       window.location.hash = '#test-hash'
       navState.updateHash()
@@ -33,7 +85,7 @@ describe('useNavState', () => {
     it('should get reference hash without prefix', () => {
       navState.setHashPrefix('prefix-')
       window.location.hash = '#prefix-test-hash'
-      expect(navState.getReferenceHash()).toBe('test-hash')
+      expect(navState.getReferenceId()).toBe('test-hash')
     })
   })
 
@@ -48,9 +100,7 @@ describe('useNavState', () => {
     })
 
     it('should generate model ID', () => {
-      expect(navState.getModelId({ name: 'Test Model' })).toBe(
-        'model/test-model',
-      )
+      expect(navState.getModelId({ name: 'Test Model' })).toBe('model/test-model')
     })
 
     it('should generate tag ID', () => {
@@ -64,7 +114,7 @@ describe('useNavState', () => {
 
     it('should generate operation ID', () => {
       const operation = {
-        httpVerb: 'GET',
+        method: 'get',
         path: '/test',
       } as const
       const parentTag = {
@@ -72,27 +122,25 @@ describe('useNavState', () => {
         description: 'Test Description',
         operations: [],
       } satisfies Tag
-      expect(navState.getOperationId(operation, parentTag)).toBe(
-        'tag/test-tag/GET/test',
-      )
+      expect(navState.getOperationId(operation, parentTag)).toBe('tag/test-tag/get/test')
     })
 
     it('should generate webhook ID', () => {
-      expect(
-        navState.getWebhookId({ name: 'Test Webhook', method: 'POST' }),
-      ).toBe('webhook/POST/test-webhook')
+      expect(navState.getWebhookId({ name: 'Test Webhook', method: 'POST' })).toBe('webhook/POST/test-webhook')
     })
   })
 
   describe('custom slug generation', () => {
     beforeEach(() => {
-      const mockConfig = {
-        generateHeadingSlug: vi.fn().mockReturnValue('custom-heading'),
-        generateModelSlug: vi.fn().mockReturnValue('custom-model'),
-        generateTagSlug: vi.fn().mockReturnValue('custom-tag'),
-        generateOperationSlug: vi.fn().mockReturnValue('custom-operation'),
-        generateWebhookSlug: vi.fn().mockReturnValue('custom-webhook'),
-      }
+      const mockConfig = computed(() =>
+        apiReferenceConfigurationSchema.parse({
+          generateHeadingSlug: vi.fn().mockReturnValue('custom-heading'),
+          generateModelSlug: vi.fn().mockReturnValue('custom-model'),
+          generateTagSlug: vi.fn().mockReturnValue('custom-tag'),
+          generateOperationSlug: vi.fn().mockReturnValue('custom-operation'),
+          generateWebhookSlug: vi.fn().mockReturnValue('custom-webhook'),
+        }),
+      )
       vi.mocked(useConfig).mockReturnValue(mockConfig)
       navState = useNavState()
     })
@@ -107,9 +155,7 @@ describe('useNavState', () => {
     })
 
     it('should use custom model slug generator', () => {
-      expect(navState.getModelId({ name: 'Test Model' })).toBe(
-        'model/custom-model',
-      )
+      expect(navState.getModelId({ name: 'Test Model' })).toBe('model/custom-model')
     })
 
     it('should use custom tag slug generator', () => {
@@ -124,13 +170,84 @@ describe('useNavState', () => {
 
   describe('path routing', () => {
     it('should handle path routing ID extraction', () => {
-      navState.pathRouting.value = { basePath: '/docs' }
+      const mockConfig = computed(() => {
+        return apiReferenceConfigurationSchema.parse({
+          pathRouting: {
+            basePath: '/docs',
+          },
+        })
+      })
+      vi.mocked(useConfig).mockReturnValue(mockConfig)
+      navState = useNavState()
+
       expect(navState.getPathRoutingId('/docs/test-path')).toBe('test-path')
+    })
+
+    it('should handle path routing ID extraction with getReferenceId', () => {
+      const mockConfig = computed(() => {
+        return apiReferenceConfigurationSchema.parse({
+          pathRouting: {
+            basePath: '/docs',
+          },
+        })
+      })
+      vi.mocked(useConfig).mockReturnValue(mockConfig)
+      navState = useNavState()
+      window.location.pathname = '/docs/test-path'
+
+      expect(navState.getReferenceId()).toBe('test-path')
     })
 
     it('should get section ID from hash', () => {
       navState.hash.value = 'tag/test-tag/operation'
       expect(navState.getSectionId()).toBe('tag/test-tag')
+    })
+  })
+
+  describe('getHashedUrl', () => {
+    it('should generate URL with hash routing', () => {
+      const mockConfig = computed(() => apiReferenceConfigurationSchema.parse({}))
+      vi.mocked(useConfig).mockReturnValue(mockConfig)
+
+      vi.mocked(inject).mockReturnValue({
+        isIntersectionEnabled: ref(false),
+        hash: ref(''),
+        hashPrefix: ref('prefix-'),
+      })
+      navState = useNavState()
+
+      const result = navState.getHashedUrl('test-hash', 'https://example.com', '?param=value')
+      expect(result).toBe('https://example.com/?param=value#prefix-test-hash')
+    })
+
+    it('should generate URL with path routing', () => {
+      const mockConfig = computed(() => {
+        return apiReferenceConfigurationSchema.parse({
+          pathRouting: {
+            basePath: '/docs',
+          },
+        })
+      })
+      vi.mocked(useConfig).mockReturnValue(mockConfig)
+      navState = useNavState()
+
+      const result = navState.getHashedUrl('test-path', 'https://example.com', '?param=value')
+      expect(result).toBe('https://example.com/docs/test-path?param=value')
+    })
+
+    it('should preserve search params when using path routing', () => {
+      const mockConfig = computed(() => {
+        return apiReferenceConfigurationSchema.parse({
+          pathRouting: {
+            basePath: '/docs',
+          },
+        })
+      })
+      vi.mocked(useConfig).mockReturnValue(mockConfig)
+      navState = useNavState()
+
+      const result = navState.getHashedUrl('test-path', 'https://example.com', '?param1=value1&param2=value2')
+      expect(result).toBe('https://example.com/docs/test-path?param1=value1&param2=value2')
     })
   })
 })

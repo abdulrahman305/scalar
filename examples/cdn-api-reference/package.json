@@ -12,7 +12,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
     "dev": "nodemon --exec \"vite-node src/index.ts\" --ext ts --quiet --watch ./",
@@ -26,11 +26,10 @@
   "dependencies": {
     "@fastify/static": "^7.0.1",
     "@scalar/api-reference": "workspace:*",
-    "@scalar/play-button": "workspace:*",
     "fastify": "^4.26.2"
   },
   "devDependencies": {
-    "@types/node": "^20.17.10",
-    "vite": "^5.4.10"
+    "@types/node": "catalog:*",
+    "vite": "catalog:*"
   }
 }

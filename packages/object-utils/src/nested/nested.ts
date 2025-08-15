@@ -4,28 +4,14 @@
  * Derived from @url https://github.com/react-hook-form/react-hook-form/tree/011fad503cc8d4543892f8e847b9bd58c1d9400f/src/types/path
  *
  */
-import type {
-  ArrayKey,
-  BrowserNativeObject,
-  IsAny,
-  IsEqual,
-  IsTuple,
-  Primitive,
-  TupleKeys,
-} from './common'
-
-type FieldValues = Record<string, any>
+import type { ArrayKey, BrowserNativeObject, IsAny, IsEqual, IsTuple, Primitive, TupleKeys } from './common'
 
 /**
  * Helper function to break apart T1 and check if any are equal to T2
  *
  * See {@link IsEqual}
  */
-type AnyIsEqual<T1, T2> = T1 extends T2
-  ? IsEqual<T1, T2> extends true
-    ? true
-    : never
-  : never
+type AnyIsEqual<T1, T2> = T1 extends T2 ? (IsEqual<T1, T2> extends true ? true : never) : never
 
 /**
  * Helper type for recursively constructing paths through a type.
@@ -34,9 +20,7 @@ type AnyIsEqual<T1, T2> = T1 extends T2
  *
  * See {@link Path}
  */
-type PathImpl<K extends string | number, V, TraversedTypes> = V extends
-  | Primitive
-  | BrowserNativeObject
+type PathImpl<K extends string | number, V, TraversedTypes> = V extends Primitive | BrowserNativeObject
   ? `${K}`
   : // Check so that we don't recurse into the same type
     // by ensuring that the types are mutually assignable
@@ -51,16 +35,15 @@ type PathImpl<K extends string | number, V, TraversedTypes> = V extends
  *
  * See {@link Path}
  */
-type PathInternal<T, TraversedTypes = T> =
-  T extends ReadonlyArray<infer V>
-    ? IsTuple<T> extends true
-      ? {
-          [K in TupleKeys<T>]-?: PathImpl<K & string, T[K], TraversedTypes>
-        }[TupleKeys<T>]
-      : PathImpl<ArrayKey, V, TraversedTypes>
-    : {
-        [K in keyof T]-?: PathImpl<K & string, T[K], TraversedTypes>
-      }[keyof T]
+type PathInternal<T, TraversedTypes = T> = T extends ReadonlyArray<infer V>
+  ? IsTuple<T> extends true
+    ? {
+        [K in TupleKeys<T>]-?: PathImpl<K & string, T[K], TraversedTypes>
+      }[TupleKeys<T>]
+    : PathImpl<ArrayKey, V, TraversedTypes>
+  : {
+      [K in keyof T]-?: PathImpl<K & string, T[K], TraversedTypes>
+    }[keyof T]
 
 /**
  * Type which eagerly collects all paths through a type
@@ -75,20 +58,13 @@ type PathInternal<T, TraversedTypes = T> =
 type Path<T> = T extends any ? PathInternal<T> : never
 
 /**
- * See {@link Path}
- */
-type FieldPath<TFieldValues extends FieldValues> = Path<TFieldValues>
-
-/**
  * Helper type for recursively constructing paths through a type.
  * This actually constructs the strings and recurses into nested
  * object types.
  *
  * See {@link ArrayPath}
  */
-type ArrayPathImpl<K extends string | number, V, TraversedTypes> = V extends
-  | Primitive
-  | BrowserNativeObject
+type ArrayPathImpl<K extends string | number, V, TraversedTypes> = V extends Primitive | BrowserNativeObject
   ? IsAny<V> extends true
     ? string
     : never
@@ -113,16 +89,15 @@ type ArrayPathImpl<K extends string | number, V, TraversedTypes> = V extends
  *
  * See {@link ArrayPath}
  */
-type ArrayPathInternal<T, TraversedTypes = T> =
-  T extends ReadonlyArray<infer V>
-    ? IsTuple<T> extends true
-      ? {
-          [K in TupleKeys<T>]-?: ArrayPathImpl<K & string, T[K], TraversedTypes>
-        }[TupleKeys<T>]
-      : ArrayPathImpl<ArrayKey, V, TraversedTypes>
-    : {
-        [K in keyof T]-?: ArrayPathImpl<K & string, T[K], TraversedTypes>
-      }[keyof T]
+type ArrayPathInternal<T, TraversedTypes = T> = T extends ReadonlyArray<infer V>
+  ? IsTuple<T> extends true
+    ? {
+        [K in TupleKeys<T>]-?: ArrayPathImpl<K & string, T[K], TraversedTypes>
+      }[TupleKeys<T>]
+    : ArrayPathImpl<ArrayKey, V, TraversedTypes>
+  : {
+      [K in keyof T]-?: ArrayPathImpl<K & string, T[K], TraversedTypes>
+    }[keyof T]
 
 /**
  * Type which eagerly collects all paths through a type which point to an array
@@ -136,11 +111,6 @@ type ArrayPathInternal<T, TraversedTypes = T> =
 // We want to explode the union type and process each individually
 // so assignable types don't leak onto the stack from the base.
 type ArrayPath<T> = T extends any ? ArrayPathInternal<T> : never
-
-/**
- * See {@link ArrayPath}
- */
-type FieldArrayPath<TFieldValues extends FieldValues> = ArrayPath<TFieldValues>
 
 /**
  * Type to evaluate the type which the given path points to.
@@ -172,61 +142,6 @@ type PathValue<T, P extends Path<T> | ArrayPath<T>> = T extends any
         : never
   : never
 
-/**
- * See {@link PathValue}
- */
-type FieldPathValue<
-  TFieldValues extends FieldValues,
-  TFieldPath extends FieldPath<TFieldValues>,
-> = PathValue<TFieldValues, TFieldPath>
-
-/**
- * See {@link PathValue}
- */
-// type FieldArrayPathValue<
-//   TFieldValues extends FieldValues,
-//   TFieldArrayPath extends FieldArrayPath<TFieldValues>,
-// > = PathValue<TFieldValues, TFieldArrayPath>
-
-/**
- * Type to evaluate the type which the given paths point to.
- * @typeParam TFieldValues - field values which are indexed by the paths
- * @typeParam TPath        - paths into the deeply nested field values
- * @example
- * ```
- * FieldPathValues<{foo: {bar: string}}, ['foo', 'foo.bar']>
- *   = [{bar: string}, string]
- * ```
- */
-// type FieldPathValues<
-//   TFieldValues extends FieldValues,
-//   TPath extends FieldPath<TFieldValues>[] | readonly FieldPath<TFieldValues>[],
-// > = {} & {
-//   [K in keyof TPath]: FieldPathValue<
-//     TFieldValues,
-//     TPath[K] & FieldPath<TFieldValues>
-//   >
-// }
-
-/**
- * Type which eagerly collects all paths through a fieldType that matches a give type
- * @typeParam TFieldValues - field values which are indexed by the paths
- * @typeParam TValue       - the value you want to match into each type
- * @example
- * ```typescript
- * FieldPathByValue<{foo: {bar: number}, baz: number, bar: string}, number>
- *   = 'foo.bar' | 'baz'
- * ```
- */
-type FieldPathByValue<TFieldValues extends FieldValues, TValue> = {
-  [Key in FieldPath<TFieldValues>]: FieldPathValue<
-    TFieldValues,
-    Key
-  > extends TValue
-    ? Key
-    : never
-}[FieldPath<TFieldValues>]
-
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
@@ -238,16 +153,14 @@ type FieldPathByValue<TFieldValues extends FieldValues, TValue> = {
  *
  * With Array: `'foo.1.bar'`
  */
-export function setNestedValue<T, P extends Path<T>>(
-  obj: T,
-  path: P,
-  value: PathValue<T, P>,
-) {
+export function setNestedValue<T, P extends Path<T>>(obj: T, path: P, value: PathValue<T, P>) {
   const keys = path.split('.')
 
   // Loop over to get the nested object reference. Then assign the value to it
   keys.reduce((acc, current, idx) => {
-    if (idx === keys.length - 1) acc[current] = value
+    if (idx === keys.length - 1) {
+      acc[current] = value
+    }
 
     return acc[current]
   }, obj as any)
@@ -272,4 +185,4 @@ export function getNestedValue<T, P extends Path<T>>(obj: T, path: P) {
 }
 
 /** Export the path and path value types to create other setter functions */
-export { type Path, type PathValue }
+export type { Path, PathValue }

@@ -6,7 +6,7 @@ const EXAMPLE_AUTHORIZATION_CODE = 'super-secret-token'
 /**
  * Responds with an HTML page that simulates an OAuth 2.0 authorization page.
  */
-export function respondWithAuthorizePage(c: Context, title: string = '') {
+export function respondWithAuthorizePage(c: Context, title = '') {
   const redirectUri = c.req.query('redirect_uri')
   const state = c.req.query('state')
 
@@ -30,10 +30,17 @@ export function respondWithAuthorizePage(c: Context, title: string = '') {
       redirectUrl.searchParams.set('state', state)
     }
 
-    const htmlContent = generateAuthorizationHtml(redirectUrl.toString(), title)
+    const deniedUrl = new URL(redirectUri)
+    if (state) {
+      deniedUrl.searchParams.set('state', state)
+    }
+    deniedUrl.searchParams.set('error', 'access_denied')
+    deniedUrl.searchParams.set('error_description', 'User has denied the authorization request')
+
+    const htmlContent = generateAuthorizationHtml(redirectUrl.toString(), deniedUrl.toString(), title)
 
     return c.html(htmlContent)
-  } catch (error) {
+  } catch {
     return c.html(
       generateErrorHtml(
         'Invalid redirect_uri format',
@@ -44,7 +51,7 @@ export function respondWithAuthorizePage(c: Context, title: string = '') {
   }
 }
 
-function generateAuthorizationHtml(redirectUrl: string, title: string = '') {
+function generateAuthorizationHtml(redirectUrl: string, deniedUrl: string, title = '') {
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -74,11 +81,11 @@ function generateAuthorizationHtml(redirectUrl: string, title: string = '') {
                 This application is requesting access to your account. By granting authorization, you allow the application to perform certain actions on your behalf.
               </p>
               <p>
-                If you’re comfortable with the access being requested, click the button below to grant authorization:
+                If you're comfortable with the access being requested, click the button below to grant authorization:
               </p>
             </div>
             <div class="px-6 py-4 pt-0 flex justify-between">
-              <a href="javascript:history.back()" class="inline-block px-6 py-2 text-gray-600 rounded border" aria-label="Cancel authorization">
+              <a href="${deniedUrl}" class="inline-block px-6 py-2 text-gray-600 rounded border" aria-label="Cancel authorization">
                 Cancel
               </a>
               <a href="${redirectUrl}" class="inline-block px-6 py-2 bg-black text-white rounded transition-colors duration-300 hover:bg-gray-800" aria-label="Authorize application">
