@@ -27,8 +27,9 @@ import { externalValueResolver, loadingStatus, refsEverywhere, restoreOriginalRe
 import type { Record } from '@sinclair/typebox'
 import { Value } from '@sinclair/typebox/value'
 import { deepClone } from '@/helpers/deep-clone'
+import { measureAsync } from '@scalar/helpers/testing/measure'
 
-type DocumentConfiguration = Config &
+export type DocumentConfiguration = Config &
   PartialDeep<{
     'x-scalar-reference-config': {
       tagSort: TraverseSpecOptions['tagsSorter']
@@ -38,6 +39,16 @@ type DocumentConfiguration = Config &
       getWebhookId: TraverseSpecOptions['getWebhookId']
       getModelId: TraverseSpecOptions['getModelId']
       getTagId: TraverseSpecOptions['getTagId']
+      generateOperationSlug?: (details: {
+        path: string
+        operationId?: string
+        method: string
+        summary?: string
+      }) => string
+      generateHeadingSlug?: (details: { slug?: string }) => string
+      generateTagSlug?: (details: { name?: string }) => string
+      generateModelSlug?: (details: { name?: string }) => string
+      generateWebhookSlug?: (details: { name: string; method: string }) => string
     }
   }>
 
@@ -122,7 +133,7 @@ async function loadDocument(workspaceDocument: WorkspaceDocumentInput) {
  * @param input - The workspace document input (either UrlDoc or ObjectDoc)
  * @returns The URL string if present, otherwise undefined
  */
-const getOrigin = (input: WorkspaceDocumentInput) => {
+const getDocumentSource = (input: WorkspaceDocumentInput) => {
   if ('url' in input) {
     return input.url
   }
@@ -502,7 +513,7 @@ export const createWorkspaceStore = (workspaceProps?: WorkspaceProps): Workspace
   }
 
   // Add a document to the store synchronously from an in-memory OpenAPI document
-  async function addInMemoryDocument(input: ObjectDoc & { initialize?: boolean; origin?: string }) {
+  async function addInMemoryDocument(input: ObjectDoc & { initialize?: boolean; documentSource?: string }) {
     const { name, meta } = input
     const inputDocument = upgrade(deepClone(input.document)).specification
 
@@ -523,7 +534,7 @@ export const createWorkspaceStore = (workspaceProps?: WorkspaceProps): Workspace
       // Store the overrides for this document, or an empty object if none are provided
       overrides[name] = input.overrides ?? {}
       // Store the document metadata for this document, setting the origin if provided
-      documentMeta[name] = { origin: input.origin }
+      documentMeta[name] = { documentSource: input.documentSource }
     }
 
     const strictDocument: UnknownObject = createMagicProxy({ ...inputDocument, ...meta })
@@ -536,7 +547,7 @@ export const createWorkspaceStore = (workspaceProps?: WorkspaceProps): Workspace
         treeShake: false,
         plugins: [fetchUrls(), externalValueResolver(), refsEverywhere()],
         urlMap: true,
-        origin: documentMeta[name]?.origin, // use the document origin (if provided) as the base URL for resolution
+        origin: documentMeta[name]?.documentSource, // use the document origin (if provided) as the base URL for resolution
       })
 
       // We coerce the values only when the document is not preprocessed by the server-side-store
@@ -568,39 +579,51 @@ export const createWorkspaceStore = (workspaceProps?: WorkspaceProps): Workspace
   async function addDocument(input: WorkspaceDocumentInput) {
     const { name, meta } = input
 
-    const resolve = await loadDocument(input)
+    const resolve = await measureAsync('loadDocument', async () => await loadDocument(input))
 
-    if (!resolve.ok) {
-      console.error(`Failed to fetch document '${name}': request was not successful`)
+    // Log the time taken to add a document
+    await measureAsync('addDocument', async () => {
+      if (!resolve.ok) {
+        console.error(`Failed to fetch document '${name}': request was not successful`)
 
-      workspace.documents[name] = {
-        ...meta,
-        openapi: '3.1.0',
-        info: {
-          title: `Document '${name}' could not be loaded`,
-          version: 'unknown',
-        },
+        workspace.documents[name] = {
+          ...meta,
+          openapi: '3.1.0',
+          info: {
+            title: `Document '${name}' could not be loaded`,
+            version: 'unknown',
+          },
+        }
+
+        return
       }
 
-      return
-    }
+      if (!isObject(resolve.data)) {
+        console.error(`Failed to load document '${name}': response data is not a valid object`)
 
-    if (!isObject(resolve.data)) {
-      console.error(`Failed to load document '${name}': response data is not a valid object`)
+        workspace.documents[name] = {
+          ...meta,
+          openapi: '3.1.0',
+          info: {
+            title: `Document '${name}' could not be loaded`,
+            version: 'unknown',
+          },
+        }
 
-      workspace.documents[name] = {
-        ...meta,
-        openapi: '3.1.0',
-        info: {
-          title: `Document '${name}' could not be loaded`,
-          version: 'unknown',
-        },
+        return
       }
 
-      return
-    }
+      await addInMemoryDocument({ ...input, document: resolve.data, documentSource: getDocumentSource(input) })
+    })
+  }
 
-    await addInMemoryDocument({ ...input, document: resolve.data, origin: getOrigin(input) })
+  // Returns the effective document configuration for a given document name,
+  // merging (in order of increasing priority): the default config, workspace-level config, and document-specific config.
+  const getDocumentConfiguration = (name: string) => {
+    return mergeObjects<typeof defaultConfig>(
+      mergeObjects(defaultConfig, workspaceProps?.config ?? {}),
+      documentConfigs[name] ?? {},
+    )
   }
 
   // Cache to track visited nodes during reference resolution to prevent bundling the same subtree multiple times
@@ -674,10 +697,7 @@ export const createWorkspaceStore = (workspaceProps?: WorkspaceProps): Workspace
     },
     addDocument,
     get config() {
-      return mergeObjects<typeof defaultConfig>(
-        mergeObjects(defaultConfig, workspaceProps?.config ?? {}),
-        documentConfigs[getActiveDocumentName()] ?? {},
-      )
+      return getDocumentConfiguration(getActiveDocumentName())
     },
     exportDocument: (documentName: string, format: 'json' | 'yaml') => {
       const intermediateDocument = intermediateDocuments[documentName]
