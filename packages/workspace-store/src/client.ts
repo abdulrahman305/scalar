@@ -27,7 +27,7 @@ import { externalValueResolver, loadingStatus, refsEverywhere, restoreOriginalRe
 import type { Record } from '@sinclair/typebox'
 import { Value } from '@sinclair/typebox/value'
 import { deepClone } from '@/helpers/deep-clone'
-import { measureAsync } from '@scalar/helpers/testing/measure'
+import { measureAsync, measureSync } from '@scalar/helpers/testing/measure'
 
 export type DocumentConfiguration = Config &
   PartialDeep<{
@@ -52,6 +52,13 @@ export type DocumentConfiguration = Config &
     }
   }>
 
+type ExtraDocumentConfigurations = Record<
+  string,
+  {
+    fetch: WorkspaceDocumentMetaInput['fetch']
+  }
+>
+
 const defaultConfig: RequiredDeep<Config> = {
   'x-scalar-reference-config': defaultReferenceConfig,
 }
@@ -69,6 +76,8 @@ type WorkspaceDocumentMetaInput = {
   config?: DocumentConfiguration
   /** Overrides for the document */
   overrides?: InMemoryWorkspace['overrides'][string]
+  /** Optional custom fetch implementation to use when retrieving the document. By default the global fetch implementation will be used */
+  fetch?: (input: string | URL | globalThis.Request, init?: RequestInit) => Promise<Response>
 }
 
 /**
@@ -78,8 +87,6 @@ type WorkspaceDocumentMetaInput = {
 export type UrlDoc = {
   /** URL to fetch the OpenAPI document from */
   url: string
-  /** Optional custom fetch implementation to use when retrieving the document. By default the global fetch implementation will be used */
-  fetch?: (input: string | URL | globalThis.Request, init?: RequestInit) => Promise<Response>
 } & WorkspaceDocumentMetaInput
 
 /** Represents a document that is provided directly as an object rather than loaded from a URL */
@@ -149,6 +156,8 @@ type WorkspaceProps = {
   meta?: WorkspaceMeta
   /** Workspace configuration */
   config?: Config
+  /** Fetch function for retrieving documents */
+  fetch?: WorkspaceDocumentInput['fetch']
 }
 
 /**
@@ -449,6 +458,13 @@ export const createWorkspaceStore = (workspaceProps?: WorkspaceProps): Workspace
    */
   const documentMeta: InMemoryWorkspace['documentMeta'] = {}
 
+  /**
+   * Holds additional configuration options for each document in the workspace.
+   *
+   * This can include settings that can not be persisted between sessions (not JSON serializable)
+   */
+  const extraDocumentConfigurations: ExtraDocumentConfigurations = {}
+
   // Create a reactive workspace object with proxied documents
   // Each document is wrapped in a proxy to enable reactive updates and reference resolution
   const workspace = reactive<Workspace>({
@@ -515,27 +531,32 @@ export const createWorkspaceStore = (workspaceProps?: WorkspaceProps): Workspace
   // Add a document to the store synchronously from an in-memory OpenAPI document
   async function addInMemoryDocument(input: ObjectDoc & { initialize?: boolean; documentSource?: string }) {
     const { name, meta } = input
-    const inputDocument = upgrade(deepClone(input.document)).specification
+    const cloned = measureSync('deepClone', () => deepClone(input.document))
+    const inputDocument = measureSync('upgrade', () => upgrade(cloned).specification)
 
-    if (input.initialize !== false) {
-      // Store the original document in the originalDocuments map
-      // This is used to track the original state of the document as it was loaded into the workspace
-      originalDocuments[name] = deepClone({ ...inputDocument })
+    measureSync('initialize', () => {
+      if (input.initialize !== false) {
+        // Store the original document in the originalDocuments map
+        // This is used to track the original state of the document as it was loaded into the workspace
+        originalDocuments[name] = deepClone({ ...inputDocument })
 
-      // Store the intermediate document state for local edits
-      // This is used to track the last saved state of the document
-      // It allows us to differentiate between the original document and the latest saved version
-      // This is important for local edits that are not yet synced with the remote registry
-      // The intermediate document is used to store the latest saved state of the document
-      // This allows us to track changes and revert to the last saved state if needed
-      intermediateDocuments[name] = deepClone({ ...inputDocument })
-      // Add the document config to the documentConfigs map
-      documentConfigs[name] = input.config ?? {}
-      // Store the overrides for this document, or an empty object if none are provided
-      overrides[name] = input.overrides ?? {}
-      // Store the document metadata for this document, setting the origin if provided
-      documentMeta[name] = { documentSource: input.documentSource }
-    }
+        // Store the intermediate document state for local edits
+        // This is used to track the last saved state of the document
+        // It allows us to differentiate between the original document and the latest saved version
+        // This is important for local edits that are not yet synced with the remote registry
+        // The intermediate document is used to store the latest saved state of the document
+        // This allows us to track changes and revert to the last saved state if needed
+        intermediateDocuments[name] = deepClone({ ...inputDocument })
+        // Add the document config to the documentConfigs map
+        documentConfigs[name] = input.config ?? {}
+        // Store the overrides for this document, or an empty object if none are provided
+        overrides[name] = input.overrides ?? {}
+        // Store the document metadata for this document, setting the origin if provided
+        documentMeta[name] = { documentSource: input.documentSource }
+        // Store extra document configurations that can not be persisted
+        extraDocumentConfigurations[name] = { fetch: input.fetch }
+      }
+    })
 
     const strictDocument: UnknownObject = createMagicProxy({ ...inputDocument, ...meta })
 
@@ -543,15 +564,28 @@ export const createWorkspaceStore = (workspaceProps?: WorkspaceProps): Workspace
       // If the document navigation is not already present, bundle the entire document to resolve all references.
       // This typically applies when the document is not preprocessed by the server and needs local reference resolution.
       // We need to bundle document first before we validate, so we can also validate the external references
-      await bundle(getRaw(strictDocument), {
-        treeShake: false,
-        plugins: [fetchUrls(), externalValueResolver(), refsEverywhere()],
-        urlMap: true,
-        origin: documentMeta[name]?.documentSource, // use the document origin (if provided) as the base URL for resolution
-      })
+      await measureAsync(
+        'bundle',
+        async () =>
+          await bundle(getRaw(strictDocument), {
+            treeShake: false,
+            plugins: [
+              fetchUrls({
+                fetch: extraDocumentConfigurations[name]?.fetch ?? workspaceProps?.fetch,
+              }),
+              externalValueResolver(),
+              refsEverywhere(),
+            ],
+            urlMap: true,
+            origin: documentMeta[name]?.documentSource, // use the document origin (if provided) as the base URL for resolution
+          }),
+      )
 
       // We coerce the values only when the document is not preprocessed by the server-side-store
-      mergeObjects(strictDocument, coerceValue(OpenAPIDocumentSchemaStrict, deepClone(strictDocument)))
+      const coerced = measureSync('coerceValue', () =>
+        coerceValue(OpenAPIDocumentSchemaStrict, deepClone(strictDocument)),
+      )
+      measureAsync('mergeObjects', async () => mergeObjects(strictDocument, coerced))
     }
 
     const isValid = Value.Check(OpenAPIDocumentSchemaStrict, strictDocument)
@@ -579,7 +613,10 @@ export const createWorkspaceStore = (workspaceProps?: WorkspaceProps): Workspace
   async function addDocument(input: WorkspaceDocumentInput) {
     const { name, meta } = input
 
-    const resolve = await measureAsync('loadDocument', async () => await loadDocument(input))
+    const resolve = await measureAsync(
+      'loadDocument',
+      async () => await loadDocument({ ...input, fetch: input.fetch ?? workspaceProps?.fetch }),
+    )
 
     // Log the time taken to add a document
     await measureAsync('addDocument', async () => {
