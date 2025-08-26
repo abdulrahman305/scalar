@@ -1,5 +1,40 @@
 # @scalar/api-reference
 
+## 1.34.6
+
+### Patch Changes
+
+- 50032be: feat: added config options for sorting schema properties
+- 88385b1: chore: added circular ref to sources for testing
+- Updated dependencies [443c507]
+- Updated dependencies [88385b1]
+- Updated dependencies [50032be]
+  - @scalar/workspace-store@0.14.2
+  - @scalar/json-magic@0.3.1
+  - @scalar/types@0.2.13
+  - @scalar/oas-utils@0.4.22
+  - @scalar/openapi-parser@0.20.1
+  - @scalar/api-client@2.5.26
+  - @scalar/snippetz@0.4.7
+  - @scalar/themes@0.13.14
+  - @scalar/components@0.14.27
+  - @scalar/code-highlight@0.1.9
+
+## 1.34.5
+
+### Patch Changes
+
+- 86d29c1: feat(snippetz): improve indentation handling in objectToString
+- Updated dependencies [86d29c1]
+- Updated dependencies [e2272a1]
+- Updated dependencies [b6f4b60]
+- Updated dependencies [b8776fc]
+  - @scalar/snippetz@0.4.6
+  - @scalar/oas-utils@0.4.21
+  - @scalar/workspace-store@0.14.1
+  - @scalar/api-client@2.5.25
+  - @scalar/components@0.14.26
+
 ## 1.34.4
 
 ### Patch Changes

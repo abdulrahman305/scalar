@@ -1022,6 +1022,158 @@ describe('create-workspace-store', () => {
     )
   })
 
+  it('another circular reference', async () => {
+    const store = createWorkspaceStore()
+    await store.addDocument({
+      name: 'default',
+      document: {
+        openapi: '3.1.0',
+        info: {
+          title: 'Hello World',
+          version: '1.0.0',
+        },
+        components: {
+          schemas: {
+            JsonObject: {
+              additionalProperties: {
+                $ref: '#/components/schemas/JsonValue',
+              },
+              type: 'object',
+            },
+            JsonValue: {
+              anyOf: [
+                {
+                  type: 'string',
+                },
+                {
+                  type: 'number',
+                  format: 'double',
+                },
+                {
+                  type: 'boolean',
+                },
+                {
+                  $ref: '#/components/schemas/JsonObject',
+                },
+              ],
+            },
+          },
+        },
+        paths: {
+          '/get': {
+            get: {
+              responses: {
+                '200': {
+                  content: {
+                    'application/json': {
+                      schema: {
+                        $ref: '#/components/schemas/JsonObject',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+    expect(JSON.stringify(getRaw(store.workspace.activeDocument))).toBe(
+      '{"openapi":"3.1.0","info":{"title":"Hello World","version":"1.0.0"},"components":{"schemas":{"JsonObject":{"additionalProperties":{"$ref":"#/components/schemas/JsonValue"},"type":"object"},"JsonValue":{"anyOf":[{"type":"string"},{"type":"number","format":"double"},{"type":"boolean"},{"$ref":"#/components/schemas/JsonObject"}]}}},"paths":{"/get":{"get":{"responses":{"200":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/JsonObject"}}},"description":""}}}}},"x-ext-urls":{},"x-scalar-navigation":[{"id":"","title":"/get","path":"/get","method":"get","ref":"#/paths/~1get/get","type":"operation"},{"id":"","title":"Models","children":[{"id":"JsonObject","title":"JsonObject","name":"JsonObject","ref":"#/content/components/schemas/JsonObject","type":"model"},{"id":"JsonValue","title":"JsonValue","name":"JsonValue","ref":"#/content/components/schemas/JsonValue","type":"model"}],"type":"text"}]}',
+    )
+  })
+
+  it('a third circular reference', async () => {
+    const store = createWorkspaceStore()
+    await store.addDocument({
+      name: 'default',
+      document: {
+        openapi: '3.1.0',
+        paths: {
+          '/test': {
+            post: {
+              operationId: 'post',
+              parameters: [
+                {
+                  name: '',
+                  required: true,
+                  in: 'query',
+                  schema: {
+                    $ref: '#/components/schemas/FilterSet',
+                  },
+                },
+              ],
+              responses: null,
+            },
+          },
+        },
+        info: {
+          title: 'API Reference',
+          description: 'API Reference',
+          version: '1.0.0',
+          contact: {},
+        },
+        tags: [],
+        servers: [],
+        components: {
+          schemas: {
+            FilterSet: {
+              $schema: 'https://json-schema.org/draft/2020-12/schema',
+              id: 'FilterSet',
+              type: 'object',
+              properties: {
+                type: {
+                  type: 'string',
+                  const: 'nested',
+                },
+                conjunction: {
+                  type: 'string',
+                  enum: ['and', 'or'],
+                },
+                conditions: {
+                  type: 'array',
+                  items: {
+                    anyOf: [
+                      {
+                        anyOf: [
+                          {
+                            type: 'object',
+                            properties: {
+                              type: {
+                                type: 'string',
+                                const: 'single',
+                              },
+                              field: {
+                                type: 'string',
+                              },
+                              operator: {
+                                type: 'string',
+                                enum: ['eq', 'ne', 'gt', 'lt', 'gte', 'lte', 'like', 'nlike'],
+                              },
+                              value: {
+                                type: 'string',
+                              },
+                            },
+                          },
+                        ],
+                      },
+                      {
+                        $ref: '#/components/schemas/FilterSet',
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+    expect(JSON.stringify(getRaw(store.workspace.activeDocument))).toBe(
+      '{"openapi":"3.1.0","paths":{"/test":{"post":{"operationId":"post","parameters":[{"name":"","required":true,"in":"query","schema":{"$ref":"#/components/schemas/FilterSet"}}],"responses":{}}}},"info":{"title":"API Reference","description":"API Reference","version":"1.0.0","contact":{}},"tags":[],"servers":[],"components":{"schemas":{"FilterSet":{"$schema":"https://json-schema.org/draft/2020-12/schema","id":"FilterSet","type":"object","properties":{"type":{"type":"string","const":"nested"},"conjunction":{"type":"string","enum":["and","or"]},"conditions":{"type":"array","items":{"anyOf":[{"anyOf":[{"type":"object","properties":{"type":{"type":"string","const":"single"},"field":{"type":"string"},"operator":{"type":"string","enum":["eq","ne","gt","lt","gte","lte","like","nlike"]},"value":{"type":"string"}}}]},{"$ref":"#/components/schemas/FilterSet"}]}}}}}},"x-ext-urls":{},"x-scalar-navigation":[{"id":"Introduction","title":"Introduction","type":"text"},{"id":"","title":"/test","path":"/test","method":"post","ref":"#/paths/~1test/post","type":"operation"},{"id":"","title":"Models","children":[{"id":"FilterSet","title":"FilterSet","name":"FilterSet","ref":"#/content/components/schemas/FilterSet","type":"model"}],"type":"text"}]}',
+    )
+  })
+
   it.skip('clean up the document to support non-compliant documents', async () => {
     const store = createWorkspaceStore()
 
@@ -1093,7 +1245,7 @@ describe('create-workspace-store', () => {
     })
 
     expect(store.exportWorkspace()).toEqual(
-      '{"documents":{"default":{"openapi":"3.1.1","paths":{"/users":{"get":{"requestBody":{"$ref":"#/x-ext/8fad302"}}}},"x-ext-urls":{"8fad302":"http://localhost:9988/a"},"x-ext":{"8fad302":{"description":"Some description","content":{}}},"info":{"title":"","version":""},"x-scalar-navigation":[{"id":"","title":"/users","path":"/users","method":"get","ref":"#/paths/~1users/get","type":"operation"}]}},"meta":{},"documentConfigs":{"default":{}},"originalDocuments":{"default":{"openapi":"3.1.1","paths":{"/users":{"get":{"requestBody":{"$ref":"http://localhost:9988/a"}}}}}},"intermediateDocuments":{"default":{"openapi":"3.1.1","paths":{"/users":{"get":{"requestBody":{"$ref":"http://localhost:9988/a"}}}}}},"overrides":{"default":{}},"documentMeta":{"default":{"documentSource":"http://localhost:9988"}}}',
+      '{"documents":{"default":{"openapi":"3.1.1","paths":{"/users":{"get":{"requestBody":{"$ref":"#/x-ext/8fad302"}}}},"x-ext-urls":{"8fad302":"http://localhost:9988/a"},"x-ext":{"8fad302":{"description":"Some description","content":{}}},"info":{"title":"","version":""},"x-scalar-navigation":[{"id":"","title":"/users","path":"/users","method":"get","ref":"#/paths/~1users/get","type":"operation"}],"servers":[{"url":"http://localhost:9988"}]}},"meta":{},"documentConfigs":{"default":{}},"originalDocuments":{"default":{"openapi":"3.1.1","paths":{"/users":{"get":{"requestBody":{"$ref":"http://localhost:9988/a"}}}}}},"intermediateDocuments":{"default":{"openapi":"3.1.1","paths":{"/users":{"get":{"requestBody":{"$ref":"http://localhost:9988/a"}}}}}},"overrides":{"default":{}},"documentMeta":{"default":{"documentSource":"http://localhost:9988"}}}',
     )
 
     await store.revertDocumentChanges('default')
@@ -1161,6 +1313,13 @@ describe('create-workspace-store', () => {
           },
         },
       },
+      'servers': [
+        {
+          'description': undefined,
+          'url': 'http://localhost:9988',
+          'variables': undefined,
+        },
+      ],
       'x-ext': {
         'a327830': {
           'summary': 'User path',
@@ -1239,6 +1398,13 @@ describe('create-workspace-store', () => {
           },
         },
       },
+      'servers': [
+        {
+          'description': undefined,
+          'url': 'http://localhost:9988',
+          'variables': undefined,
+        },
+      ],
       'x-ext': {
         'a327830': {
           'summary': 'User path',
@@ -1980,7 +2146,7 @@ describe('create-workspace-store', () => {
       })
 
       expect(store.exportWorkspace()).toBe(
-        '{"documents":{"default":{"openapi":"3.1.1","info":{"title":"My API","version":"1.0.0"},"components":{"schemas":{"User":{"type":"object","properties":{"id":{"type":"string","description":"The user ID"},"name":{"type":"string","description":"The user name"},"email":{"type":"string","format":"email","description":"The user email"}}}}},"paths":{"/users":{"get":{"summary":"Get all users","responses":{"200":{"description":"Successful response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/User"}}}}}}}}},"x-ext-urls":{},"x-scalar-navigation":[{"id":"Get all users","title":"Get all users","path":"/users","method":"get","ref":"#/paths/~1users/get","type":"operation"},{"id":"","title":"Models","children":[{"id":"User","title":"User","name":"User","ref":"#/content/components/schemas/User","type":"model"}],"type":"text"}]}},"meta":{},"documentConfigs":{"default":{}},"originalDocuments":{"default":{"openapi":"3.1.1","info":{"title":"My API","version":"1.0.0"},"components":{"schemas":{"User":{"type":"object","properties":{"id":{"type":"string","description":"The user ID"},"name":{"type":"string","description":"The user name"},"email":{"type":"string","format":"email","description":"The user email"}}}}},"paths":{"/users":{"get":{"summary":"Get all users","responses":{"200":{"description":"Successful response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/User"}}}}}}}}}}},"intermediateDocuments":{"default":{"openapi":"3.1.1","info":{"title":"My API","version":"1.0.0"},"components":{"schemas":{"User":{"type":"object","properties":{"id":{"type":"string","description":"The user ID"},"name":{"type":"string","description":"The user name"},"email":{"type":"string","format":"email","description":"The user email"}}}}},"paths":{"/users":{"get":{"summary":"Get all users","responses":{"200":{"description":"Successful response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/User"}}}}}}}}}}},"overrides":{"default":{}},"documentMeta":{"default":{"documentSource":"http://localhost:9989/default"}}}',
+        '{"documents":{"default":{"openapi":"3.1.1","info":{"title":"My API","version":"1.0.0"},"components":{"schemas":{"User":{"type":"object","properties":{"id":{"type":"string","description":"The user ID"},"name":{"type":"string","description":"The user name"},"email":{"type":"string","format":"email","description":"The user email"}}}}},"paths":{"/users":{"get":{"summary":"Get all users","responses":{"200":{"description":"Successful response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/User"}}}}}}}}},"x-ext-urls":{},"x-scalar-navigation":[{"id":"Get all users","title":"Get all users","path":"/users","method":"get","ref":"#/paths/~1users/get","type":"operation"},{"id":"","title":"Models","children":[{"id":"User","title":"User","name":"User","ref":"#/content/components/schemas/User","type":"model"}],"type":"text"}],"servers":[{"url":"http://localhost:9989"}]}},"meta":{},"documentConfigs":{"default":{}},"originalDocuments":{"default":{"openapi":"3.1.1","info":{"title":"My API","version":"1.0.0"},"components":{"schemas":{"User":{"type":"object","properties":{"id":{"type":"string","description":"The user ID"},"name":{"type":"string","description":"The user name"},"email":{"type":"string","format":"email","description":"The user email"}}}}},"paths":{"/users":{"get":{"summary":"Get all users","responses":{"200":{"description":"Successful response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/User"}}}}}}}}}}},"intermediateDocuments":{"default":{"openapi":"3.1.1","info":{"title":"My API","version":"1.0.0"},"components":{"schemas":{"User":{"type":"object","properties":{"id":{"type":"string","description":"The user ID"},"name":{"type":"string","description":"The user name"},"email":{"type":"string","format":"email","description":"The user email"}}}}},"paths":{"/users":{"get":{"summary":"Get all users","responses":{"200":{"description":"Successful response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/User"}}}}}}}}}}},"overrides":{"default":{}},"documentMeta":{"default":{"documentSource":"http://localhost:9989/default"}}}',
       )
     })
 
