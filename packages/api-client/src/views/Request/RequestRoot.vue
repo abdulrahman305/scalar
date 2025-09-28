@@ -7,6 +7,7 @@ import { RouterView } from 'vue-router'
 
 import SidebarToggle from '@/components/Sidebar/SidebarToggle.vue'
 import { useLayout } from '@/hooks'
+import { useAnalytics } from '@/hooks/useAnalytics'
 import { useClientConfig } from '@/hooks/useClientConfig'
 import { useSidebar } from '@/hooks/useSidebar'
 import { ERRORS } from '@/libs'
@@ -26,6 +27,7 @@ const { toast } = useToasts()
 const { layout } = useLayout()
 const config = useClientConfig()
 const { isSidebarOpen } = useSidebar()
+const analytics = useAnalytics()
 
 const {
   activeCollection,
@@ -133,8 +135,14 @@ const executeRequest = async () => {
 const cancelRequest = async () =>
   requestAbortController.value?.abort(ERRORS.REQUEST_ABORTED)
 
+/** Subscribed to executeRequest, used for logging / analytics. */
+function logRequest() {
+  analytics?.capture('client-send-request')
+}
+
 onMounted(() => {
   events.executeRequest.on(executeRequest)
+  events.executeRequest.on(logRequest)
   events.cancelRequest.on(cancelRequest)
 })
 
@@ -145,7 +153,10 @@ useOpenApiWatcher()
  *
  * @see https://github.com/vueuse/vueuse/issues/3498#issuecomment-2055546566
  */
-onBeforeUnmount(() => events.executeRequest.off(executeRequest))
+onBeforeUnmount(() => {
+  events.executeRequest.off(executeRequest)
+  events.executeRequest.off(logRequest)
+})
 
 // Clear invalid params on parameter update
 watch(
@@ -211,8 +222,8 @@ const cloneRequestResult = (result: any) => {
       <div class="flex h-full flex-1 flex-col">
         <RouterView
           :invalidParams="invalidParams"
-          :selectedSecuritySchemeUids="selectedSecuritySchemeUids"
-          :requestResult="requestResult" />
+          :requestResult="requestResult"
+          :selectedSecuritySchemeUids="selectedSecuritySchemeUids" />
       </div>
     </div>
   </div>

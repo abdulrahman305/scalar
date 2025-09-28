@@ -1,5 +1,7 @@
-import { createWorkspaceStore, generateClientMutators } from '@/client'
 import { describe, expect, it } from 'vitest'
+
+import { createWorkspaceStore, generateClientMutators } from '@/client'
+import type { OAuthFlowAuthorizationCode } from '@/schemas/v3.1/strict/oauth-flow'
 
 describe('generateClientMutators', () => {
   describe('cookieMutators', () => {
@@ -229,6 +231,7 @@ describe('generateClientMutators', () => {
           type: 'apiKey',
           name: 'api_key',
           in: 'header',
+          'x-scalar-secret-token': '1234567890',
         }),
       ).toBe(true)
 
@@ -237,6 +240,7 @@ describe('generateClientMutators', () => {
           type: 'apiKey',
           name: 'api_key',
           in: 'header',
+          'x-scalar-secret-token': '1234567890',
         },
       })
 
@@ -245,6 +249,7 @@ describe('generateClientMutators', () => {
           type: 'apiKey',
           name: 'api_key',
           in: 'header',
+          'x-scalar-secret-token': '1234567890',
         }),
       ).toBe(false)
 
@@ -269,6 +274,12 @@ describe('generateClientMutators', () => {
               authorizationUrl: 'https://auth.example.com/authorize',
               tokenUrl: 'https://auth.example.com/token',
               scopes: {},
+              refreshUrl: '',
+              'x-scalar-secret-token': '',
+              'x-scalar-secret-client-id': '',
+              'x-scalar-secret-client-secret': '',
+              'x-scalar-secret-redirect-uri': '',
+              'x-usePkce': 'no',
             },
           },
         }),
@@ -281,8 +292,14 @@ describe('generateClientMutators', () => {
             authorizationCode: {
               authorizationUrl: 'https://auth.example.com/authorize',
               tokenUrl: 'https://auth.example.com/token',
+              refreshUrl: '',
               scopes: {},
-            },
+              'x-scalar-secret-client-id': '',
+              'x-scalar-secret-client-secret': '',
+              'x-scalar-secret-redirect-uri': '',
+              'x-scalar-secret-token': '',
+              'x-usePkce': 'no',
+            } satisfies OAuthFlowAuthorizationCode,
           },
         },
       })
@@ -300,7 +317,13 @@ describe('generateClientMutators', () => {
             authorizationCode: {
               authorizationUrl: 'https://auth.example.com/authorize',
               tokenUrl: 'https://auth.example.com/token',
+              refreshUrl: '',
               scopes: {},
+              'x-scalar-secret-client-id': '',
+              'x-scalar-secret-client-secret': '',
+              'x-scalar-secret-redirect-uri': '',
+              'x-scalar-secret-token': '',
+              'x-usePkce': 'no',
             },
           },
         }),
@@ -314,7 +337,13 @@ describe('generateClientMutators', () => {
               authorizationUrl: 'https://auth.example.com/authorize',
               tokenUrl: 'https://auth.example.com/token',
               scopes: {},
-            },
+              refreshUrl: '',
+              'x-scalar-secret-client-id': '',
+              'x-scalar-secret-client-secret': '',
+              'x-scalar-secret-token': '',
+              'x-scalar-secret-redirect-uri': '',
+              'x-usePkce': 'no',
+            } satisfies OAuthFlowAuthorizationCode,
           },
         },
       })

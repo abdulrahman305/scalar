@@ -9,16 +9,17 @@
     "url": "git+https://github.com/scalar/scalar.git",
     "directory": "integrations/aspnetcore"
   },
-  "version": "2.7.2",
+  "version": "2.8.7",
   "private": true,
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "compress": "cd ./src/Scalar.AspNetCore/StaticAssets && gzip --keep --verbose --force scalar.js scalar.aspnetcore.js",
+    "compress": "cd ./src/Scalar.AspNetCore/StaticAssets && gzip --keep --verbose --force scalar.js scalar.aspnetcore.js favicon.svg",
     "copy:standalone": "shx cp ../../packages/api-reference/dist/browser/standalone.js ./src/Scalar.AspNetCore/StaticAssets/scalar.js",
     "format": "scalar-format",
     "format:check": "scalar-format-check",
+    "generate:enums": "vite-node scripts/generate-enums.ts",
     "lint:check": "scalar-lint-check",
     "lint:fix": "scalar-lint-fix",
     "test": "vitest"
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@scalar/build-tooling": "workspace:*",
-    "shx": "^0.4.0"
+    "@scalar/snippetz": "workspace:*",
+    "vite-node": "catalog:*"
   }
 }

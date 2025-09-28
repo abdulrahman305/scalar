@@ -1,10 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import { nextTick } from 'vue'
-import ApiReferenceWorkspace from './ApiReferenceWorkspace.vue'
-import type { WorkspaceStore } from '@scalar/workspace-store/client'
-import { createMockLocalStorage, createMockStore } from '@/helpers/test-utils'
 import { REFERENCE_LS_KEYS } from '@scalar/helpers/object/local-storage'
+import type { WorkspaceStore } from '@scalar/workspace-store/client'
+import { type VueWrapper, flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
+
+import { createMockLocalStorage, createMockStore } from '@/helpers/test-utils'
+
+import ApiReferenceWorkspace from './ApiReferenceWorkspace.vue'
 
 // vi.mock('@scalar/oas-utils/helpers', async () => ({
 //   redirectToProxy: vi.fn((proxyUrl, url) => `${proxyUrl}?url=${encodeURIComponent(url)}`),
@@ -436,6 +438,39 @@ describe('ApiReferenceWorkspace', () => {
     })
   })
 
+  describe('custom fetch functionality', async () => {
+    it('use the provided fetch function to fetch the documents', async () => {
+      const fn = vi.fn()
+      wrapper = mount(ApiReferenceWorkspace, {
+        props: {
+          configuration: {
+            title: 'Test API',
+            url: 'https://example.com/api/spec.json',
+            fetch: async (...args) => {
+              fn(...args)
+              // Simple mock fetch function that returns a fixed response
+              return new Response(JSON.stringify({ openapi: '3.0.0', info: { title: 'Test API' }, paths: {} }), {
+                headers: { 'Content-Type': 'application/json' },
+                status: 200,
+              })
+            },
+          },
+          store: mockStore,
+        },
+      })
+
+      await flushPromises()
+
+      expect(wrapper.exists()).toBe(true)
+      expect(wrapper.findComponent({ name: 'ApiReferenceLayout' }).exists()).toBe(true)
+      expect(wrapper.text()).toContain('Test API')
+
+      // Expect the custom fetch function to have been called
+      expect(fn).toHaveBeenCalledOnce()
+      expect(fn).toHaveBeenCalledWith('https://example.com/api/spec.json', undefined)
+    })
+  })
+
   describe('slot rendering', () => {
     it('renders footer slot', () => {
       wrapper = mount(ApiReferenceWorkspace, {
@@ -468,18 +503,21 @@ describe('ApiReferenceWorkspace', () => {
 
   describe('event emission', () => {
     it('emits updateContent event', async () => {
+      const onUpdateContent = vi.fn()
       wrapper = mount(ApiReferenceWorkspace, {
         props: {
           configuration: mockConfiguration,
           store: mockStore,
+          onUpdateContent,
         },
       })
 
       const layoutComponent = wrapper.findComponent({ name: 'ApiReferenceLayout' })
       await layoutComponent.vm.$emit('updateContent', { some: 'content' })
+      await nextTick()
 
-      expect(wrapper.emitted('updateContent')).toBeTruthy()
-      expect(wrapper.emitted('updateContent')?.[0]).toEqual([{ some: 'content' }])
+      expect(onUpdateContent).toHaveBeenCalledTimes(1)
+      expect(onUpdateContent).toHaveBeenCalledWith({ some: 'content' })
     })
   })
 

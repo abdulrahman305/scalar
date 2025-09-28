@@ -1,5 +1,35 @@
 # scalar-fastapi
 
+## 1.4.3
+
+### Patch Changes
+
+- 186b1ea: not include tests package in wheel and tgz
+
+## 1.4.2
+
+### Patch Changes
+
+- 24d5f59: fix: output for dark_mode is wrong
+
+## 1.4.1
+
+### Patch Changes
+
+- da4d1da: fix: scalar-fastapi installs tests
+
+## 1.4.0
+
+### Minor Changes
+
+- 961abc8: feat: cover more configuration options
+
+### Patch Changes
+
+- 6657e7c: fix: title is required
+- 1c411d4: Export objects from scalar_fastapi package root
+- 3473e08: fix: performance issues on script load
+
 ## 1.3.0
 
 ### Minor Changes

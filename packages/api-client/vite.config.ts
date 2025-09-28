@@ -1,7 +1,7 @@
 import { ViteWatchWorkspace, alias, createViteBuildOptions, findEntryPoints } from '@scalar/build-tooling'
-
-import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
+import vue from '@vitejs/plugin-vue'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import svgLoader from 'vite-svg-loader'
 
@@ -11,7 +11,10 @@ export default defineConfig({
     PACKAGE_VERSION: JSON.stringify(process.env.npm_package_version),
   },
   resolve: {
-    alias: alias(import.meta.url),
+    alias: {
+      ...alias(import.meta.url),
+      '@v2': fileURLToPath(new URL('./src/v2', import.meta.url)),
+    },
     dedupe: ['vue'],
   },
   optimizeDeps: {

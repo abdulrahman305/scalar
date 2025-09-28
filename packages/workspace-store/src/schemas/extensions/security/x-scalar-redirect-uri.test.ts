@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest'
-import { XScalarRedirectUriSchema } from './x-scalar-redirect-uri'
 import { Value } from '@scalar/typebox/value'
+import { describe, expect, it } from 'vitest'
+
+import { coerceValue } from '@/schemas/typebox-coerce'
+
+import { XScalarRedirectUriSchema } from './x-scalar-redirect-uri'
 
 describe('XScalarRedirectUri', () => {
   it('accepts a valid URI string', () => {
@@ -19,8 +22,8 @@ describe('XScalarRedirectUri', () => {
     expect(result).toEqual({ 'x-scalar-redirect-uri': '' })
   })
 
-  it('defaults to undefined when empty object provided', () => {
-    const result = Value.Parse(XScalarRedirectUriSchema, {})
-    expect(result).toEqual({ 'x-scalar-redirect-uri': undefined })
+  it('defaults to empty string when empty object provided', () => {
+    const result = coerceValue(XScalarRedirectUriSchema, {})
+    expect(result).toEqual({ 'x-scalar-redirect-uri': '' })
   })
 })

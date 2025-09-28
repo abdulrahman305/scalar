@@ -1,3 +1,5 @@
+import { coerceValue } from '@scalar/workspace-store/schemas/typebox-coerce'
+import { SchemaObjectSchema } from '@scalar/workspace-store/schemas/v3.1/strict/openapi-document'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
@@ -5,60 +7,20 @@ import SchemaComposition from './SchemaComposition.vue'
 
 describe('SchemaComposition', () => {
   describe('schema name display', () => {
-    it('displays schema title when both title and name are present', () => {
-      const wrapper = mount(SchemaComposition, {
-        props: {
-          composition: 'oneOf',
-          value: {
-            oneOf: [
-              {
-                name: 'OneModel',
-                title: 'One',
-                type: 'object',
-              },
-            ],
-          },
-          level: 0,
-        },
-      })
-
-      const tab = wrapper.find('.composition-selector-label')
-      expect(tab.text()).toBe('One')
-    })
-
-    it('displays schema name when title is not present', () => {
-      const wrapper = mount(SchemaComposition, {
-        props: {
-          composition: 'oneOf',
-          value: {
-            oneOf: [
-              {
-                name: 'One',
-                type: 'object',
-              },
-            ],
-          },
-          level: 0,
-        },
-      })
-
-      const tab = wrapper.find('.composition-selector-label')
-      expect(tab.text()).toBe('One')
-    })
-
     it('displays schema title when name is not present', () => {
       const wrapper = mount(SchemaComposition, {
         props: {
           composition: 'anyOf',
-          value: {
+          schema: coerceValue(SchemaObjectSchema, {
             anyOf: [
               {
                 title: 'Any',
                 type: 'object',
               },
             ],
-          },
+          }),
           level: 0,
+          options: {},
         },
       })
 
@@ -70,14 +32,15 @@ describe('SchemaComposition', () => {
       const wrapper = mount(SchemaComposition, {
         props: {
           composition: 'oneOf',
-          value: {
+          schema: coerceValue(SchemaObjectSchema, {
             oneOf: [
               {
                 type: 'object',
               },
             ],
-          },
+          }),
           level: 0,
+          options: {},
         },
       })
 
@@ -85,43 +48,11 @@ describe('SchemaComposition', () => {
       expect(tab.text()).toBe('object')
     })
 
-    // TODO: This would be nice to have, but we used to compare schemas and in some cases it returned the wrong name.
-    // Let's find another approach and enable this test again.
-    it.todo('displays schema name from components when matching schema is found', () => {
-      const wrapper = mount(SchemaComposition, {
-        props: {
-          composition: 'oneOf',
-          schemas: {
-            User: {
-              type: 'object',
-              properties: {
-                id: { type: 'string' },
-              },
-            },
-          },
-          value: {
-            oneOf: [
-              {
-                type: 'object',
-                properties: {
-                  id: { type: 'string' },
-                },
-              },
-            ],
-          },
-          level: 0,
-        },
-      })
-
-      const tab = wrapper.find('.composition-selector-label')
-      expect(tab.text()).toBe('User')
-    })
-
     it('humanizes array types with item type', () => {
       const wrapper = mount(SchemaComposition, {
         props: {
           composition: 'anyOf',
-          value: {
+          schema: coerceValue(SchemaObjectSchema, {
             anyOf: [
               {
                 type: 'array',
@@ -130,8 +61,9 @@ describe('SchemaComposition', () => {
                 },
               },
             ],
-          },
+          }),
           level: 0,
+          options: {},
         },
       })
 
@@ -145,10 +77,11 @@ describe('SchemaComposition', () => {
       const wrapper = mount(SchemaComposition, {
         props: {
           composition: 'oneOf',
-          value: {
+          schema: coerceValue(SchemaObjectSchema, {
             oneOf: [{ type: 'object' }],
-          },
+          }),
           level: 0,
+          options: {},
         },
       })
 
@@ -160,10 +93,11 @@ describe('SchemaComposition', () => {
       const wrapper = mount(SchemaComposition, {
         props: {
           composition: 'oneOf',
-          value: {
+          schema: coerceValue(SchemaObjectSchema, {
             oneOf: [{ type: 'boolean' }, { type: 'object', properties: { foo: { type: 'string' } } }],
-          },
+          }),
           level: 0,
+          options: {},
         },
       })
 
@@ -174,15 +108,17 @@ describe('SchemaComposition', () => {
       const wrapper = mount(SchemaComposition, {
         props: {
           composition: 'anyOf',
-          value: {
+          schema: {
             anyOf: [
               {
                 type: 'object',
                 properties: { foo: { type: 'string' } },
               },
+              // @ts-expect-error - Test nullable here
               { nullable: true },
             ],
           },
+          options: {},
           level: 0,
         },
       })
@@ -199,7 +135,7 @@ describe('SchemaComposition', () => {
       const wrapper = mount(SchemaComposition, {
         props: {
           composition: 'anyOf',
-          value: {
+          schema: coerceValue(SchemaObjectSchema, {
             anyOf: [
               {
                 type: 'object',
@@ -212,8 +148,9 @@ describe('SchemaComposition', () => {
               },
               { const: 'Baz' },
             ],
-          },
+          }),
           level: 0,
+          options: {},
         },
       })
 
@@ -223,14 +160,14 @@ describe('SchemaComposition', () => {
 
       const schemaComponent = wrapper.findComponent({ name: 'Schema' })
       expect(schemaComponent.exists()).toBe(true)
-      expect(schemaComponent.props('value')).toEqual({ const: 'Baz' })
+      expect(schemaComponent.props('schema')).toEqual({ '_': '', const: 'Baz' })
     })
 
     it('renders enum schema in composition panel', async () => {
       const wrapper = mount(SchemaComposition, {
         props: {
           composition: 'oneOf',
-          value: {
+          schema: coerceValue(SchemaObjectSchema, {
             oneOf: [
               {
                 type: 'string',
@@ -240,14 +177,15 @@ describe('SchemaComposition', () => {
                 type: 'number',
               },
             ],
-          },
+          }),
+          options: {},
           level: 0,
         },
       })
 
       const schemaComponent = wrapper.findComponent({ name: 'Schema' })
       expect(schemaComponent.exists()).toBe(true)
-      expect(schemaComponent.props('value')).toEqual({
+      expect(schemaComponent.props('schema')).toEqual({
         type: 'string',
         enum: ['option1', 'option2', 'option3'],
       })
@@ -257,21 +195,18 @@ describe('SchemaComposition', () => {
       const wrapper = mount(SchemaComposition, {
         props: {
           composition: 'oneOf',
-          value: {
+          schema: coerceValue(SchemaObjectSchema, {
             oneOf: [
-              {
-                allOf: [
-                  { title: 'Planet', type: 'object' },
-                  { type: 'object', properties: { test: { type: 'string' } } },
-                ],
-              },
+              { title: 'Planet', type: 'object' },
+              { type: 'object', properties: { test: { type: 'string' } } },
             ],
-          },
+          }),
           level: 0,
+          options: {},
         },
       })
 
-      const tab = wrapper.find('.composition-selector-label')
+      const tab = wrapper.findAll('.composition-selector-label')[0]
       expect(tab.text()).toBe('Planet')
     })
   })
@@ -280,7 +215,7 @@ describe('SchemaComposition', () => {
     const wrapper = mount(SchemaComposition, {
       props: {
         composition: 'anyOf',
-        value: {
+        schema: coerceValue(SchemaObjectSchema, {
           anyOf: [
             {
               type: 'object',
@@ -296,26 +231,27 @@ describe('SchemaComposition', () => {
               },
             },
           ],
-        },
+        }),
         level: 0,
+        options: {},
       },
     })
 
     const schemaComponent = wrapper.findComponent({ name: 'Schema' })
-    expect(schemaComponent.props('value')).toEqual({
+    expect(schemaComponent.props('schema')).toEqual({
       type: 'object',
       properties: {
-        foo: { const: 'Foo' },
+        foo: { _: '', const: 'Foo' },
       },
       required: ['foo'],
     })
   })
 
-  it('merges allOf schemas within anyOf composition', () => {
+  it('does not merge allOf schemas within anyOf composition', () => {
     const wrapper = mount(SchemaComposition, {
       props: {
         composition: 'anyOf',
-        value: {
+        schema: coerceValue(SchemaObjectSchema, {
           anyOf: [
             {
               type: 'string',
@@ -341,8 +277,9 @@ describe('SchemaComposition', () => {
               ],
             },
           ],
-        },
+        }),
         level: 0,
+        options: {},
       },
     })
 
@@ -352,20 +289,20 @@ describe('SchemaComposition', () => {
 
     expect(options).toHaveLength(2)
     expect(options[0].label).toBe('string')
-    expect(options[1].label).toBe('object')
+    expect(options[1].label).toBe('Schema')
 
     // Check that the first schema (string) is rendered correctly
     const schemaComponent = wrapper.findComponent({ name: 'Schema' })
-    expect(schemaComponent.props('value')).toEqual({
+    expect(schemaComponent.props('schema')).toEqual({
       type: 'string',
     })
   })
 
-  it('renders merged allOf schema when selected in anyOf composition', async () => {
+  it('does not merge allOf object schemas within anyOf composition', async () => {
     const wrapper = mount(SchemaComposition, {
       props: {
         composition: 'anyOf',
-        value: {
+        schema: coerceValue(SchemaObjectSchema, {
           anyOf: [
             {
               type: 'string',
@@ -391,28 +328,39 @@ describe('SchemaComposition', () => {
               ],
             },
           ],
-        },
+        }),
         level: 0,
+        options: {},
       },
     })
 
     // Select the second option (merged allOf schema)
     const listbox = wrapper.findComponent({ name: 'ScalarListbox' })
-    await listbox.vm.$emit('update:modelValue', { id: '1', label: 'object' })
+    await listbox.vm.$emit('update:modelValue', { id: '1', label: 'Schema' })
     await wrapper.vm.$nextTick()
 
     // Check that the merged schema is rendered with both properties
     const schemaComponent = wrapper.findComponent({ name: 'Schema' })
-    const schemaValue = schemaComponent.props('value')
+    const schemaValue = schemaComponent.props('schema')
 
-    expect(schemaValue.type).toBe('object')
-    expect(schemaValue.properties).toEqual({
-      bar: {
-        type: 'string',
+    expect(typeof schemaValue).toBe('object')
+    expect(schemaValue.allOf).toEqual([
+      {
+        type: 'object',
+        properties: {
+          bar: {
+            type: 'string',
+          },
+        },
       },
-      baz: {
-        type: 'string',
+      {
+        type: 'object',
+        properties: {
+          baz: {
+            type: 'string',
+          },
+        },
       },
-    })
+    ])
   })
 })

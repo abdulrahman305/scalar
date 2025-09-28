@@ -14,16 +14,6 @@ env:
   NODE_OPTIONS: '--max_old_space_size=8192'
   TURBO_CACHE_DIR: '${{ github.ref_name }}/.turbo'
 jobs:
-  harden_security:
-    name: Check used GitHub Actions
-    runs-on: blacksmith-2vcpu-ubuntu-2204
-    timeout-minutes: 10
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-      - name: Ensure all Actions are pinned to a Commit SHA
-        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@fc87bb5b5a97953d987372e74478de634726b3e5
-
   # Initial build.
   # We only build the packages and integrations as everything else depends on them
   # turbo is cached to sticky disk and pnpm is cached in the standard actions cache
@@ -83,13 +73,18 @@ jobs:
           path: integrations/docker/assets
 
       - if: steps.changed-files.outputs.api_reference_docker_any_changed == 'true'
+        name: Rename standalone.js to scalar.js
+        working-directory: integrations/docker/assets
+        run: mv standalone.js scalar.js
+
+      - if: steps.changed-files.outputs.api_reference_docker_any_changed == 'true'
         name: Compress static assets
         working-directory: integrations/docker/assets
-        run: gzip --keep --verbose --force standalone.js
+        run: gzip --keep --verbose --force scalar.js
 
       - if: steps.changed-files.outputs.api_reference_docker_any_changed == 'true'
         name: Setup Docker Builder
-        uses: useblacksmith/setup-docker-builder@0b434dfbb431f4e3a2bcee7a773a56bd363184c5 # v1
+        uses: useblacksmith/setup-docker-builder@80c45ee688bb4844ec646f05c49c0a0cab309846 # v1
         with:
           platforms: |
             linux/amd64
@@ -106,7 +101,7 @@ jobs:
 
       - if: steps.changed-files.outputs.api_reference_docker_any_changed == 'true'
         name: Scan for vulnerabilities
-        uses: aquasecurity/trivy-action@dc5a429b52fcf669ce959baa2c2dd26090d2a6c4 # 0.32.0
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
           scan-type: 'image'
           image-ref: 'scalarapi/api-reference:latest'
@@ -117,7 +112,7 @@ jobs:
 
       - if: startsWith(github.event.head_commit.message, 'RELEASING:') && steps.changed-files.outputs.api_reference_docker_version_any_changed == 'true'
         name: Log in to DockerHub
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
         with:
           # Username of your Docker account
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -153,18 +148,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
+      # Install only root dependencies
       - name: Install dev dependencies
-        run: pnpm install --dev
-      # You might ask why we need a GitHub Action to install Biome.
-      # Well, it's because GHA throws an error when it's run through pnpm.# > Error: Cannot find module '@biomejs/cli-linux-x64/biome'
-      - name: Setup Biome
-        uses: biomejs/setup-biome@454fa0d884737805f48d7dc236c1761a0ac3cc13 # v2
-        with:
-          version: 1.9.4
+        run: pnpm install --filter .
       - name: Lint code
-        run: biome lint --diagnostic-level=error
+        run: pnpm lint:check
       - name: Check formatting
-        run: pnpm prettier --check . && biome format
+        run: pnpm format:check
 
   build-examples:
     needs: [build]
@@ -244,17 +234,14 @@ jobs:
     needs: [build]
     runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 10
-    strategy:
-      matrix:
-        go-version: ['1.21']
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Setup Go
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: projects/proxy-scalar-com/go.mod
+          cache: false
       - name: Run tests for the proxy server (Go)
         run: cd projects/proxy-scalar-com && go test -v
 
@@ -278,7 +265,7 @@ jobs:
         run: |
           ls -la integrations/java/webjar/src/main/resources/META-INF/resources/webjars/scalar/scalar.js || exit 1
       - name: Setup Java
-        uses: actions/setup-java@17f84c3641ba7b8f6deff6309fc4c864478f5d62 # v3
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -316,7 +303,7 @@ jobs:
         run: pnpm --filter @scalar/webjar copy:standalone
       - if: steps.changed-files.outputs.java_webjar_package_any_changed == 'true'
         name: Setup Java
-        uses: actions/setup-java@17f84c3641ba7b8f6deff6309fc4c864478f5d62 # v3
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -469,7 +456,7 @@ jobs:
           done
 
   test-component-snapshots:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.head_ref == 'changeset-release/main' || github.head_ref == 'main'
     needs: [build]
     runs-on: blacksmith-4vcpu-ubuntu-2204
     permissions:
@@ -520,7 +507,7 @@ jobs:
           report-file: packages/components/playwright-results.json
 
   test-cdn-snapshots:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.head_ref == 'changeset-release/main' || github.head_ref == 'main'
     needs: [build]
     runs-on: blacksmith-8vcpu-ubuntu-2204
     permissions:
@@ -532,7 +519,7 @@ jobs:
         node-version: [22]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Generate new DEPLOY_ID
         run: echo "DEPLOY_ID=$(npx uuid)" >> "$GITHUB_ENV" && echo $DEPLOY_ID
       - name: Build
@@ -587,8 +574,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
-    needs:
-      [harden_security, build, format, types, test-packages, test-integrations]
+    needs: [build, format, types, test-packages, test-integrations]
     strategy:
       matrix:
         node-version: [22]
@@ -898,16 +884,16 @@ jobs:
           name: standalone-js
           path: integrations/aspnetcore/src/Scalar.AspNetCore/StaticAssets
 
-      - name: Rename standalone.js to scalar.js # Lets get rid of this
+      - name: Rename standalone.js to scalar.js
         working-directory: integrations/aspnetcore/src/Scalar.AspNetCore/StaticAssets
         run: mv standalone.js scalar.js
 
       - name: Compress static assets
         working-directory: integrations/aspnetcore/src/Scalar.AspNetCore/StaticAssets
-        run: gzip --keep --verbose --force scalar.js scalar.aspnetcore.js
+        run: gzip --keep --verbose --force scalar.js scalar.aspnetcore.js favicon.svg
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5
         with:
           dotnet-version: |
             10.x
@@ -940,8 +926,12 @@ jobs:
           name: standalone-js
           path: integrations/aspire/src/Scalar.Aspire.Service/wwwroot
 
+      - name: Rename standalone.js to scalar.js
+        working-directory: integrations/aspire/src/Scalar.Aspire.Service/wwwroot
+        run: mv standalone.js scalar.js
+
       - name: Setup .NET
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5
         with:
           dotnet-version: |
             9.x
@@ -969,7 +959,6 @@ jobs:
       cancel-in-progress: false
     needs:
       [
-        harden_security,
         build,
         format,
         types,
@@ -1018,11 +1007,11 @@ jobs:
       - if: steps.changed-files.outputs.aspnetcore_package_any_changed == 'true'
         name: Compress static assets
         working-directory: integrations/aspnetcore/src/Scalar.AspNetCore/StaticAssets
-        run: gzip --keep --verbose --force scalar.js scalar.aspnetcore.js
+        run: gzip --keep --verbose --force scalar.js scalar.aspnetcore.js favicon.svg
 
       - if: steps.changed-files.outputs.aspnetcore_package_any_changed == 'true'
         name: Setup .NET
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5
         with:
           dotnet-version: 10.x
 
@@ -1053,7 +1042,6 @@ jobs:
       cancel-in-progress: false
     needs:
       [
-        harden_security,
         build,
         format,
         types,
@@ -1095,8 +1083,13 @@ jobs:
           path: integrations/aspire/src/Scalar.Aspire.Service/wwwroot
 
       - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
+        name: Rename standalone.js to scalar.js
+        working-directory: integrations/aspire/src/Scalar.Aspire.Service/wwwroot
+        run: mv standalone.js scalar.js
+
+      - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
         name: Log in to DockerHub
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -1107,7 +1100,7 @@ jobs:
 
       - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
         name: Setup Docker Builder
-        uses: useblacksmith/setup-docker-builder@0b434dfbb431f4e3a2bcee7a773a56bd363184c5 # v1
+        uses: useblacksmith/setup-docker-builder@80c45ee688bb4844ec646f05c49c0a0cab309846 # v1
         with:
           platforms: |
             linux/amd64
@@ -1136,7 +1129,7 @@ jobs:
 
       - if: steps.changed-files.outputs.aspire_package_any_changed == 'true'
         name: Setup .NET
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5
         with:
           dotnet-version: |
             9.x
@@ -1192,7 +1185,6 @@ jobs:
       cancel-in-progress: false
     needs:
       [
-        harden_security,
         build,
         format,
         types,
@@ -1236,3 +1228,135 @@ jobs:
         working-directory: integrations/fastapi
         run: |
           twine upload --username __token__ --password ${{ secrets.PYPI_TOKEN }} dist/*
+
+  rust-build-test:
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 10
+    needs: [build]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Download standalone.js artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: standalone-js
+          path: integrations/rust/ui
+
+      - name: Rename standalone.js to scalar.js
+        working-directory: integrations/rust/ui
+        run: mv standalone.js scalar.js
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Check Rust code formatting
+        working-directory: integrations/rust
+        run: cargo fmt -- --check
+
+      - name: Run Clippy
+        working-directory: integrations/rust
+        run: cargo clippy -- -D warnings
+
+      - name: Run tests
+        working-directory: integrations/rust
+        run: cargo test
+
+      - name: Run tests with all features
+        working-directory: integrations/rust
+        run: cargo test --features axum,actix-web,warp
+
+      - name: Build examples
+        working-directory: integrations/rust
+        run: |
+          cargo build --example axum --features axum
+          cargo build --example actix --features actix-web
+          cargo build --example warp --features warp
+
+  rust-publish:
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'RELEASING:')
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 10
+    concurrency:
+      group: rust-publish
+      cancel-in-progress: false
+    needs:
+      [build, format, types, test-packages, test-integrations, rust-build-test]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Check for Rust integration changes
+        id: changed-files
+        uses: step-security/changed-files@95b56dadb92a30ca9036f16423fd3c088a71ee94 # v46
+        with:
+          files_yaml: |
+            rust_integration:
+              - integrations/rust/package.json
+
+      - if: steps.changed-files.outputs.rust_integration_any_changed == 'true'
+        name: Download standalone.js artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: standalone-js
+          path: integrations/rust/ui
+
+      - if: steps.changed-files.outputs.rust_integration_any_changed == 'true'
+        name: Rename standalone.js to scalar.js
+        working-directory: integrations/rust/ui
+        run: mv standalone.js scalar.js
+
+      - if: steps.changed-files.outputs.rust_integration_any_changed == 'true'
+        name: Setup Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - if: steps.changed-files.outputs.rust_integration_any_changed == 'true'
+        name: Cache cargo registry
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - if: steps.changed-files.outputs.rust_integration_any_changed == 'true'
+        name: Extract version from package.json
+        working-directory: integrations/rust
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - if: steps.changed-files.outputs.rust_integration_any_changed == 'true'
+        name: Update Cargo.toml version
+        working-directory: integrations/rust
+        run: |
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
+          cat Cargo.toml | grep version
+
+      - if: steps.changed-files.outputs.rust_integration_any_changed == 'true'
+        name: Publish to crates.io
+        working-directory: integrations/rust
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

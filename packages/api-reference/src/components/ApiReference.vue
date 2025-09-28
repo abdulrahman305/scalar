@@ -12,6 +12,15 @@ defineProps<{
   configuration?: AnyApiReferenceConfiguration
 }>()
 
+/** These slots render in their respective slots in the underlying ApiReferenceWorkspace component */
+defineSlots<{
+  'content-start'?(): unknown
+  'content-end'?(): unknown
+  'sidebar-start'?(): unknown
+  'sidebar-end'?(): unknown
+  footer?(): unknown
+}>()
+
 /**
  * Initializes the new client workspace store.
  *
@@ -27,6 +36,13 @@ if (typeof window !== 'undefined') {
 
 <template>
   <ApiReferenceWorkspace
-    :store="workspaceStore"
-    :configuration="configuration" />
+    :configuration="configuration"
+    :store="workspaceStore">
+    <!-- Pass through content, sidebar and footer slots -->
+    <template #content-start><slot name="content-start" /></template>
+    <template #content-end><slot name="content-end" /></template>
+    <template #sidebar-start><slot name="sidebar-start" /></template>
+    <template #sidebar-end><slot name="sidebar-end" /></template>
+    <template #footer><slot name="footer" /></template>
+  </ApiReferenceWorkspace>
 </template>

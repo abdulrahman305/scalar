@@ -23,6 +23,9 @@ const themeIdEnum = z.enum([
   'none',
 ])
 
+/** Whether to use the operation summary or the operation path for the sidebar and search */
+const operationTitleEnum = z.enum(['summary', 'path'])
+
 /** Valid keys that can be used with CTRL/CMD to open the search modal */
 const searchHotKeyEnum = z.enum([
   'a',
@@ -207,6 +210,11 @@ export const apiClientConfigurationSchema = z.object({
    * @default true
    */
   showSidebar: z.boolean().optional().default(true).catch(true),
+  /**
+   * Whether to use the operation summary or the operation path for the sidebar and search
+   * @default 'summary'
+   */
+  operationTitleSource: operationTitleEnum.optional().default('summary').catch('summary'),
   /** A string to use one of the color presets */
   theme: themeIdEnum.optional().default('default').catch('default'),
   /** Integration type identifier */
@@ -217,9 +225,17 @@ export const apiClientConfigurationSchema = z.object({
   persistAuth: z.boolean().optional().default(false).catch(false),
   /** Plugins for the API client */
   plugins: z.array(ApiClientPluginSchema).optional(),
+  /** Enables / disables telemetry*/
+  telemetry: z.boolean().optional().default(true),
 })
 
 export type ApiClientConfiguration = z.infer<typeof apiClientConfigurationSchema>
+
+export const FetchLike = z
+  .function()
+  .args(z.union([z.string(), z.instanceof(URL), z.instanceof(Request)]), z.any().optional())
+  .returns(z.promise(z.instanceof(Response)))
+  .optional()
 
 /** Configuration for the Api Client without the transform since it cannot be merged */
 const _apiReferenceConfigurationSchema = apiClientConfigurationSchema.merge(
@@ -234,6 +250,12 @@ const _apiReferenceConfigurationSchema = apiClientConfigurationSchema.merge(
      * @deprecated Use proxyUrl instead
      */
     proxy: z.string().optional(),
+    /**
+     * Custom fetch function for custom logic
+     *
+     * Can be used to add custom headers, handle auth, etc.
+     */
+    fetch: FetchLike,
     /**
      * Plugins for the API reference
      */
@@ -257,7 +279,7 @@ const _apiReferenceConfigurationSchema = apiClientConfigurationSchema.merge(
      * Sets the file type of the document to download, set to `none` to hide the download button
      * @default 'both'
      */
-    documentDownloadType: z.enum(['yaml', 'json', 'both', 'none']).optional().default('both').catch('both'),
+    documentDownloadType: z.enum(['yaml', 'json', 'both', 'direct', 'none']).optional().default('both').catch('both'),
     /**
      * Whether to show the "Download OpenAPI Document" button
      * @default false

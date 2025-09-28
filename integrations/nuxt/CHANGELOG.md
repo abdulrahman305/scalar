@@ -1,5 +1,138 @@
 # @scalar/nuxt
 
+## 0.5.16
+
+### Patch Changes
+
+- Updated dependencies [b858566]
+- Updated dependencies [77337d3]
+- Updated dependencies [170b890]
+- Updated dependencies [db5b649]
+  - @scalar/workspace-store@0.16.0
+  - @scalar/api-client@2.6.0
+  - @scalar/api-reference@1.36.1
+
+## 0.5.15
+
+### Patch Changes
+
+- Updated dependencies [2362df9]
+- Updated dependencies [7be091c]
+- Updated dependencies [f0f28a9]
+- Updated dependencies [003bb98]
+- Updated dependencies [dd98fdc]
+- Updated dependencies [db966b4]
+  - @scalar/api-reference@1.36.0
+  - @scalar/workspace-store@0.15.8
+  - @scalar/api-client@2.5.35
+
+## 0.5.14
+
+### Patch Changes
+
+- Updated dependencies [6e92423]
+- Updated dependencies [005fba9]
+- Updated dependencies [724052c]
+- Updated dependencies [a1f865c]
+- Updated dependencies [6ee88cd]
+- Updated dependencies [b5321f1]
+- Updated dependencies [dcf50ef]
+  - @scalar/api-reference@1.35.7
+  - @scalar/types@0.2.16
+  - @scalar/workspace-store@0.15.7
+  - @scalar/api-client@2.5.34
+
+## 0.5.13
+
+### Patch Changes
+
+- Updated dependencies [b6a59bd]
+- Updated dependencies [8f2a2f2]
+  - @scalar/api-reference@1.35.6
+  - @scalar/api-client@2.5.33
+  - @scalar/use-hooks@0.2.5
+  - @scalar/workspace-store@0.15.6
+
+## 0.5.12
+
+### Patch Changes
+
+- Updated dependencies [4e7e8a9]
+  - @scalar/api-reference@1.35.5
+  - @scalar/workspace-store@0.15.5
+  - @scalar/api-client@2.5.32
+
+## 0.5.11
+
+### Patch Changes
+
+- Updated dependencies [019a22a]
+- Updated dependencies [f8fc81c]
+  - @scalar/workspace-store@0.15.4
+  - @scalar/api-client@2.5.31
+  - @scalar/api-reference@1.35.4
+
+## 0.5.10
+
+### Patch Changes
+
+- Updated dependencies [821717b]
+- Updated dependencies [c173063]
+- Updated dependencies [c173063]
+- Updated dependencies [821717b]
+- Updated dependencies [425a954]
+  - @scalar/workspace-store@0.15.3
+  - @scalar/api-reference@1.35.3
+  - @scalar/api-client@2.5.30
+
+## 0.5.9
+
+### Patch Changes
+
+- Updated dependencies [5eedb97]
+  - @scalar/api-client@2.5.29
+  - @scalar/api-reference@1.35.2
+  - @scalar/workspace-store@0.15.2
+
+## 0.5.8
+
+### Patch Changes
+
+- Updated dependencies [c470c60]
+- Updated dependencies [abe3842]
+- Updated dependencies [5a7d388]
+  - @scalar/api-client@2.5.28
+  - @scalar/types@0.2.15
+  - @scalar/api-reference@1.35.1
+  - @scalar/workspace-store@0.15.1
+
+## 0.5.7
+
+### Patch Changes
+
+- 64f0264: fix(nuxt): more CommonJS issues
+- Updated dependencies [ba27329]
+- Updated dependencies [714b197]
+- Updated dependencies [792c937]
+- Updated dependencies [f918582]
+- Updated dependencies [549eb02]
+- Updated dependencies [3473e08]
+- Updated dependencies [a6ae22a]
+- Updated dependencies [94e4762]
+- Updated dependencies [d5c1d0c]
+- Updated dependencies [63283aa]
+- Updated dependencies [8680da6]
+- Updated dependencies [2077f01]
+- Updated dependencies [ee605d8]
+- Updated dependencies [0e747c7]
+- Updated dependencies [697f1d0]
+- Updated dependencies [99894bc]
+- Updated dependencies [5ad329e]
+  - @scalar/workspace-store@0.15.0
+  - @scalar/api-reference@1.35.0
+  - @scalar/api-client@2.5.27
+  - @scalar/types@0.2.14
+
 ## 0.5.6
 
 ### Patch Changes

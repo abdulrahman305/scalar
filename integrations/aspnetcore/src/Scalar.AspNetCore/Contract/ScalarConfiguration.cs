@@ -12,6 +12,8 @@ internal sealed class ScalarConfiguration
 
     public required bool? ShowSidebar { get; init; }
 
+    public required OperationTitleSource? OperationTitleSource { get; init; }
+
     public required bool? HideModels { get; init; }
 
     public required bool? HideTestRequestButton { get; init; }
@@ -68,6 +70,10 @@ internal sealed class ScalarConfiguration
     public required bool PersistAuth { get; init; }
 
     public required DocumentDownloadType? DocumentDownloadType { get; init; }
+
+    public required bool OrderRequiredPropertiesFirst { get; init; }
+
+    public required PropertyOrder? OrderSchemaPropertiesBy { get; init; }
 }
 
 [JsonSerializable(typeof(ScalarConfiguration))]

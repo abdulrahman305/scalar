@@ -53,6 +53,7 @@ internal static class ScalarOptionsMapper
             DefaultOpenAllTags = options.DefaultOpenAllTags,
             ForceDarkModeState = options.ForceThemeMode?.ToStringFast(true),
             ShowSidebar = options.ShowSidebar,
+            OperationTitleSource = options.OperationTitleSource?.ToStringFast(true),
             WithDefaultFonts = options.DefaultFonts,
             CustomCss = options.CustomCss,
             SearchHotKey = options.SearchHotKey,
@@ -71,7 +72,9 @@ internal static class ScalarOptionsMapper
             Sources = sources,
             BaseServerUrl = options.BaseServerUrl,
             PersistAuth = options.PersistentAuthentication,
-            DocumentDownloadType = options.DocumentDownloadType?.ToStringFast(true)
+            DocumentDownloadType = options.DocumentDownloadType?.ToStringFast(true),
+            OrderRequiredPropertiesFirst = options.OrderRequiredPropertiesFirst,
+            OrderSchemaPropertiesBy = options.SchemaPropertyOrder?.ToStringFast(true)
         };
     }
 
@@ -79,13 +82,14 @@ internal static class ScalarOptionsMapper
     {
         var trimmedOpenApiRoutePattern = options.OpenApiRoutePattern.TrimStart('/');
 
-        foreach (var (name, title, routePattern) in options.Documents)
+        foreach (var (name, title, routePattern, isDefault) in options.Documents)
         {
             var openApiRoutePattern = routePattern is null ? trimmedOpenApiRoutePattern : routePattern.TrimStart('/');
             yield return new ScalarSource
             {
                 Title = title ?? name,
-                Url = openApiRoutePattern.Replace(DocumentName, name)
+                Url = openApiRoutePattern.Replace(DocumentName, name),
+                Default = isDefault
             };
         }
     }

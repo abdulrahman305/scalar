@@ -1,5 +1,105 @@
 # @scalar/aspire
 
+## 0.5.0
+
+### Minor Changes
+
+- f6883f5: feat: rename standalone.js to scalar.js
+
+### Patch Changes
+
+- Updated dependencies [77337d3]
+  - @scalar/api-reference@1.36.1
+
+## 0.4.11
+
+### Patch Changes
+
+- Updated dependencies [2362df9]
+- Updated dependencies [f0f28a9]
+- Updated dependencies [003bb98]
+- Updated dependencies [dd98fdc]
+  - @scalar/api-reference@1.36.0
+
+## 0.4.10
+
+### Patch Changes
+
+- 5377b1b: feat: add direct download type
+- Updated dependencies [6e92423]
+- Updated dependencies [005fba9]
+- Updated dependencies [724052c]
+- Updated dependencies [a1f865c]
+- Updated dependencies [6ee88cd]
+- Updated dependencies [b5321f1]
+- Updated dependencies [dcf50ef]
+  - @scalar/api-reference@1.35.7
+
+## 0.4.9
+
+### Patch Changes
+
+- 422f01d: feat: add SchemaPropertyOrder and OrderRequiredPropertiesFirst configuration support
+- Updated dependencies [b6a59bd]
+- Updated dependencies [8f2a2f2]
+  - @scalar/api-reference@1.35.6
+
+## 0.4.8
+
+### Patch Changes
+
+- Updated dependencies [4e7e8a9]
+  - @scalar/api-reference@1.35.5
+
+## 0.4.7
+
+### Patch Changes
+
+- @scalar/api-reference@1.35.4
+
+## 0.4.6
+
+### Patch Changes
+
+- Updated dependencies [821717b]
+- Updated dependencies [821717b]
+- Updated dependencies [425a954]
+  - @scalar/api-reference@1.35.3
+
+## 0.4.5
+
+### Patch Changes
+
+- @scalar/api-reference@1.35.2
+
+## 0.4.4
+
+### Patch Changes
+
+- @scalar/api-reference@1.35.1
+
+## 0.4.3
+
+### Patch Changes
+
+- 7267103: feat: add default favicon
+- 792c937: Configurable option for sidebar to show method path instead of method summary.
+- d1c8441: feat: support default OpenAPI document
+- 3473e08: fix: performance issues on script load
+- Updated dependencies [714b197]
+- Updated dependencies [792c937]
+- Updated dependencies [f918582]
+- Updated dependencies [549eb02]
+- Updated dependencies [3473e08]
+- Updated dependencies [a6ae22a]
+- Updated dependencies [94e4762]
+- Updated dependencies [d5c1d0c]
+- Updated dependencies [2077f01]
+- Updated dependencies [0e747c7]
+- Updated dependencies [697f1d0]
+- Updated dependencies [5ad329e]
+  - @scalar/api-reference@1.35.0
+
 ## 0.4.2
 
 ### Patch Changes

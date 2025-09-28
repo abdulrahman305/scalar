@@ -1,5 +1,24 @@
 # @scalar/helpers
 
+## 0.0.11
+
+### Patch Changes
+
+- bff46e5: feat: don’t use proxy for reserved tlds
+
+## 0.0.10
+
+### Patch Changes
+
+- 821717b: refactor: schema rendering
+
+## 0.0.9
+
+### Patch Changes
+
+- 98c55d0: feat: better xml rendering
+- 0e747c7: fix: initial scroll to id lands in random positions
+
 ## 0.0.8
 
 ### Patch Changes

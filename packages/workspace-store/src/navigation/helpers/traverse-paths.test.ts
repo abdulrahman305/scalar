@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { traversePaths } from './traverse-paths'
+import { describe, expect, it } from 'vitest'
+
 import type { TagsMap, TraverseSpecOptions } from '@/navigation/types'
 import type { OpenApiDocument } from '@/schemas/v3.1/strict/openapi-document'
+
+import { traversePaths } from './traverse-paths'
 
 describe('traversePaths', () => {
   // Mock getOperationId function
@@ -21,9 +23,8 @@ describe('traversePaths', () => {
   it('should handle empty paths', () => {
     const spec = createBasicSpec()
     const tagsMap: TagsMap = new Map()
-    const titlesMap = new Map<string, string>()
 
-    traversePaths(spec, tagsMap, titlesMap, mockGetOperationId)
+    traversePaths(spec, tagsMap, mockGetOperationId)
     expect(tagsMap.size).toBe(0)
   })
 
@@ -48,8 +49,7 @@ describe('traversePaths', () => {
       ['Users', { tag: { name: 'Users', description: 'User operations' }, entries: [] }],
     ])
 
-    const titlesMap = new Map<string, string>()
-    traversePaths(spec, tagsMap, titlesMap, mockGetOperationId)
+    traversePaths(spec, tagsMap, mockGetOperationId)
 
     expect(tagsMap.size).toBe(1)
     expect(tagsMap.get('Users')?.entries.length).toBe(2)
@@ -74,9 +74,8 @@ describe('traversePaths', () => {
     }
 
     const tagsMap: TagsMap = new Map()
-    const titlesMap = new Map<string, string>()
 
-    traversePaths(spec, tagsMap, titlesMap, mockGetOperationId)
+    traversePaths(spec, tagsMap, mockGetOperationId)
 
     expect(tagsMap.size).toBe(1)
     expect(tagsMap.get('default')?.entries.length).toBe(1)
@@ -108,9 +107,8 @@ describe('traversePaths', () => {
     }
 
     const tagsMap: TagsMap = new Map([['Foobar', { tag: { name: 'Foobar' }, entries: [] }]])
-    const titlesMap = new Map<string, string>()
 
-    traversePaths(spec, tagsMap, titlesMap, mockGetOperationId)
+    traversePaths(spec, tagsMap, mockGetOperationId)
     expect(tagsMap.get('Foobar')?.entries.length).toBe(1)
     expect(tagsMap.get('Foobar')?.entries[0]?.title).toBe('Get Hello World')
     expect(tagsMap.get('default')?.entries.length).toBe(1)
@@ -130,14 +128,14 @@ describe('traversePaths', () => {
     }
 
     const tagsMap: TagsMap = new Map([['Legacy', { tag: { name: 'Legacy' }, entries: [] }]])
-    const titlesMap = new Map<string, string>()
 
-    traversePaths(spec, tagsMap, titlesMap, mockGetOperationId)
+    traversePaths(spec, tagsMap, mockGetOperationId)
 
     expect(tagsMap.get('Legacy')?.entries).toEqual([
       {
         id: 'GET-/old-endpoint',
         method: 'get',
+        'isDeprecated': true,
         path: '/old-endpoint',
         ref: '#/paths/~1old-endpoint/get',
         title: 'Old endpoint',
@@ -160,9 +158,8 @@ describe('traversePaths', () => {
     }
 
     const tagsMap: TagsMap = new Map([['Internal', { tag: { name: 'Internal' }, entries: [] }]])
-    const titlesMap = new Map<string, string>()
 
-    traversePaths(spec, tagsMap, titlesMap, mockGetOperationId)
+    traversePaths(spec, tagsMap, mockGetOperationId)
     expect(tagsMap.get('Internal')?.entries).toEqual([])
   })
 
@@ -180,9 +177,8 @@ describe('traversePaths', () => {
     }
 
     const tagsMap: TagsMap = new Map([['Ignored', { tag: { name: 'Ignored' }, entries: [] }]])
-    const titlesMap = new Map<string, string>()
 
-    traversePaths(spec, tagsMap, titlesMap, mockGetOperationId)
+    traversePaths(spec, tagsMap, mockGetOperationId)
     expect(tagsMap.get('Ignored')?.entries).toEqual([])
   })
 
@@ -198,9 +194,8 @@ describe('traversePaths', () => {
     }
 
     const tagsMap: TagsMap = new Map([['Misc', { tag: { name: 'Misc' }, entries: [] }]])
-    const titlesMap = new Map<string, string>()
 
-    traversePaths(spec, tagsMap, titlesMap, mockGetOperationId)
+    traversePaths(spec, tagsMap, mockGetOperationId)
     expect(tagsMap.get('Misc')?.entries[0]?.title).toBe('/no-summary')
   })
 
@@ -217,11 +212,9 @@ describe('traversePaths', () => {
     }
 
     const tagsMap: TagsMap = new Map([['Test', { tag: { name: 'Test' }, entries: [] }]])
-    const titlesMap = new Map<string, string>()
 
-    traversePaths(spec, tagsMap, titlesMap, mockGetOperationId)
-
-    expect(titlesMap.get('GET-/test')).toBe('Test endpoint')
+    traversePaths(spec, tagsMap, mockGetOperationId)
+    expect(tagsMap.get('Test')?.entries[0]?.title).toBe('Test endpoint')
   })
 
   it('should use the path when the summary is empty', () => {
@@ -237,10 +230,8 @@ describe('traversePaths', () => {
     }
 
     const tagsMap: TagsMap = new Map([['Test', { tag: { name: 'Test' }, entries: [] }]])
-    const titlesMap = new Map<string, string>()
 
-    traversePaths(spec, tagsMap, titlesMap, mockGetOperationId)
-
-    expect(titlesMap.get('GET-/test')).toBe('/test')
+    traversePaths(spec, tagsMap, mockGetOperationId)
+    expect(tagsMap.get('Test')?.entries[0]?.title).toBe('/test')
   })
 })

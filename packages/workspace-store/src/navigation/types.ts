@@ -1,7 +1,4 @@
-import type { TraversedEntry } from '@/schemas/navigation'
-import type { OperationObject } from '@/schemas/v3.1/strict/path-operations'
-import type { TagObject } from '@/schemas/v3.1/strict/tag'
-
+import type { OperationObject, TagObject, TraversedEntry } from '@/schemas/v3.1/strict/openapi-document'
 /** Map of tagNames and their entries */
 export type TagsMap = Map<string, { tag: TagObject; entries: TraversedEntry[] }>
 
@@ -22,20 +19,16 @@ type OperationSortValue = {
  */
 export type TraverseSpecOptions = {
   /** Controls how tags are sorted - either alphabetically or using a custom sort function */
-  tagsSorter: 'alpha' | ((a: TagObject, b: TagObject) => number)
+  tagsSorter?: 'alpha' | ((a: TagObject, b: TagObject) => number)
 
   /** Controls how operations are sorted - alphabetically, by method, or using a custom sort function */
-  operationsSorter: 'alpha' | 'method' | ((a: OperationSortValue, b: OperationSortValue) => number)
+  operationsSorter?: 'alpha' | 'method' | ((a: OperationSortValue, b: OperationSortValue) => number)
 
   /** Whether to hide model schemas from the navigation */
   hideModels: boolean
 
   /** Function to generate unique IDs for markdown headings */
-  getHeadingId: (heading: {
-    depth: number
-    value: string
-    slug?: string
-  }) => string
+  getHeadingId: (heading: { depth: number; value: string; slug?: string }) => string
 
   /** Function to generate unique IDs for operations */
   getOperationId: (

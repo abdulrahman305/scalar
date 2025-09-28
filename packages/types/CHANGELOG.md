@@ -1,5 +1,23 @@
 # @scalar/types
 
+## 0.2.16
+
+### Patch Changes
+
+- 005fba9: feat: documentDownloadType: 'direct'
+
+## 0.2.15
+
+### Patch Changes
+
+- abe3842: Add analytic events to api-client + add telemetry option
+
+## 0.2.14
+
+### Patch Changes
+
+- 792c937: Configurable option for sidebar to show method path instead of method summary.
+
 ## 0.2.13
 
 ### Patch Changes

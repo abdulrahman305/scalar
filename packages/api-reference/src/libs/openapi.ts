@@ -1,16 +1,12 @@
 import type { OpenAPI, OpenAPIV3_1 } from '@scalar/openapi-types'
 import { isDereferenced } from '@scalar/openapi-types/helpers'
-
-import type { ParameterObject } from '@scalar/workspace-store/schemas/v3.1/strict/parameter'
-import type { OperationObject } from '@scalar/workspace-store/schemas/v3.1/strict/path-operations'
 import { getResolvedRef } from '@scalar/workspace-store/helpers/get-resolved-ref'
-import type { MediaTypeObject } from '@scalar/workspace-store/schemas/v3.1/strict/media-header-encoding'
-import type { SchemaObject } from '@scalar/workspace-store/schemas/v3.1/strict/schema'
+import type { OperationObject, ParameterObject } from '@scalar/workspace-store/schemas/v3.1/strict/openapi-document'
 
 /**
  * Formats a property object into a string.
  */
-export function formatProperty(key: string, obj: SchemaObject): string {
+export function formatProperty(key: string, obj: OpenAPIV3_1.SchemaObject): string {
   let output = key
   const isRequired = obj.required?.includes(key)
   output += isRequired ? ' REQUIRED ' : ' optional '
@@ -30,7 +26,7 @@ export function formatProperty(key: string, obj: SchemaObject): string {
 /**
  * Recursively logs the properties of an object.
  */
-function recursiveLogger(obj: MediaTypeObject): string[] {
+function recursiveLogger(obj: OpenAPIV3_1.MediaTypeObject): string[] {
   const results: string[] = ['Body']
   const schema = getResolvedRef(obj?.schema)
 
@@ -71,63 +67,6 @@ export function extractRequestBody(operation: OperationObject): string[] | boole
   } catch (_error) {
     return false
   }
-}
-
-/**
- * Returns all models from the specification, no matter if it's OpenAPI 3.x.
- */
-export function getModels(document?: OpenAPIV3_1.Document) {
-  if (!document) {
-    return {} as Record<string, OpenAPIV3_1.SchemaObject>
-  }
-
-  const models =
-    // OpenAPI 3.x
-    (
-      Object.keys(document?.components?.schemas ?? {}).length
-        ? document?.components?.schemas
-        : // Fallback
-          {}
-    ) as Record<string, OpenAPIV3_1.SchemaObject>
-
-  // Filter out all schemas with `x-internal: true`
-  Object.keys(models ?? {}).forEach((key) => {
-    if (models[key]?.['x-internal'] === true || models[key]?.['x-scalar-ignore'] === true) {
-      delete models[key]
-    }
-  })
-
-  return models
-}
-
-/**
- * Checks if the OpenAPI document has schemas.
- */
-export const hasModels = (content?: OpenAPIV3_1.Document) => {
-  if (!content) {
-    return false
-  }
-
-  if (Object.keys(getModels(content) ?? {}).length) {
-    return true
-  }
-
-  return false
-}
-
-/**
- * Checks if the OpenAPI document has webhooks.
- */
-export const hasWebhooks = (document?: OpenAPIV3_1.Document) => {
-  if (!document) {
-    return false
-  }
-
-  if (Object.keys(document?.webhooks ?? {}).length) {
-    return true
-  }
-
-  return false
 }
 
 /**

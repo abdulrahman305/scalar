@@ -1,5 +1,125 @@
 # @scalar/openapi-to-markdown
 
+## 0.2.40
+
+### Patch Changes
+
+- b858566: chore: moved api client code sample to new store
+- Updated dependencies [db5b649]
+  - @scalar/components@0.14.37
+  - @scalar/oas-utils@0.4.32
+  - @scalar/openapi-parser@0.21.2
+
+## 0.2.39
+
+### Patch Changes
+
+- Updated dependencies [e1cdd00]
+  - @scalar/openapi-parser@0.21.1
+  - @scalar/oas-utils@0.4.31
+  - @scalar/components@0.14.36
+
+## 0.2.38
+
+### Patch Changes
+
+- 02085ef: refactor: use upgrade function from @scalar/openapi-upgrader
+- Updated dependencies [6221e4a]
+- Updated dependencies [005fba9]
+- Updated dependencies [a1f865c]
+- Updated dependencies [a1f865c]
+- Updated dependencies [2d612e4]
+- Updated dependencies [dcf50ef]
+- Updated dependencies [02085ef]
+  - @scalar/openapi-upgrader@0.1.0
+  - @scalar/types@0.2.16
+  - @scalar/openapi-parser@0.21.0
+  - @scalar/oas-utils@0.4.30
+  - @scalar/snippetz@0.4.10
+  - @scalar/components@0.14.35
+
+## 0.2.37
+
+### Patch Changes
+
+- Updated dependencies [498f771]
+- Updated dependencies [bff46e5]
+- Updated dependencies [8f2a2f2]
+  - @scalar/components@0.14.34
+  - @scalar/helpers@0.0.11
+  - @scalar/oas-utils@0.4.29
+  - @scalar/openapi-parser@0.20.6
+
+## 0.2.36
+
+### Patch Changes
+
+- Updated dependencies [39bbc0e]
+  - @scalar/openapi-parser@0.20.5
+  - @scalar/oas-utils@0.4.28
+  - @scalar/components@0.14.33
+
+## 0.2.35
+
+### Patch Changes
+
+- @scalar/oas-utils@0.4.27
+- @scalar/components@0.14.32
+
+## 0.2.34
+
+### Patch Changes
+
+- Updated dependencies [821717b]
+- Updated dependencies [2249fe3]
+  - @scalar/oas-utils@0.4.26
+  - @scalar/helpers@0.0.10
+  - @scalar/components@0.14.31
+  - @scalar/openapi-parser@0.20.4
+
+## 0.2.33
+
+### Patch Changes
+
+- Updated dependencies [b8c4b61]
+  - @scalar/openapi-parser@0.20.3
+  - @scalar/oas-utils@0.4.25
+  - @scalar/components@0.14.30
+
+## 0.2.32
+
+### Patch Changes
+
+- Updated dependencies [c470c60]
+- Updated dependencies [abe3842]
+  - @scalar/components@0.14.29
+  - @scalar/types@0.2.15
+  - @scalar/oas-utils@0.4.24
+  - @scalar/openapi-parser@0.20.2
+  - @scalar/snippetz@0.4.9
+
+## 0.2.31
+
+### Patch Changes
+
+- 98c55d0: feat: better xml rendering
+- Updated dependencies [714b197]
+- Updated dependencies [40e79b9]
+- Updated dependencies [98c55d0]
+- Updated dependencies [792c937]
+- Updated dependencies [f918582]
+- Updated dependencies [cededd8]
+- Updated dependencies [a6ae22a]
+- Updated dependencies [422cb2b]
+- Updated dependencies [0e747c7]
+- Updated dependencies [976366f]
+  - @scalar/oas-utils@0.4.23
+  - @scalar/snippetz@0.4.8
+  - @scalar/helpers@0.0.9
+  - @scalar/types@0.2.14
+  - @scalar/components@0.14.28
+  - @scalar/openapi-parser@0.20.2
+
 ## 0.2.30
 
 ### Patch Changes

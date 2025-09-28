@@ -1,5 +1,6 @@
 import { combineUrlAndPath } from '@scalar/helpers/url/merge-urls'
-import type { ServerObject } from '@scalar/workspace-store/schemas/v3.1/strict/server'
+
+import type { ServerObject } from '@/schemas/v3.1/strict/openapi-document'
 
 /**
  * Server processing options containing base URLs for resolving relative server URLs.

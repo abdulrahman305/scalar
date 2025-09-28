@@ -1,6 +1,8 @@
+import type { ApiClientConfiguration } from '@scalar/types/api-reference'
+
+import { analytics } from '@/analytics'
 import { createApiClient } from '@/libs'
 import { createWebHistoryRouter, saveActiveWorkspace } from '@/router'
-import type { ApiClientConfiguration } from '@scalar/types/api-reference'
 
 import ApiClientWeb from './ApiClientWeb.vue'
 
@@ -29,7 +31,18 @@ export const createApiClientWeb = async (
   })
 
   const { importSpecFile, importSpecFromUrl } = client.store
-  router.afterEach(saveActiveWorkspace)
+
+  router.afterEach((to, from) => {
+    if (configuration.telemetry) {
+      analytics?.capture('page-view', {
+        hostname: window.location.hostname,
+        to: to.path, // capture path excluding query params
+        from: from.path,
+      })
+    }
+
+    saveActiveWorkspace(to)
+  })
 
   // Import the spec if needed
   if (configuration.url) {

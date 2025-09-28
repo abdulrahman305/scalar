@@ -1,42 +1,37 @@
-import { compose } from '@/schemas/compose'
-import { Type, type Static, type TSchema } from '@scalar/typebox'
+import { type HttpMethod, httpMethods } from '@scalar/helpers/http/http-methods'
+import { type TLiteral, Type } from '@scalar/typebox'
 
-export const NavigationBaseSchema = Type.Object({
-  type: Type.Union([
-    Type.Literal('text'),
-    Type.Literal('operation'),
-    Type.Literal('model'),
-    Type.Literal('tag'),
-    Type.Literal('webhook'),
-  ]),
+import { compose } from '@/schemas/compose'
+import { TraversedEntryObjectRef, TraversedTagObjectRef } from '@/schemas/v3.1/strict/ref-definitions'
+
+export const NavigationBaseSchemaDefinition = Type.Object({
   id: Type.String(),
   title: Type.String(),
 })
 
-export const TraversedDescriptionSchema = compose(
-  NavigationBaseSchema,
+export const TraversedDescriptionSchemaDefinition = compose(
+  NavigationBaseSchemaDefinition,
   Type.Object({
     type: Type.Literal('text'),
-    children: Type.Optional(Type.Array(NavigationBaseSchema)),
+    children: Type.Optional(Type.Array(TraversedEntryObjectRef)),
   }),
 )
 
-export type TraversedDescription = Static<typeof TraversedDescriptionSchema>
-
-export const TraversedOperationSchema = compose(
-  NavigationBaseSchema,
+export const TraversedOperationSchemaDefinition = compose(
+  NavigationBaseSchemaDefinition,
   Type.Object({
     type: Type.Literal('operation'),
     ref: Type.String(),
-    method: Type.String(),
+    method: Type.Union(
+      Array.from(httpMethods.keys()).map((method) => Type.Literal(method)),
+    ) as unknown as TLiteral<HttpMethod>,
     path: Type.String(),
+    isDeprecated: Type.Optional(Type.Boolean()),
   }),
 )
 
-export type TraversedOperation = Static<typeof TraversedOperationSchema>
-
-export const TraversedSchemaSchema = compose(
-  NavigationBaseSchema,
+export const TraversedSchemaSchemaDefinition = compose(
+  NavigationBaseSchemaDefinition,
   Type.Object({
     type: Type.Literal('model'),
     ref: Type.String(),
@@ -44,46 +39,36 @@ export const TraversedSchemaSchema = compose(
   }),
 )
 
-export type TraversedSchema = Static<typeof TraversedSchemaSchema>
-
-export const TraversedWebhookSchema = compose(
-  NavigationBaseSchema,
+export const TraversedWebhookSchemaDefinition = compose(
+  NavigationBaseSchemaDefinition,
   Type.Object({
     type: Type.Literal('webhook'),
     ref: Type.String(),
-    method: Type.String(),
+    method: Type.Union(
+      Array.from(httpMethods.keys()).map((method) => Type.Literal(method)),
+    ) as unknown as TLiteral<HttpMethod>,
     name: Type.String(),
+    isDeprecated: Type.Optional(Type.Boolean()),
   }),
 )
 
-export type TraversedWebhook = Static<typeof TraversedWebhookSchema>
-
-// Recursive schemas for traversed tags and entries
-const traversedTagSchemaBuilder = <T extends TSchema>(traversedEntrySchema: T) =>
-  compose(
-    NavigationBaseSchema,
-    Type.Object({
-      type: Type.Literal('tag'),
-      name: Type.String(),
-      children: Type.Optional(Type.Array(traversedEntrySchema)),
-      isGroup: Type.Boolean(),
-    }),
-  )
-
-const traversedEntrySchemaBuilder = <T extends TSchema>(traversedTagSchema: T) =>
-  Type.Union([
-    TraversedDescriptionSchema,
-    TraversedOperationSchema,
-    TraversedSchemaSchema,
-    traversedTagSchema,
-    TraversedWebhookSchema,
-  ])
-
-export const TraversedTagSchema = Type.Recursive((This) => traversedTagSchemaBuilder(traversedEntrySchemaBuilder(This)))
-
-export const TraversedEntrySchema = Type.Recursive((This) =>
-  traversedEntrySchemaBuilder(traversedTagSchemaBuilder(This)),
+export const TraversedTagSchemaDefinition = compose(
+  NavigationBaseSchemaDefinition,
+  Type.Object({
+    type: Type.Literal('tag'),
+    name: Type.String(),
+    description: Type.Optional(Type.String()),
+    children: Type.Optional(Type.Array(TraversedEntryObjectRef)),
+    isGroup: Type.Boolean(),
+    isWebhooks: Type.Optional(Type.Boolean()),
+    xKeys: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+  }),
 )
 
-export type TraversedTag = Static<typeof TraversedTagSchema>
-export type TraversedEntry = Static<typeof TraversedEntrySchema>
+export const TraversedEntrySchemaDefinition = Type.Union([
+  TraversedTagObjectRef,
+  TraversedDescriptionSchemaDefinition,
+  TraversedOperationSchemaDefinition,
+  TraversedSchemaSchemaDefinition,
+  TraversedWebhookSchemaDefinition,
+])

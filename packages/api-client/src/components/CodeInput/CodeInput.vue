@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Environment } from '@scalar/oas-utils/entities/environment'
-import type { Workspace } from '@scalar/oas-utils/entities/workspace'
 import {
   colorPicker as colorPickerExtension,
   useCodeMirror,
@@ -45,7 +44,6 @@ const props = withDefaults(
     default?: string | number
     environment: Environment
     envVariables: EnvVariable[]
-    workspace: Workspace
     lineWrapping?: boolean
   }>(),
   {
@@ -143,7 +141,6 @@ const pillPluginExtension = computed(() =>
   pillPlugin({
     environment: props.environment,
     envVariables: props.envVariables,
-    workspace: props.workspace,
     isReadOnly: layout === 'modal',
   }),
 )
@@ -182,10 +179,7 @@ codeMirror.value?.focus()
 
 // If we specify autofocus then focus codemirror on creation
 watch(codeMirror, () => {
-  if (
-    codeMirror.value &&
-    Object.prototype.hasOwnProperty.call(attrs, 'autofocus')
-  ) {
+  if (codeMirror.value && Object.hasOwn(attrs, 'autofocus')) {
     codeMirror.value.focus()
   }
 })

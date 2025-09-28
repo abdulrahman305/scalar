@@ -1,5 +1,27 @@
 # @scalar/core
 
+## 0.3.17
+
+### Patch Changes
+
+- fd2c4ba: fix: html rendering does not output functions in arrays
+- Updated dependencies [005fba9]
+  - @scalar/types@0.2.16
+
+## 0.3.16
+
+### Patch Changes
+
+- Updated dependencies [abe3842]
+  - @scalar/types@0.2.15
+
+## 0.3.15
+
+### Patch Changes
+
+- Updated dependencies [792c937]
+  - @scalar/types@0.2.14
+
 ## 0.3.14
 
 ### Patch Changes

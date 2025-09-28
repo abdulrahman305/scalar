@@ -1,18 +1,26 @@
-import { escapeJsonPointer, upgrade } from '@scalar/openapi-parser'
-import { getValueByPath, parseJsonPointer } from './helpers/json-path-utils'
-import type { WorkspaceDocumentMeta, WorkspaceMeta } from './schemas/workspace'
 import fs from 'node:fs/promises'
 import { cwd } from 'node:process'
-import { createNavigation, type createNavigationOptions } from '@/navigation'
-import { extensions } from '@/schemas/extensions'
-import { OpenAPIDocumentSchema, type OpenApiDocument } from '@/schemas/v3.1/strict/openapi-document'
-import type { PathsObject } from '@/schemas/v3.1/strict/paths'
-import { keyOf } from '@/helpers/general'
-import type { OperationObject } from '@/schemas/v3.1/strict/path-operations'
+
 import { fetchUrls, readFiles } from '@scalar/json-magic/bundle/plugins/node'
+import { escapeJsonPointer } from '@scalar/json-magic/helpers/escape-json-pointer'
+import { upgrade } from '@scalar/openapi-upgrader'
+
+import { keyOf } from '@/helpers/general'
+import { createNavigation } from '@/navigation'
+import { extensions } from '@/schemas/extensions'
 import { coerceValue } from '@/schemas/typebox-coerce'
-import type { ComponentsObject } from '@/schemas/v3.1/strict/components'
-import type { TraversedEntry } from '@/schemas/navigation'
+import {
+  type ComponentsObject,
+  OpenAPIDocumentSchema,
+  type OpenApiDocument,
+  type OperationObject,
+  type PathsObject,
+  type TraversedEntry,
+} from '@/schemas/v3.1/strict/openapi-document'
+import type { DocumentConfiguration } from '@/schemas/workspace-specification/config'
+
+import { getValueByPath, parseJsonPointer } from './helpers/json-path-utils'
+import type { WorkspaceDocumentMeta, WorkspaceMeta } from './schemas/workspace'
 
 const DEFAULT_ASSETS_FOLDER = 'assets'
 export const WORKSPACE_FILE_NAME = 'scalar-workspace.json'
@@ -31,7 +39,7 @@ type WorkspaceDocumentInput = UrlDoc | ObjectDoc | FileDoc
 type CreateServerWorkspaceStoreBase = {
   documents: WorkspaceDocumentInput[]
   meta?: WorkspaceMeta
-  config?: createNavigationOptions
+  config?: DocumentConfiguration
 }
 type CreateServerWorkspaceStore =
   | ({
@@ -271,7 +279,7 @@ export async function createServerWorkspaceStore(workspaceProps: CreateServerWor
   const addDocumentSync = (document: Record<string, unknown>, meta: { name: string } & WorkspaceDocumentMeta) => {
     const { name, ...documentMeta } = meta
 
-    const documentV3 = coerceValue(OpenAPIDocumentSchema, upgrade(document).specification)
+    const documentV3 = coerceValue(OpenAPIDocumentSchema, upgrade(document, '3.1'))
 
     // add the assets
     assets[meta.name] = {

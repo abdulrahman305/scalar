@@ -1,5 +1,223 @@
 # @scalar/api-reference
 
+## 1.36.1
+
+### Patch Changes
+
+- 77337d3: fix: propogate property sorting into schema
+- Updated dependencies [6462733]
+- Updated dependencies [b858566]
+- Updated dependencies [170b890]
+- Updated dependencies [db5b649]
+  - @scalar/json-magic@0.5.2
+  - @scalar/workspace-store@0.16.0
+  - @scalar/api-client@2.6.0
+  - @scalar/components@0.14.37
+  - @scalar/oas-utils@0.4.32
+  - @scalar/openapi-parser@0.21.2
+
+## 1.36.0
+
+### Minor Changes
+
+- 003bb98: Fix server selection for examples/snippets in Operation: prefer operation-level servers, then path-level servers, then provided server prop.
+
+### Patch Changes
+
+- 2362df9: fix: add property name sorting to the request body before splitting additional properties
+- f0f28a9: feat: migrate sidebar to consume from the new store
+- dd98fdc: fix: remove asterisk from additionalProperties
+- Updated dependencies [7be091c]
+- Updated dependencies [e1cdd00]
+- Updated dependencies [f0f28a9]
+- Updated dependencies [41d8600]
+- Updated dependencies [db966b4]
+  - @scalar/workspace-store@0.15.8
+  - @scalar/openapi-parser@0.21.1
+  - @scalar/json-magic@0.5.1
+  - @scalar/api-client@2.5.35
+  - @scalar/oas-utils@0.4.31
+  - @scalar/components@0.14.36
+
+## 1.35.7
+
+### Patch Changes
+
+- 6e92423: feat: do not show example picker for one example
+- 005fba9: feat: documentDownloadType: 'direct'
+- 724052c: fix: darkMode setting does not do anything for `false`
+- a1f865c: refactor: use @scalar/openapi-upgrader
+- 6ee88cd: feat: show webhook id in payload example
+- b5321f1: feat: copy webhook as cURL
+- dcf50ef: refactor: move escapeJsonPointer to @scalar/json-magic
+- Updated dependencies [6221e4a]
+- Updated dependencies [005fba9]
+- Updated dependencies [fe46413]
+- Updated dependencies [0aa6d26]
+- Updated dependencies [a1f865c]
+- Updated dependencies [a1f865c]
+- Updated dependencies [2d612e4]
+- Updated dependencies [dcf50ef]
+- Updated dependencies [02085ef]
+  - @scalar/openapi-upgrader@0.1.0
+  - @scalar/types@0.2.16
+  - @scalar/json-magic@0.5.0
+  - @scalar/code-highlight@0.2.0
+  - @scalar/workspace-store@0.15.7
+  - @scalar/openapi-parser@0.21.0
+  - @scalar/api-client@2.5.34
+  - @scalar/oas-utils@0.4.30
+  - @scalar/snippetz@0.4.10
+  - @scalar/themes@0.13.18
+  - @scalar/components@0.14.35
+
+## 1.35.6
+
+### Patch Changes
+
+- b6a59bd: fix(api-reference): webhook request example display
+- 8f2a2f2: Bump some dependencies to latest
+- Updated dependencies [498f771]
+- Updated dependencies [bff46e5]
+- Updated dependencies [8f2a2f2]
+  - @scalar/components@0.14.34
+  - @scalar/helpers@0.0.11
+  - @scalar/api-client@2.5.33
+  - @scalar/use-hooks@0.2.5
+  - @scalar/themes@0.13.17
+  - @scalar/json-magic@0.4.3
+  - @scalar/oas-utils@0.4.29
+  - @scalar/object-utils@1.2.7
+  - @scalar/workspace-store@0.15.6
+  - @scalar/code-highlight@0.1.9
+  - @scalar/openapi-parser@0.20.6
+
+## 1.35.5
+
+### Patch Changes
+
+- 4e7e8a9: fix: safely check for readonly/writeonly properties
+- Updated dependencies [3bd1209]
+- Updated dependencies [39bbc0e]
+- Updated dependencies [1943b99]
+  - @scalar/json-magic@0.4.2
+  - @scalar/openapi-parser@0.20.5
+  - @scalar/oas-utils@0.4.28
+  - @scalar/workspace-store@0.15.5
+  - @scalar/api-client@2.5.32
+  - @scalar/components@0.14.33
+
+## 1.35.4
+
+### Patch Changes
+
+- Updated dependencies [019a22a]
+- Updated dependencies [f8fc81c]
+  - @scalar/workspace-store@0.15.4
+  - @scalar/api-client@2.5.31
+  - @scalar/oas-utils@0.4.27
+  - @scalar/components@0.14.32
+
+## 1.35.3
+
+### Patch Changes
+
+- 821717b: refactor: schema rendering
+- 821717b: fix: deep resolve response examples
+- 425a954: fix(api-reference): render proper slots
+- Updated dependencies [821717b]
+- Updated dependencies [c173063]
+- Updated dependencies [c173063]
+- Updated dependencies [2249fe3]
+  - @scalar/workspace-store@0.15.3
+  - @scalar/oas-utils@0.4.26
+  - @scalar/helpers@0.0.10
+  - @scalar/api-client@2.5.30
+  - @scalar/components@0.14.31
+  - @scalar/json-magic@0.4.1
+  - @scalar/object-utils@1.2.6
+  - @scalar/openapi-parser@0.20.4
+
+## 1.35.2
+
+### Patch Changes
+
+- Updated dependencies [b8c4b61]
+- Updated dependencies [5eedb97]
+  - @scalar/openapi-parser@0.20.3
+  - @scalar/api-client@2.5.29
+  - @scalar/oas-utils@0.4.25
+  - @scalar/workspace-store@0.15.2
+  - @scalar/components@0.14.30
+
+## 1.35.1
+
+### Patch Changes
+
+- Updated dependencies [c470c60]
+- Updated dependencies [abe3842]
+- Updated dependencies [5a7d388]
+  - @scalar/api-client@2.5.28
+  - @scalar/components@0.14.29
+  - @scalar/types@0.2.15
+  - @scalar/oas-utils@0.4.24
+  - @scalar/openapi-parser@0.20.2
+  - @scalar/snippetz@0.4.9
+  - @scalar/themes@0.13.16
+  - @scalar/workspace-store@0.15.1
+  - @scalar/code-highlight@0.1.9
+
+## 1.35.0
+
+### Minor Changes
+
+- 697f1d0: feat(api-reference): info block
+- 5ad329e: feat: openapi auth selector block
+
+### Patch Changes
+
+- 714b197: feat: support base64 unicode characters
+- 792c937: Configurable option for sidebar to show method path instead of method summary.
+- f918582: feat(api-reference, components): update scalar floating components contraints
+- 549eb02: feat(api-reference): export workspace store hooks
+- 3473e08: fix: performance issues on script load
+- a6ae22a: feat: change the way we declare schemas
+- 94e4762: fix: padding on intro block
+- d5c1d0c: feat(api-reference): custom display for webhook request examples
+- 2077f01: fix: open first tag when not defined in document
+- 0e747c7: fix: initial scroll to id lands in random positions
+- Updated dependencies [ba27329]
+- Updated dependencies [714b197]
+- Updated dependencies [40e79b9]
+- Updated dependencies [06a46f0]
+- Updated dependencies [98c55d0]
+- Updated dependencies [792c937]
+- Updated dependencies [f918582]
+- Updated dependencies [cededd8]
+- Updated dependencies [3473e08]
+- Updated dependencies [a6ae22a]
+- Updated dependencies [422cb2b]
+- Updated dependencies [63283aa]
+- Updated dependencies [8680da6]
+- Updated dependencies [ee605d8]
+- Updated dependencies [2b22eab]
+- Updated dependencies [0e747c7]
+- Updated dependencies [976366f]
+- Updated dependencies [99894bc]
+- Updated dependencies [5ad329e]
+  - @scalar/workspace-store@0.15.0
+  - @scalar/api-client@2.5.27
+  - @scalar/oas-utils@0.4.23
+  - @scalar/snippetz@0.4.8
+  - @scalar/json-magic@0.4.0
+  - @scalar/helpers@0.0.9
+  - @scalar/types@0.2.14
+  - @scalar/components@0.14.28
+  - @scalar/themes@0.13.15
+  - @scalar/openapi-parser@0.20.2
+  - @scalar/object-utils@1.2.5
+  - @scalar/code-highlight@0.1.9
+
 ## 1.34.6
 
 ### Patch Changes

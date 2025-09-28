@@ -54,15 +54,16 @@ public static class ScalarOptionsExtensions
     /// <param name="documentName">The name identifier for the OpenAPI document. This value will be used to replace the '{documentName}' placeholder in the <see cref="ScalarOptions.OpenApiRoutePattern"/>.</param>
     /// <param name="title">Optional display title for the document. If not provided, the document name will be used as the title.</param>
     /// <param name="routePattern">Optional route pattern for the OpenAPI document. If not provided, the <see cref="ScalarOptions.OpenApiRoutePattern"/> will be used. The pattern can include the '{documentName}' placeholder which will be replaced with the document name.</param>
+    /// <param name="isDefault">Indicates whether this document should be the default selection when multiple documents are available. Only one document should be marked as default.</param>
     /// <returns>The <see cref="ScalarOptions" /> so that additional calls can be chained.</returns>
     /// <remarks>
     /// When multiple documents are added, they will be displayed as selectable options in a dropdown menu.
     /// If no documents are explicitly added, a default document named 'v1' will be used.
     /// The '{documentName}' placeholder in the route pattern will be replaced with the provided document name.
     /// </remarks>
-    public static ScalarOptions AddDocument(this ScalarOptions options, string documentName, string? title = null, string? routePattern = null)
+    public static ScalarOptions AddDocument(this ScalarOptions options, string documentName, string? title = null, string? routePattern = null, bool isDefault = false)
     {
-        options.Documents.Add(new ScalarDocument(documentName, title, routePattern));
+        options.Documents.Add(new ScalarDocument(documentName, title, routePattern, isDefault));
         return options;
     }
 
@@ -120,6 +121,18 @@ public static class ScalarOptionsExtensions
     public static ScalarOptions WithSidebar(this ScalarOptions options, bool showSidebar = true)
     {
         options.ShowSidebar = showSidebar;
+        return options;
+    }
+
+    /// <summary>
+    /// Sets whether the sidebar and search should use the operation summary or the operation path.
+    /// </summary>
+    /// <param name="options">The <see cref="ScalarOptions" /> to configure.</param>
+    /// <param name="operationTitleSource">Whether to use the method summary or the method path in the sidebar and search.</param>
+    /// <returns>The <see cref="ScalarOptions" /> so that additional calls can be chained.</returns>
+    public static ScalarOptions WithOperationTitleSource(this ScalarOptions options, OperationTitleSource operationTitleSource)
+    {
+        options.OperationTitleSource = operationTitleSource;
         return options;
     }
 
@@ -901,6 +914,30 @@ public static class ScalarOptionsExtensions
     public static ScalarOptions WithPersistentAuthentication(this ScalarOptions options, bool persistAuth = true)
     {
         options.PersistentAuthentication = persistAuth;
+        return options;
+    }
+
+    /// <summary>
+    /// Sets whether required properties should be ordered first in schema properties.
+    /// </summary>
+    /// <param name="options">The <see cref="ScalarOptions" /> to configure.</param>
+    /// <param name="orderRequiredFirst">Whether to order required properties first.</param>
+    /// <returns>The <see cref="ScalarOptions" /> so that additional calls can be chained.</returns>
+    public static ScalarOptions WithOrderRequiredPropertiesFirst(this ScalarOptions options, bool orderRequiredFirst = true)
+    {
+        options.OrderRequiredPropertiesFirst = orderRequiredFirst;
+        return options;
+    }
+
+    /// <summary>
+    /// Sets the ordering method for schema properties.
+    /// </summary>
+    /// <param name="options">The <see cref="ScalarOptions" /> to configure.</param>
+    /// <param name="orderBy">The ordering method to use for schema properties.</param>
+    /// <returns>The <see cref="ScalarOptions" /> so that additional calls can be chained.</returns>
+    public static ScalarOptions WithSchemaPropertyOrder(this ScalarOptions options, PropertyOrder? orderBy)
+    {
+        options.SchemaPropertyOrder = orderBy;
         return options;
     }
 }

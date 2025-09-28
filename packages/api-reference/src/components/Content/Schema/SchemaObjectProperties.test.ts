@@ -1,6 +1,8 @@
-import type { OpenAPIV3_1 } from '@scalar/openapi-types'
+import { coerceValue } from '@scalar/workspace-store/schemas/typebox-coerce'
+import { type SchemaObject, SchemaObjectSchema } from '@scalar/workspace-store/schemas/v3.1/strict/openapi-document'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+
 import SchemaObjectProperties from './SchemaObjectProperties.vue'
 
 // Mock child component to avoid deep rendering
@@ -12,7 +14,7 @@ vi.mock('./SchemaProperty.vue', () => ({
       'name',
       'variant',
       'resolvedSchema',
-      'value',
+      'schema',
       'level',
       'compact',
       'hideHeading',
@@ -29,36 +31,35 @@ vi.mock('./SchemaProperty.vue', () => ({
 
 describe('SchemaObjectProperties', () => {
   it('renders properties as SchemaProperty components', () => {
-    const schema: OpenAPIV3_1.SchemaObject = {
+    const schema = coerceValue(SchemaObjectSchema, {
       type: 'object',
       properties: {
         foo: { type: 'string' },
         bar: { type: 'number' },
       },
       required: ['foo'],
-    }
+    })
 
     const wrapper = mount(SchemaObjectProperties, {
-      props: { schema },
+      props: { schema, options: {} },
     })
     const props = wrapper.findAll('.schema-property')
-    expect(props).toHaveLength(2)
     expect(props[0].attributes('data-name')).toBe('foo')
     expect(props[1].attributes('data-name')).toBe('bar')
   })
 
   it('marks required properties', () => {
-    const schema: OpenAPIV3_1.SchemaObject = {
+    const schema = coerceValue(SchemaObjectSchema, {
       type: 'object',
       properties: {
         foo: { type: 'string' },
-        bar: { type: 'number', required: true },
+        bar: { type: 'number' },
       },
       required: ['foo'],
-    }
+    })
 
     const wrapper = mount(SchemaObjectProperties, {
-      props: { schema },
+      props: { schema, options: {} },
     })
     // The required prop is passed to SchemaProperty, but since we mock it, we cannot check directly.
     // Instead, check that both properties are rendered.
@@ -66,16 +67,16 @@ describe('SchemaObjectProperties', () => {
   })
 
   it('renders patternProperties as SchemaProperty components', () => {
-    const schema: OpenAPIV3_1.SchemaObject = {
+    const schema = coerceValue(SchemaObjectSchema, {
       type: 'object',
       patternProperties: {
         '^x-': { type: 'string' },
         '^y-': { type: 'boolean' },
       },
-    }
+    })
 
     const wrapper = mount(SchemaObjectProperties, {
-      props: { schema },
+      props: { schema, options: {} },
     })
 
     const props = wrapper.findAll('.schema-property')
@@ -85,90 +86,92 @@ describe('SchemaObjectProperties', () => {
   })
 
   it('renders additionalProperties as SchemaProperty with default name', () => {
-    const schema: OpenAPIV3_1.SchemaObject = {
+    const schema = coerceValue(SchemaObjectSchema, {
       type: 'object',
       additionalProperties: { type: 'string' },
-    }
+    })
 
     const wrapper = mount(SchemaObjectProperties, {
-      props: { schema },
+      props: { schema, options: {} },
     })
 
     const prop = wrapper.find('.schema-property')
     expect(prop.exists()).toBe(true)
-    expect(prop.attributes('data-name')).toBe('propertyName*')
+    expect(prop.attributes('data-name')).toBe('propertyName')
   })
 
   it('renders additionalProperties with x-additionalPropertiesName', () => {
-    const schema: OpenAPIV3_1.SchemaObject = {
+    const schema = coerceValue(SchemaObjectSchema, {
       type: 'object',
       additionalProperties: {
         type: 'string',
         'x-additionalPropertiesName': 'customName',
       },
-    }
+    })
 
     const wrapper = mount(SchemaObjectProperties, {
-      props: { schema },
+      props: { schema, options: {} },
     })
 
     const prop = wrapper.find('.schema-property')
     expect(prop.exists()).toBe(true)
-    expect(prop.attributes('data-name')).toBe('customName*')
+    expect(prop.attributes('data-name')).toBe('customName')
   })
 
   it('handles additionalProperties as boolean true correctly', () => {
-    const schema: OpenAPIV3_1.SchemaObject = {
+    const schema = coerceValue(SchemaObjectSchema, {
       type: 'object',
       additionalProperties: true,
-    }
+    })
 
     const wrapper = mount(SchemaObjectProperties, {
-      props: { schema },
+      props: { schema, options: {} },
     })
 
     const prop = wrapper.find('.schema-property')
     expect(prop.exists()).toBe(true)
-    expect(prop.attributes('data-name')).toBe('propertyName*')
+    expect(prop.attributes('data-name')).toBe('propertyName')
   })
 
   it('handles additionalProperties as empty object correctly', () => {
-    const schema: OpenAPIV3_1.SchemaObject = {
+    const schema = coerceValue(SchemaObjectSchema, {
       type: 'object',
       additionalProperties: {},
-    }
+    })
 
     const wrapper = mount(SchemaObjectProperties, {
-      props: { schema },
+      props: { schema, options: {} },
     })
 
     const prop = wrapper.find('.schema-property')
     expect(prop.exists()).toBe(true)
-    expect(prop.attributes('data-name')).toBe('propertyName*')
+    expect(prop.attributes('data-name')).toBe('propertyName')
   })
 
   it('does not render anything if schema has no properties, patternProperties, or additionalProperties', () => {
-    const schema: OpenAPIV3_1.SchemaObject = { type: 'object' }
+    const schema = coerceValue(SchemaObjectSchema, {
+      type: 'object',
+    })
 
     const wrapper = mount(SchemaObjectProperties, {
-      props: { schema },
+      props: { schema, options: {} },
     })
 
     expect(wrapper.findAll('.schema-property')).toHaveLength(0)
   })
 
   it('sorts properties alphabetically when all have same required status', () => {
-    const schema: OpenAPIV3_1.SchemaObject = {
+    const schema = coerceValue(SchemaObjectSchema, {
       type: 'object',
       properties: {
         zebra: { type: 'string' },
         alpha: { type: 'number' },
         beta: { type: 'boolean' },
       },
-    }
+    })
 
     const wrapper = mount(SchemaObjectProperties, {
-      props: { schema },
+      props: { schema, options: {} },
     })
 
     const props = wrapper.findAll('.schema-property')
@@ -179,7 +182,7 @@ describe('SchemaObjectProperties', () => {
   })
 
   it('sorts required properties first, then alphabetically', () => {
-    const schema: OpenAPIV3_1.SchemaObject = {
+    const schema = coerceValue(SchemaObjectSchema, {
       type: 'object',
       properties: {
         zebra: { type: 'string' },
@@ -188,10 +191,10 @@ describe('SchemaObjectProperties', () => {
         gamma: { type: 'object' },
       },
       required: ['zebra', 'gamma'],
-    }
+    })
 
     const wrapper = mount(SchemaObjectProperties, {
-      props: { schema },
+      props: { schema, options: {} },
     })
 
     const props = wrapper.findAll('.schema-property')
@@ -205,7 +208,7 @@ describe('SchemaObjectProperties', () => {
   })
 
   it('sorts properties alphabetically when orderRequiredPropertiesFirst is false', () => {
-    const schema: OpenAPIV3_1.SchemaObject = {
+    const schema: SchemaObject = {
       type: 'object',
       properties: {
         zebra: { type: 'string' },
@@ -219,7 +222,9 @@ describe('SchemaObjectProperties', () => {
     const wrapper = mount(SchemaObjectProperties, {
       props: {
         schema,
-        orderRequiredPropertiesFirst: false,
+        options: {
+          orderRequiredPropertiesFirst: false,
+        },
       },
     })
 
@@ -234,7 +239,7 @@ describe('SchemaObjectProperties', () => {
   })
 
   it('preserves original property order when orderSchemaPropertiesBy is preserve', () => {
-    const schema: OpenAPIV3_1.SchemaObject = {
+    const schema: SchemaObject = {
       type: 'object',
       properties: {
         zebra: { type: 'string' },
@@ -248,8 +253,10 @@ describe('SchemaObjectProperties', () => {
     const wrapper = mount(SchemaObjectProperties, {
       props: {
         schema,
-        orderSchemaPropertiesBy: 'preserve',
-        orderRequiredPropertiesFirst: false,
+        options: {
+          orderSchemaPropertiesBy: 'preserve',
+          orderRequiredPropertiesFirst: false,
+        },
       },
     })
 

@@ -84,9 +84,11 @@ import { operationToHar } from '@scalar/oas-utils/helpers/operation-to-har'
 import { type AvailableClients, type TargetId } from '@scalar/snippetz'
 import { emitCustomEvent } from '@scalar/workspace-store/events'
 import { getResolvedRef } from '@scalar/workspace-store/helpers/get-resolved-ref'
-import type { OperationObject } from '@scalar/workspace-store/schemas/v3.1/strict/path-operations'
-import type { SecuritySchemeObject } from '@scalar/workspace-store/schemas/v3.1/strict/security-scheme'
-import type { ServerObject } from '@scalar/workspace-store/schemas/v3.1/strict/server'
+import type {
+  OperationObject,
+  SecuritySchemeObject,
+  ServerObject,
+} from '@scalar/workspace-store/schemas/v3.1/strict/openapi-document'
 import { computed, ref, useId, watch, type ComponentPublicInstance } from 'vue'
 
 import { HttpMethod } from '@/components/HttpMethod'
@@ -311,9 +313,7 @@ const id = useId()
       <span
         v-if="generateLabel"
         v-html="generateLabel()" />
-      <slot
-        v-else-if="!isWebhook"
-        name="header" />
+      <slot name="header" />
       <!-- Client picker -->
       <template
         v-if="!isWebhook && clients.length"
@@ -357,18 +357,24 @@ const id = useId()
 
     <!-- Footer -->
     <ScalarCardFooter
-      v-if="Object.keys(operationExamples).length || $slots.footer"
+      v-if="Object.keys(operationExamples).length > 1 || $slots.footer"
       class="request-card-footer bg-b-3">
       <!-- Example picker -->
       <div
-        v-if="Object.keys(operationExamples).length"
+        v-if="Object.keys(operationExamples).length > 1"
         class="request-card-footer-addon">
-        <ExamplePicker
-          v-model="selectedExampleKey"
-          :examples="operationExamples"
-          @update:modelValue="
-            emitCustomEvent(elem?.$el, 'scalar-update-selected-example', $event)
-          " />
+        <template v-if="Object.keys(operationExamples).length">
+          <ExamplePicker
+            v-model="selectedExampleKey"
+            :examples="operationExamples"
+            @update:modelValue="
+              emitCustomEvent(
+                elem?.$el,
+                'scalar-update-selected-example',
+                $event,
+              )
+            " />
+        </template>
       </div>
 
       <!-- Footer -->

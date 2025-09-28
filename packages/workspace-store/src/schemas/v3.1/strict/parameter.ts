@@ -1,9 +1,8 @@
+import { Type } from '@scalar/typebox'
+
 import { compose } from '@/schemas/compose'
-import { MediaTypeObjectSchema } from '@/schemas/v3.1/strict/media-header-encoding'
-import { ExampleObjectSchema } from '@/schemas/v3.1/strict/example'
+import { ExampleObjectRef, MediaTypeObjectRef, SchemaObjectRef } from '@/schemas/v3.1/strict/ref-definitions'
 import { reference } from '@/schemas/v3.1/strict/reference'
-import { SchemaObjectSchema } from '@/schemas/v3.1/strict/schema'
-import { Type, type Static } from '@scalar/typebox'
 
 export const ParameterObjectBaseSchema = Type.Object({
   /** REQUIRED. The name of the parameter. Parameter names are case sensitive.
@@ -31,20 +30,18 @@ export const ParameterObjectWithSchemaSchema = compose(
     /** When this is true, header values of type array or object generate a single header whose value is a comma-separated list of the array items or key-value pairs of the map, see Style Examples. For other data types this field has no effect. The default value is false. */
     explode: Type.Optional(Type.Boolean()),
     /** The schema defining the type used for the header. */
-    schema: Type.Optional(Type.Union([SchemaObjectSchema, reference(SchemaObjectSchema)])),
+    schema: Type.Optional(Type.Union([SchemaObjectRef, reference(SchemaObjectRef)])),
     /** Example of the header's potential value; see Working With Examples. https://swagger.io/specification/#working-with-examples */
     example: Type.Optional(Type.Any()),
     /** Examples of the header's potential value; see Working With Examples. https://swagger.io/specification/#working-with-examples */
-    examples: Type.Optional(
-      Type.Record(Type.String(), Type.Union([ExampleObjectSchema, reference(ExampleObjectSchema)])),
-    ),
+    examples: Type.Optional(Type.Record(Type.String(), Type.Union([ExampleObjectRef, reference(ExampleObjectRef)]))),
   }),
 )
 
 export const ParameterObjectWithContentSchema = compose(
   ParameterObjectBaseSchema,
   Type.Object({
-    content: Type.Optional(Type.Record(Type.String(), MediaTypeObjectSchema)),
+    content: Type.Optional(Type.Record(Type.String(), MediaTypeObjectRef)),
   }),
 )
 
@@ -55,6 +52,7 @@ export const ParameterObjectWithContentSchema = compose(
  *
  * See Appendix E for a detailed examination of percent-encoding concerns, including interactions with the application/x-www-form-urlencoded query string format.
  */
-export const ParameterObjectSchema = Type.Union([ParameterObjectWithSchemaSchema, ParameterObjectWithContentSchema])
-
-export type ParameterObject = Static<typeof ParameterObjectSchema>
+export const ParameterObjectSchemaDefinition = Type.Union([
+  ParameterObjectWithSchemaSchema,
+  ParameterObjectWithContentSchema,
+])

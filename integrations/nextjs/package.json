@@ -18,7 +18,7 @@
     "openapi",
     "swagger"
   ],
-  "version": "0.8.17",
+  "version": "0.8.20",
   "engines": {
     "node": ">=20"
   },
@@ -52,14 +52,14 @@
     "@types/react": "catalog:*",
     "@types/react-dom": "catalog:*",
     "@vitejs/plugin-react": "^4.3.4",
-    "next": "^15.3.3",
+    "next": "catalog:*",
     "react": "catalog:*",
     "react-dom": "catalog:*",
     "vite": "catalog:*",
     "vite-plugin-dts": "^4.3.0"
   },
   "peerDependencies": {
-    "next": "^15.3.3",
+    "next": "^15.0.0",
     "react": "^19.0.0"
   }
 }

@@ -10,13 +10,6 @@ import { nextTick, ref } from 'vue'
 
 import { lazyBus } from './lazyBus'
 
-/**
- * The default timeout for lazy loading
- *
- * Note: For browsers *without* requestIdleCallback support only.
- */
-const DEFAULT_LAZY_TIMEOUT = 300
-
 const {
   id,
   isLazy = true,
@@ -33,6 +26,13 @@ const {
   prev?: boolean
 }>()
 
+/**
+ * The default timeout for lazy loading
+ *
+ * Note: For browsers *without* requestIdleCallback support only.
+ */
+const DEFAULT_LAZY_TIMEOUT = 300
+
 /** We save to our lazyId list if it's a previous sibling or if it's not lazy */
 const save = prev || !isLazy
 
@@ -45,9 +45,8 @@ const onIdle = (cb: () => void) => {
     setTimeout(() => {
       nextTick(() => {
         cb()
-      }),
-        lazyTimeout ?? DEFAULT_LAZY_TIMEOUT
-    })
+      })
+    }, lazyTimeout ?? DEFAULT_LAZY_TIMEOUT)
   }
 }
 
@@ -64,6 +63,7 @@ if (isLazy) {
     }
   })
 } else if (id) {
+  // console.log('✅ LOADED', id)
   nextTick(() => lazyBus.emit({ loaded: id, save }))
 }
 </script>

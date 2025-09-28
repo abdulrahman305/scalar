@@ -1,5 +1,62 @@
 # @scalar/json-magic
 
+## 0.5.2
+
+### Patch Changes
+
+- 6462733: fix: comment out flaky test for now
+
+## 0.5.1
+
+### Patch Changes
+
+- 41d8600: feat: add local ref bundling to bundler
+
+## 0.5.0
+
+### Minor Changes
+
+- fe46413: feat: support for $id and $anchor
+
+### Patch Changes
+
+- dcf50ef: refactor: move escapeJsonPointer to @scalar/json-magic
+
+## 0.4.3
+
+### Patch Changes
+
+- Updated dependencies [bff46e5]
+  - @scalar/helpers@0.0.11
+
+## 0.4.2
+
+### Patch Changes
+
+- 3bd1209: fix: do not throw when we set on an invalid ref
+- 1943b99: chore: emit warning when trying to set an invalid ref
+
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [821717b]
+  - @scalar/helpers@0.0.10
+
+## 0.4.0
+
+### Minor Changes
+
+- 99894bc: feat: correctly validate the schemas
+
+### Patch Changes
+
+- 06a46f0: fix: add proxy cache to fix reactivity issues
+- 63283aa: fix: use hidden properties during validation
+- Updated dependencies [98c55d0]
+- Updated dependencies [0e747c7]
+  - @scalar/helpers@0.0.9
+
 ## 0.3.1
 
 ### Patch Changes

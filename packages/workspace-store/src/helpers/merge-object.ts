@@ -1,5 +1,6 @@
-import type { UnknownObject } from '@/helpers/general'
 import { getRaw } from '@scalar/json-magic/magic-proxy'
+
+import type { UnknownObject } from '@/helpers/general'
 
 /**
  * Deep merges two objects, combining their properties recursively.
@@ -58,7 +59,12 @@ export const mergeObjects = <R>(
 
         mergeObjects(aValue as Record<string, unknown>, bValue as Record<string, unknown>, cache)
       } else {
-        a[key] = bValue // Overwrite with b's value if not an object
+        try {
+          a[key] = bValue // Overwrite with b's value if not an object
+        } catch (error) {
+          console.warn(`Issue setting ${key} on object`)
+          console.warn(error)
+        }
       }
     }
   }

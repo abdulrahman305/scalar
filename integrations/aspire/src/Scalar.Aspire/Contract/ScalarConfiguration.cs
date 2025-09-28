@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Scalar.Aspire;
 
@@ -11,6 +11,8 @@ internal sealed class ScalarConfiguration
     public required string? ProxyUrl { get; init; }
 
     public required bool? ShowSidebar { get; init; }
+
+    public required string? OperationTitleSource { get; init; }
 
     public required bool? HideModels { get; init; }
 
@@ -65,4 +67,8 @@ internal sealed class ScalarConfiguration
     public required bool PersistAuth { get; set; }
 
     public required string? DocumentDownloadType { get; init; }
+
+    public required bool OrderRequiredPropertiesFirst { get; init; }
+
+    public required string? OrderSchemaPropertiesBy { get; init; }
 }

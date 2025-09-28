@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { XEnumDescriptionsSchema } from './x-enum-descriptions'
 import { Value } from '@scalar/typebox/value'
+import { describe, expect, it } from 'vitest'
+
+import { XEnumDescriptionsSchema } from './x-enum-descriptions'
 
 describe('XEnumDescriptionsSchema', () => {
   it('validates enum descriptions mapping', () => {
@@ -23,17 +24,16 @@ describe('XEnumDescriptionsSchema', () => {
     })
   })
 
-  it('defaults to empty object when empty', () => {
+  it('defaults to undefined when empty', () => {
     expect(Value.Parse(XEnumDescriptionsSchema, {})).toEqual({
-      'x-enumDescriptions': {},
+      'x-enumDescriptions': undefined,
     })
   })
 
   it('throws error when invalid value provided', () => {
-    expect(() => {
-      Value.Parse(XEnumDescriptionsSchema, {
-        'x-enumDescriptions': 'invalid',
-      })
-    }).toThrow()
+    const result = Value.Check(XEnumDescriptionsSchema, {
+      'x-enumDescriptions': 'invalid',
+    })
+    expect(result).toEqual(false)
   })
 })

@@ -1,5 +1,28 @@
 # @scalar/nestjs-api-reference
 
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies [fd2c4ba]
+  - @scalar/core@0.3.17
+
+## 1.0.1
+
+### Patch Changes
+
+- @scalar/core@0.3.16
+
+## 1.0.0
+
+### Major Changes
+
+- 2c9c54c: feat!: pure ESM distribution
+
+### Patch Changes
+
+- @scalar/core@0.3.15
+
 ## 0.5.14
 
 ### Patch Changes

@@ -1,5 +1,95 @@
 # @scalar/components
 
+## 0.14.37
+
+### Patch Changes
+
+- db5b649: feat: auth selector block
+  - @scalar/oas-utils@0.4.32
+
+## 0.14.36
+
+### Patch Changes
+
+- @scalar/oas-utils@0.4.31
+
+## 0.14.35
+
+### Patch Changes
+
+- Updated dependencies [0aa6d26]
+  - @scalar/code-highlight@0.2.0
+  - @scalar/oas-utils@0.4.30
+  - @scalar/themes@0.13.18
+
+## 0.14.34
+
+### Patch Changes
+
+- 498f771: fix(components): default scalar menu links to be <a> tags
+- 8f2a2f2: Bump some dependencies to latest
+- Updated dependencies [bff46e5]
+- Updated dependencies [8f2a2f2]
+  - @scalar/helpers@0.0.11
+  - @scalar/use-hooks@0.2.5
+  - @scalar/themes@0.13.17
+  - @scalar/oas-utils@0.4.29
+  - @scalar/code-highlight@0.1.9
+
+## 0.14.33
+
+### Patch Changes
+
+- @scalar/oas-utils@0.4.28
+
+## 0.14.32
+
+### Patch Changes
+
+- @scalar/oas-utils@0.4.27
+
+## 0.14.31
+
+### Patch Changes
+
+- 2249fe3: fix: a > img takes the full width
+- Updated dependencies [821717b]
+  - @scalar/oas-utils@0.4.26
+  - @scalar/helpers@0.0.10
+
+## 0.14.30
+
+### Patch Changes
+
+- @scalar/oas-utils@0.4.25
+
+## 0.14.29
+
+### Patch Changes
+
+- c470c60: fix(components): update scalar menu button flex
+  - @scalar/oas-utils@0.4.24
+  - @scalar/themes@0.13.16
+  - @scalar/code-highlight@0.1.9
+
+## 0.14.28
+
+### Patch Changes
+
+- f918582: feat(api-reference, components): update scalar floating components contraints
+- 422cb2b: feat(components)!: add "Add new option" slot to combobox
+- Updated dependencies [714b197]
+- Updated dependencies [98c55d0]
+- Updated dependencies [cededd8]
+- Updated dependencies [a6ae22a]
+- Updated dependencies [2b22eab]
+- Updated dependencies [0e747c7]
+- Updated dependencies [976366f]
+  - @scalar/oas-utils@0.4.23
+  - @scalar/helpers@0.0.9
+  - @scalar/themes@0.13.15
+  - @scalar/code-highlight@0.1.9
+
 ## 0.14.27
 
 ### Patch Changes

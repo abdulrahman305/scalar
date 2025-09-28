@@ -1,5 +1,127 @@
 # @scalar/workspace-store
 
+## 0.16.0
+
+### Minor Changes
+
+- db5b649: feat: auth selector block
+
+### Patch Changes
+
+- b858566: chore: moved api client code sample to new store
+- Updated dependencies [6462733]
+  - @scalar/json-magic@0.5.2
+
+## 0.15.8
+
+### Patch Changes
+
+- 7be091c: fix: schema format does not allow custom formats
+- f0f28a9: feat: migrate sidebar to consume from the new store
+- db966b4: chore: remove other string schema formats
+- Updated dependencies [41d8600]
+  - @scalar/json-magic@0.5.1
+
+## 0.15.7
+
+### Patch Changes
+
+- a1f865c: refactor: use @scalar/openapi-upgrader
+- dcf50ef: refactor: move escapeJsonPointer to @scalar/json-magic
+- Updated dependencies [6221e4a]
+- Updated dependencies [005fba9]
+- Updated dependencies [fe46413]
+- Updated dependencies [0aa6d26]
+- Updated dependencies [2d612e4]
+- Updated dependencies [dcf50ef]
+- Updated dependencies [02085ef]
+  - @scalar/openapi-upgrader@0.1.0
+  - @scalar/types@0.2.16
+  - @scalar/json-magic@0.5.0
+  - @scalar/code-highlight@0.2.0
+  - @scalar/snippetz@0.4.10
+
+## 0.15.6
+
+### Patch Changes
+
+- Updated dependencies [bff46e5]
+  - @scalar/helpers@0.0.11
+  - @scalar/json-magic@0.4.3
+  - @scalar/code-highlight@0.1.9
+  - @scalar/openapi-parser@0.20.6
+
+## 0.15.5
+
+### Patch Changes
+
+- Updated dependencies [3bd1209]
+- Updated dependencies [39bbc0e]
+- Updated dependencies [1943b99]
+  - @scalar/json-magic@0.4.2
+  - @scalar/openapi-parser@0.20.5
+
+## 0.15.4
+
+### Patch Changes
+
+- 019a22a: Try catch merge object to avoid uncaught proxy errors
+
+## 0.15.3
+
+### Patch Changes
+
+- 821717b: refactor: schema rendering
+- Updated dependencies [821717b]
+  - @scalar/helpers@0.0.10
+  - @scalar/json-magic@0.4.1
+  - @scalar/openapi-parser@0.20.4
+
+## 0.15.2
+
+### Patch Changes
+
+- Updated dependencies [b8c4b61]
+  - @scalar/openapi-parser@0.20.3
+
+## 0.15.1
+
+### Patch Changes
+
+- Updated dependencies [abe3842]
+  - @scalar/types@0.2.15
+  - @scalar/openapi-parser@0.20.2
+  - @scalar/snippetz@0.4.9
+  - @scalar/code-highlight@0.1.9
+
+## 0.15.0
+
+### Minor Changes
+
+- a6ae22a: feat: change the way we declare schemas
+- 99894bc: feat: correctly validate the schemas
+- 5ad329e: feat: openapi auth selector block
+
+### Patch Changes
+
+- ba27329: chore: switch to the new version of typebox
+- 3473e08: fix: performance issues on script load
+- 63283aa: fix: use hidden properties during validation
+- 8680da6: chore: delete loose schemas
+- Updated dependencies [40e79b9]
+- Updated dependencies [06a46f0]
+- Updated dependencies [98c55d0]
+- Updated dependencies [792c937]
+- Updated dependencies [63283aa]
+- Updated dependencies [0e747c7]
+- Updated dependencies [99894bc]
+  - @scalar/snippetz@0.4.8
+  - @scalar/json-magic@0.4.0
+  - @scalar/helpers@0.0.9
+  - @scalar/types@0.2.14
+  - @scalar/openapi-parser@0.20.2
+  - @scalar/code-highlight@0.1.9
+
 ## 0.14.2
 
 ### Patch Changes

@@ -1,5 +1,35 @@
 # @scalar/void-server
 
+## 2.2.5
+
+### Patch Changes
+
+- c075323: fix: duplicate xml definition
+
+## 2.2.4
+
+### Patch Changes
+
+- Updated dependencies [bff46e5]
+  - @scalar/helpers@0.0.11
+
+## 2.2.3
+
+### Patch Changes
+
+- Updated dependencies [821717b]
+  - @scalar/helpers@0.0.10
+
+## 2.2.2
+
+### Patch Changes
+
+- 714b197: feat: support base64 unicode characters
+- 98c55d0: feat: better xml rendering
+- Updated dependencies [98c55d0]
+- Updated dependencies [0e747c7]
+  - @scalar/helpers@0.0.9
+
 ## 2.2.1
 
 ### Patch Changes

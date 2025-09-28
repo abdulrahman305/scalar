@@ -1,4 +1,15 @@
+import { randomUUID } from 'node:crypto'
+import fs from 'node:fs/promises'
+import { cwd } from 'node:process'
+import { setTimeout } from 'node:timers/promises'
+
+import { type FastifyInstance, fastify } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
+import { coerceValue } from '@/schemas/typebox-coerce'
+import { SchemaObjectSchema } from '@/schemas/v3.1/strict/openapi-document'
+
+import { allFilesMatch } from '../test/helpers'
 import {
   createServerWorkspaceStore,
   escapePaths,
@@ -6,14 +17,6 @@ import {
   externalizePathReferences,
   filterHttpMethodsOnly,
 } from './server'
-import fs from 'node:fs/promises'
-import { cwd } from 'node:process'
-import { allFilesMatch } from '../test/helpers'
-import { fastify, type FastifyInstance } from 'fastify'
-import { randomUUID } from 'node:crypto'
-import { setTimeout } from 'node:timers/promises'
-import { SchemaObjectSchema } from '@/schemas/v3.1/strict/schema'
-import { coerceValue } from '@/schemas/typebox-coerce'
 
 describe('create-server-store', () => {
   const exampleDocument = () => ({
@@ -89,7 +92,7 @@ describe('create-server-store', () => {
         },
         'x-scalar-navigation': [
           {
-            id: 'List planets',
+            'id': 'tag/default/get/planets',
             method: 'get',
             type: 'operation',
             'ref': '#/paths/~1planets/get',
@@ -179,7 +182,7 @@ describe('create-server-store', () => {
         'x-scalar-active-auth': 'test',
         'x-scalar-navigation': [
           {
-            id: 'List planets',
+            'id': 'tag/default/get/planets',
             method: 'get',
             type: 'operation',
             'ref': '#/paths/~1planets/get',
@@ -211,7 +214,7 @@ describe('create-server-store', () => {
         'x-scalar-active-auth': 'test',
         'x-scalar-navigation': [
           {
-            id: 'List planets',
+            'id': 'tag/default/get/planets',
             method: 'get',
             type: 'operation',
             'ref': '#/paths/~1planets/get',
@@ -285,7 +288,7 @@ describe('create-server-store', () => {
             },
             'x-scalar-navigation': [
               {
-                id: 'List planets',
+                'id': 'tag/default/get/planets',
                 method: 'get',
                 path: '/planets',
                 title: 'List planets',
@@ -314,7 +317,7 @@ describe('create-server-store', () => {
             },
             'x-scalar-navigation': [
               {
-                id: 'List planets',
+                'id': 'tag/default/get/planets',
                 method: 'get',
                 type: 'operation',
                 'ref': '#/paths/~1planets/get',
