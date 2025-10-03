@@ -1,5 +1,54 @@
 # @scalar/api-reference
 
+## 1.37.0
+
+### Minor Changes
+
+- 008a0f3: feat: migrate to Zod 4
+
+### Patch Changes
+
+- f833196: fix: performance issues on references
+- Updated dependencies [008a0f3]
+- Updated dependencies [f833196]
+- Updated dependencies [a9f8d56]
+  - @scalar/openapi-types@0.4.0
+  - @scalar/api-client@2.7.0
+  - @scalar/oas-utils@0.5.0
+  - @scalar/types@0.3.0
+  - @scalar/components@0.14.40
+  - @scalar/openapi-parser@0.22.1
+  - @scalar/openapi-upgrader@0.1.1
+  - @scalar/snippetz@0.4.11
+  - @scalar/themes@0.13.20
+  - @scalar/workspace-store@0.16.2
+  - @scalar/code-highlight@0.2.0
+
+## 1.36.3
+
+### Patch Changes
+
+- 894343a: feat: show operationId
+- 9b7f5e4: chore: wording configuration toolbar
+- 8ad6af0: feat: integrate new code sample block
+- 395e822: chore: rename configuration tools to developer tools
+- 2b98503: fix: configuration handling and server list reset on document replacement
+- c6736fd: chore: hard code openapi types
+- 5e268a4: fix: typo and whitespace in toolbar
+- e8915c6: feat: support relative URLs
+- a46a700: Export API reference content and simplify child components of layout
+- Updated dependencies [8ad6af0]
+- Updated dependencies [2b98503]
+- Updated dependencies [c6736fd]
+- Updated dependencies [4951456]
+- Updated dependencies [a46a700]
+  - @scalar/api-client@2.6.2
+  - @scalar/workspace-store@0.16.1
+  - @scalar/openapi-parser@0.22.0
+  - @scalar/json-magic@0.6.0
+  - @scalar/oas-utils@0.4.34
+  - @scalar/components@0.14.39
+
 ## 1.36.2
 
 ### Patch Changes

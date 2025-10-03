@@ -1,5 +1,30 @@
 # @scalar/oas-utils
 
+## 0.5.0
+
+### Minor Changes
+
+- 008a0f3: feat: migrate to Zod 4
+
+### Patch Changes
+
+- f833196: fix: performance issues on references
+- Updated dependencies [008a0f3]
+  - @scalar/openapi-types@0.4.0
+  - @scalar/types@0.3.0
+  - @scalar/themes@0.13.20
+  - @scalar/workspace-store@0.16.2
+
+## 0.4.34
+
+### Patch Changes
+
+- Updated dependencies [2b98503]
+- Updated dependencies [c6736fd]
+- Updated dependencies [4951456]
+  - @scalar/workspace-store@0.16.1
+  - @scalar/json-magic@0.6.0
+
 ## 0.4.33
 
 ### Patch Changes

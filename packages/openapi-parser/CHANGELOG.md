@@ -1,5 +1,24 @@
 # @scalar/openapi-parser
 
+## 0.22.1
+
+### Patch Changes
+
+- Updated dependencies [008a0f3]
+  - @scalar/openapi-types@0.4.0
+  - @scalar/openapi-upgrader@0.1.1
+
+## 0.22.0
+
+### Minor Changes
+
+- 4951456: feat: merge yaml aliases for in-mem representation
+
+### Patch Changes
+
+- Updated dependencies [4951456]
+  - @scalar/json-magic@0.6.0
+
 ## 0.21.2
 
 ### Patch Changes

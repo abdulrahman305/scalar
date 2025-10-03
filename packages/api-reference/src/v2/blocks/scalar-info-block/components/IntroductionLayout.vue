@@ -16,26 +16,24 @@ import {
 } from '@/components/Section'
 import { SpecificationExtension } from '@/features/specification-extension'
 
-import DownloadLink from './DownloadLink.vue'
 import InfoDescription from './InfoDescription.vue'
 import InfoLinks from './InfoLinks.vue'
 import InfoVersion from './InfoVersion.vue'
 import OpenApiVersion from './OpenApiVersion.vue'
 
 const { onLoaded } = defineProps<{
-  oasVersion?: string
+  id: string | undefined
+  oasVersion: string | undefined
   info: InfoObject
   externalDocs?: ExternalDocumentationObject
   documentExtensions?: Record<string, unknown>
   infoExtensions?: Record<string, unknown>
   isLoading?: boolean
-  getOriginalDocument: () => string
-  onLoaded?: () => void
-  id?: string
+  onLoaded?: (() => void) | unknown
 }>()
 
 /** Trigger the onLoaded event when the component is mounted */
-onMounted(() => onLoaded?.())
+onMounted(() => (typeof onLoaded === 'function' ? onLoaded?.() : onLoaded))
 </script>
 
 <template>
@@ -64,9 +62,7 @@ onMounted(() => onLoaded?.())
         </SectionHeader>
         <SectionColumns>
           <SectionColumn>
-            <DownloadLink
-              :getOriginalDocument
-              :title="info?.title" />
+            <slot name="download-link" />
             <InfoDescription :description="info?.description" />
           </SectionColumn>
           <SectionColumn v-if="$slots.aside">

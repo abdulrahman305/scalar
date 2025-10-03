@@ -19,10 +19,9 @@ import {
   hasObtrusiveScrollbars,
   type ThemeId,
 } from '@scalar/themes'
-import { apiReferenceConfigurationSchema } from '@scalar/types/api-reference'
 import { useBreakpoints } from '@scalar/use-hooks/useBreakpoints'
-import { ScalarToasts, useToasts } from '@scalar/use-toasts'
-import { useDebounceFn, useMediaQuery, useResizeObserver } from '@vueuse/core'
+import { ScalarToasts } from '@scalar/use-toasts'
+import { useDebounceFn, useResizeObserver } from '@vueuse/core'
 import {
   computed,
   onBeforeMount,
@@ -42,7 +41,6 @@ import MobileHeader from '@/components/MobileHeader.vue'
 import { ApiClientModal } from '@/features/api-client-modal'
 import { useDocumentSource } from '@/features/document-source'
 import { SearchButton } from '@/features/Search'
-import { CONFIGURATION_SYMBOL } from '@/hooks/useConfig'
 import { useNavState } from '@/hooks/useNavState'
 import { createPluginManager, PLUGIN_MANAGER_SYMBOL } from '@/plugins'
 import type {
@@ -52,6 +50,9 @@ import type {
 } from '@/types'
 import { SidebarBlock, useSidebar } from '@/v2/blocks/scalar-sidebar-block'
 import { useLegacyStoreEvents } from '@/v2/hooks/use-legacy-store-events'
+
+// ---------------------------------------------------------------------------
+// Vue Macros
 
 const {
   configuration: providedConfiguration,
@@ -68,27 +69,9 @@ defineEmits<{
   (e: 'toggleDarkMode'): void
 }>()
 
-const configuration = computed(() =>
-  apiReferenceConfigurationSchema.parse(providedConfiguration),
-)
-
-// Configure Reference toasts to use vue-sonner
-const { initializeToasts, toast } = useToasts()
-initializeToasts((message) => toast(message))
-
 defineOptions({
   inheritAttrs: false,
 })
-
-const { dereferencedDocument, workspaceStore, activeEntitiesStore } =
-  useDocumentSource({
-    configuration,
-    dereferencedDocument: providedDereferencedDocument,
-    originalDocument: providedOriginalDocument,
-  })
-
-provide(WORKSPACE_SYMBOL, workspaceStore)
-provide(ACTIVE_ENTITIES_SYMBOL, activeEntitiesStore)
 
 defineSlots<
   {
@@ -96,23 +79,62 @@ defineSlots<
   } & { 'document-selector': any }
 >()
 
-const isLargeScreen = useMediaQuery('(min-width: 1150px)')
+/**
+ * For unknown reasons the configuration does not perform reactively without this wrapper
+ */
+const configuration = computed(() => ({
+  ...providedConfiguration,
+  hideClientButton: providedConfiguration.hideClientButton ?? false,
+  showSidebar: providedConfiguration.showSidebar ?? true,
+  theme: providedConfiguration.theme ?? 'none',
+  layout: providedConfiguration.layout ?? 'modern',
+  persistAuth: providedConfiguration.persistAuth ?? false,
+  documentDownloadType: providedConfiguration.documentDownloadType ?? 'both',
+  onBeforeRequest: providedConfiguration.onBeforeRequest,
+}))
 
-// Track the container height to control the sidebar height
-const elementHeight = ref('100dvh')
-const documentEl = ref<HTMLElement | null>(null)
-useResizeObserver(documentEl, (entries) => {
-  elementHeight.value = entries[0]
-    ? entries[0].contentRect.height + 'px'
-    : '100dvh'
-})
+// ---------------------------------------------------------------------------
+// Date injection for global state
 
-// Check for Obtrusive Scrollbars
-const obtrusiveScrollbars = computed(hasObtrusiveScrollbars)
+/** @deprecated Old method of document loading. Move to workspace store and async addDocument */
+const { dereferencedDocument, workspaceStore, activeEntitiesStore } =
+  useDocumentSource({
+    configuration,
+    dereferencedDocument: providedDereferencedDocument,
+    originalDocument: providedOriginalDocument,
+  })
 
-const navState = useNavState(configuration)
+/** @deprecated Injected to provision api-client */
+provide(WORKSPACE_SYMBOL, workspaceStore)
+
+/** @deprecated Injected to provision api-client */
+provide(ACTIVE_ENTITIES_SYMBOL, activeEntitiesStore)
+
+/**
+ * Due to a bug in headless UI, we need to set an ID here that can be shared across server/client
+ * TODO remove this once the bug is fixed
+ *
+ * @see https://github.com/tailwindlabs/headlessui/issues/2979
+ */
+provideUseId(() => useId())
+// Provide the client layout
+provide(LAYOUT_SYMBOL, 'modal')
+
+provide(
+  PLUGIN_MANAGER_SYMBOL,
+  createPluginManager({
+    plugins: configuration.value.plugins,
+  }),
+)
+
+// ---------------------------------------------------------------------------
+// Sync sidebar to active document
+
 const { isSidebarOpen, setCollapsedSidebarItem, scrollToOperation, items } =
   useSidebar(store)
+
+/** Id of the first entry should be the  */
+const contentId = computed(() => items.value.entries[0]?.id ?? '')
 
 const {
   getReferenceId,
@@ -121,7 +143,25 @@ const {
   isIntersectionEnabled,
   updateHash,
   replaceUrlState,
-} = navState
+} = useNavState()
+
+/** This is passed into all of the slots so they have access to the references data */
+const breadcrumb = computed(
+  () => items.value.entities?.get(hash.value)?.title ?? '',
+)
+
+const referenceSlotProps = computed<ReferenceSlotProps>(() => ({
+  breadcrumb: breadcrumb.value,
+}))
+
+// Check for Obtrusive Scrollbars
+const obtrusiveScrollbars = computed(hasObtrusiveScrollbars)
+
+// ---------------------------------------------------------------------------
+// Scroll management
+
+/** TODO: Comment this var */
+const yPosition = ref(0)
 
 // Front-end redirect
 if (configuration.value.redirect && typeof window !== 'undefined') {
@@ -157,8 +197,6 @@ const scrollToSection = async (id?: string) => {
   isIntersectionEnabled.value = true
 }
 
-const yPosition = ref(0)
-
 onMounted(() => {
   // Prevent the browser from restoring scroll position on refresh
   history.scrollRestoration = 'manual'
@@ -184,10 +222,6 @@ onMounted(() => {
   window.addEventListener('scroll', debouncedScroll, { passive: true })
 })
 
-const showRenderedContent = computed(
-  () => isLargeScreen.value || !configuration.value.isEditable,
-)
-
 // To clear hash when scrolled to the top
 const debouncedScroll = useDebounceFn(() => {
   if (window.scrollY < 50 && hasLazyLoaded.value) {
@@ -195,7 +229,10 @@ const debouncedScroll = useDebounceFn(() => {
   }
 })
 
-const sidebarOpened = ref(false)
+onUnmounted(() => {
+  // Remove window scroll listener
+  window.removeEventListener('scroll', debouncedScroll)
+})
 
 // Open a sidebar tag
 watch(
@@ -216,44 +253,19 @@ watch(
         setCollapsedSidebarItem(firstTag.id, true)
       }
     }
-
-    // Open the sidebar
-    sidebarOpened.value = true
   },
 )
 
-/** This is passed into all of the slots so they have access to the references data */
-const breadcrumb = computed(
-  () => items.value.entities?.get(hash.value)?.title ?? '',
-)
-const referenceSlotProps = computed<ReferenceSlotProps>(() => ({
-  breadcrumb: breadcrumb.value,
-}))
+// ---------------------------------------------------------------------------
 
-onUnmounted(() => {
-  // Remove window scroll listener
-  window.removeEventListener('scroll', debouncedScroll)
+// Track the container height to control the sidebar height
+const elementHeight = ref('100dvh')
+const documentEl = ref<HTMLElement | null>(null)
+useResizeObserver(documentEl, (entries) => {
+  elementHeight.value = entries[0]
+    ? entries[0].contentRect.height + 'px'
+    : '100dvh'
 })
-
-/**
- * Due to a bug in headless UI, we need to set an ID here that can be shared across server/client
- * TODO remove this once the bug is fixed
- *
- * @see https://github.com/tailwindlabs/headlessui/issues/2979
- */
-provideUseId(() => useId())
-// Provide the client layout
-provide(LAYOUT_SYMBOL, 'modal')
-
-// Provide the configuration
-provide(CONFIGURATION_SYMBOL, configuration)
-
-provide(
-  PLUGIN_MANAGER_SYMBOL,
-  createPluginManager({
-    plugins: configuration.value.plugins,
-  }),
-)
 
 const themeStyleTag = computed(
   () => `<style>
@@ -328,6 +340,12 @@ useLegacyStoreEvents(store, workspaceStore, activeEntitiesStore, documentEl)
         <ScalarErrorBoundary>
           <!-- TODO: @brynn should this be conditional based on classic/modern layout? -->
           <SidebarBlock
+            :options="{
+              pathRouting: configuration.pathRouting,
+              onSidebarClick: configuration.onSidebarClick,
+              operationTitleSource: configuration.operationTitleSource,
+              defaultOpenAllTags: configuration.defaultOpenAllTags,
+            }"
             :title="dereferencedDocument?.info?.title ?? 'The OpenAPI Schema'">
             <template #sidebar-start>
               <!-- Wrap in a div when slot is filled -->
@@ -385,64 +403,83 @@ useLegacyStoreEvents(store, workspaceStore, activeEntitiesStore, documentEl)
       </div>
     </div>
     <!-- The Content -->
-    <template v-if="showRenderedContent">
-      <main
-        :aria-label="`Open API Documentation for ${dereferencedDocument?.info?.title}`"
-        class="references-rendered">
-        <Content
-          :config="configuration"
-          :store="store">
-          <template #start>
-            <slot
-              v-bind="referenceSlotProps"
-              name="content-start" />
-            <ClassicHeader v-if="configuration.layout === 'classic'">
-              <div
-                v-if="$slots['document-selector']"
-                class="w-64 *:!p-0 empty:hidden">
-                <slot name="document-selector" />
-              </div>
-              <SearchButton
-                v-if="!configuration.hideSearch"
-                class="t-doc__sidebar max-w-64"
-                :hideModels="configuration?.hideModels"
-                :searchHotKey="configuration.searchHotKey" />
-              <template #dark-mode-toggle>
-                <ScalarColorModeToggleIcon
-                  v-if="!configuration.hideDarkModeToggle"
-                  class="text-c-2 hover:text-c-1"
-                  :mode="isDark ? 'dark' : 'light'"
-                  style="transform: scale(1.4)"
-                  variant="icon"
-                  @click="$emit('toggleDarkMode')" />
-              </template>
-            </ClassicHeader>
-          </template>
-          <template
-            v-if="configuration?.isEditable"
-            #empty-state>
-            <GettingStarted
-              :theme="configuration?.theme || 'default'"
-              @changeTheme="$emit('changeTheme', $event)"
-              @linkSwaggerFile="$emit('linkSwaggerFile')"
-              @loadSwaggerFile="$emit('loadSwaggerFile')"
-              @updateContent="$emit('updateContent', $event)" />
-          </template>
-          <template #end>
-            <slot
-              v-bind="referenceSlotProps"
-              name="content-end" />
-          </template>
-        </Content>
-      </main>
-      <div
-        v-if="$slots.footer"
-        class="references-footer">
-        <slot
-          v-bind="referenceSlotProps"
-          name="footer" />
-      </div>
-    </template>
+
+    <main
+      :aria-label="`Open API Documentation for ${dereferencedDocument?.info?.title}`"
+      class="references-rendered">
+      <Content
+        :contentId="contentId"
+        :options="{
+          isLoading: configuration.isLoading,
+          slug: configuration.slug,
+          hiddenClients: configuration.hiddenClients,
+          layout: configuration.layout,
+          onLoaded: configuration.onLoaded,
+          persistAuth: configuration.persistAuth,
+          showOperationId: configuration.showOperationId,
+          hideTestRequestButton: configuration.hideTestRequestButton,
+          expandAllResponses: configuration.expandAllResponses,
+          hideModels: configuration.hideModels,
+          expandAllModelSections: configuration.expandAllModelSections,
+          orderRequiredPropertiesFirst:
+            configuration.orderRequiredPropertiesFirst,
+          orderSchemaPropertiesBy: configuration.orderSchemaPropertiesBy,
+          documentDownloadType: configuration.documentDownloadType,
+          url: configuration.url,
+          onShowMore: configuration.onShowMore,
+        }"
+        :store="store">
+        <template #start>
+          <slot
+            v-bind="referenceSlotProps"
+            name="content-start" />
+          <ClassicHeader v-if="configuration.layout === 'classic'">
+            <div
+              v-if="$slots['document-selector']"
+              class="w-64 *:!p-0 empty:hidden">
+              <slot name="document-selector" />
+            </div>
+            <SearchButton
+              v-if="!configuration.hideSearch"
+              class="t-doc__sidebar max-w-64"
+              :hideModels="configuration?.hideModels"
+              :searchHotKey="configuration.searchHotKey" />
+            <template #dark-mode-toggle>
+              <ScalarColorModeToggleIcon
+                v-if="!configuration.hideDarkModeToggle"
+                class="text-c-2 hover:text-c-1"
+                :mode="isDark ? 'dark' : 'light'"
+                style="transform: scale(1.4)"
+                variant="icon"
+                @click="$emit('toggleDarkMode')" />
+            </template>
+          </ClassicHeader>
+        </template>
+        <template
+          v-if="configuration?.isEditable"
+          #empty-state>
+          <GettingStarted
+            :theme="configuration?.theme || 'default'"
+            @changeTheme="$emit('changeTheme', $event)"
+            @linkSwaggerFile="$emit('linkSwaggerFile')"
+            @loadSwaggerFile="$emit('loadSwaggerFile')"
+            @updateContent="$emit('updateContent', $event)" />
+        </template>
+        <template #end>
+          <slot
+            v-bind="referenceSlotProps"
+            name="content-end" />
+        </template>
+      </Content>
+    </main>
+    <div
+      v-if="$slots.footer"
+      class="references-footer">
+      <slot
+        v-bind="referenceSlotProps"
+        name="footer" />
+    </div>
+
     <ApiClientModal
       :configuration="configuration"
       :dereferencedDocument="dereferencedDocument" />
