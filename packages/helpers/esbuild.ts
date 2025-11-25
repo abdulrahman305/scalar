@@ -1,6 +1,6 @@
 import { build } from '@scalar/build-tooling/esbuild'
 
-build({
+await build({
   entries: [
     'src/array/*.ts',
     'src/dom/*.ts',
@@ -12,6 +12,8 @@ build({
     'src/string/*.ts',
     'src/testing/*.ts',
     'src/url/*.ts',
+    'src/crypto/*.ts',
+    'src/node/*.ts',
   ],
   platform: 'shared',
   options: {

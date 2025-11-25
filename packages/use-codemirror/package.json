@@ -16,7 +16,7 @@
     "vue",
     "vue3"
   ],
-  "version": "0.12.43",
+  "version": "0.12.48",
   "engines": {
     "node": ">=20"
   },
@@ -31,6 +31,7 @@
   },
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -52,7 +53,6 @@
     "dist",
     "CHANGELOG.md"
   ],
-  "module": "dist/index.js",
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.3",
     "@codemirror/commands": "^6.7.1",

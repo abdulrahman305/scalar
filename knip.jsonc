@@ -1,0 +1,122 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "ignoreWorkspaces": [
+    // Allows a progressive adoption
+    "examples/**",
+    "packages/api-client/**",
+    "packages/api-client-react/**",
+    "packages/api-reference/**",
+    "packages/api-reference-react/**",
+    "packages/code-highlight/**",
+    "packages/components/**",
+    "packages/core/**",
+    "packages/draggable/**",
+    "packages/galaxy/**",
+    "packages/icons/**",
+    "packages/json-magic/**",
+    "packages/nextjs-openapi/**",
+    "packages/openapi-upgrader/**",
+    "packages/postman-to-openapi/**",
+    "packages/pre-post-request-scripts/**",
+    "packages/react-renderer/**",
+    "packages/sidebar/**",
+    "packages/snippetz/**",
+    "packages/themes/**",
+    "packages/ts-to-openapi/**",
+    "packages/use-codemirror/**",
+    "packages/use-hooks/**",
+    "packages/use-toasts/**",
+    "packages/void-server/**",
+    "packages/workspace-store/**",
+    "projects/**",
+    "integrations/docker/**",
+    "integrations/dotnet/**",
+    "integrations/express/**",
+    "integrations/fastapi/**",
+    "integrations/django-ninja/**",
+    "integrations/hono/**",
+    "integrations/java/**",
+    "integrations/nestjs/**",
+    "integrations/nextjs/**",
+    "integrations/nuxt/**",
+    "integrations/rust/**",
+    "integrations/sveltekit/**"
+  ],
+  "ignoreFiles": [
+    // test types files are marked as unused
+    "**/*.test-d.ts",
+
+    "**/esbuild.ts",
+
+    // Referenced in scalar.config.json
+    "documentation/assets/landing.js"
+  ],
+
+  "ignoreDependencies": [
+    // Used by `ci.yml` `npm-publish` job
+    "@changesets/cli",
+
+    // Required on root to have proper format with prettier
+    "tailwindcss",
+
+    // The following values needs to be re-checked once more packages are included
+    "rollup",
+    "tsc-alias",
+    "tsconfig-paths",
+    "vue-tsc"
+  ],
+  "ignoreBinaries": ["netlify"],
+  "workspaces": {
+    "packages/build-tooling": {
+      "entry": ["src/index.ts", "src/{esbuild,rollup,vite}/index.ts"]
+    },
+    "packages/helpers": {
+      "entry": ["src/*/*.ts", "!src/*/*.test.ts"]
+    },
+    "packages/oas-utils": {
+      "entry": [
+        "src/entities/*/index.ts",
+        "src/helpers/index.ts",
+        "src/helpers/security/index.ts",
+        "src/migrations/index.ts",
+        "src/spec-getters/index.ts",
+        "src/transforms/index.ts"
+      ]
+    },
+    "packages/object-utils": {
+      "entry": ["src/*/index.ts"]
+    },
+    "packages/openapi-parser": {
+      "entry": ["src/index.ts", "src/plugins/fetch-urls/index.ts", "src/plugins/read-files/index.ts"]
+    },
+    "packages/openapi-types": {
+      "entry": ["src/index.ts", "src/helpers/index.ts", "src/schemas/extensions/index.ts", "src/schemas/3.1/*/index.ts"]
+    },
+    "packages/types": {
+      "entry": [
+        "src/index.ts",
+        "src/api-reference/index.ts",
+        "src/entities/index.ts",
+        "src/legacy/index.ts",
+        "src/snippetz/index.ts",
+        "src/utils/index.ts"
+      ]
+    },
+    "integrations/docusaurus": {
+      "ignoreFiles": [
+        // Loaded dynamically by index.ts
+        "src/ScalarDocusaurus.tsx"
+      ],
+      "ignoreDependencies": [
+        // used as polyfill by webpack
+        "path"
+      ]
+    },
+    "integrations/fastify": {
+      "ignoreDependencies": [
+        // build step copy standalone file from this package
+        "@scalar/api-reference"
+      ]
+    }
+  }
+}

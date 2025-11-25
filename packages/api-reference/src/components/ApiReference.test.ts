@@ -31,6 +31,13 @@ beforeEach(() => {
   mockLocation.search = ''
   mockLocation.hash = ''
 
+  vi.mock('@scalar/use-hooks/useBreakpoints', () => ({
+    useBreakpoints: () => ({
+      mediaQueries: {
+        lg: { value: true },
+      },
+    }),
+  }))
   vi.stubGlobal('location', mockLocation)
 })
 
@@ -60,8 +67,8 @@ describe('multiple configurations', () => {
     // Wait for the API reference to be rendered
     await wrapper.vm.$nextTick()
 
-    // Check whether it renders the ApiReferenceLayout component only once
-    expect(wrapper.findAllComponents({ name: 'ApiReferenceLayout' })).toHaveLength(1)
+    // Check whether it renders the Content component only once
+    expect(wrapper.findAllComponents({ name: 'Content' })).toHaveLength(1)
     wrapper.unmount()
   })
 
@@ -85,8 +92,8 @@ describe('multiple configurations', () => {
     // Wait for the API reference to be rendered
     await wrapper.vm.$nextTick()
 
-    // Check whether it renders the ApiReferenceLayout component
-    expect(wrapper.findAllComponents({ name: 'ApiReferenceLayout' })).toHaveLength(1)
+    // Check whether it renders the Content component
+    expect(wrapper.findAllComponents({ name: 'Content' })).toHaveLength(1)
     const documentSelector = wrapper.findComponent({ name: 'DocumentSelector' })
 
     // Check whether it doesn't render the select
@@ -123,8 +130,8 @@ describe('multiple configurations', () => {
     // Wait for the API reference to be rendered
     await wrapper.vm.$nextTick()
 
-    // Check whether it renders the ApiReferenceLayout component
-    expect(wrapper.findAllComponents({ name: 'ApiReferenceLayout' })).toHaveLength(1)
+    // Check whether it renders the Content component
+    expect(wrapper.findAllComponents({ name: 'Content' })).toHaveLength(1)
     const documentSelector = wrapper.findComponent({ name: 'DocumentSelector' })
 
     // Ensure the select is rendered
@@ -164,8 +171,8 @@ describe('multiple configurations', () => {
     await flushPromises()
     await wrapper.vm.$nextTick()
 
-    // Check whether it renders the ApiReferenceLayout component
-    expect(wrapper.findAllComponents({ name: 'ApiReferenceLayout' })).toHaveLength(1)
+    // Check whether it renders the Content component
+    expect(wrapper.findAllComponents({ name: 'Content' })).toHaveLength(1)
 
     // Check whether it renders the select
     const documentSelector = wrapper.findComponent({ name: 'DocumentSelector' })
@@ -235,15 +242,15 @@ describe('circular documents', () => {
     // await flushPromises()
     await wrapper.vm.$nextTick()
 
-    // Check whether it renders the ApiReferenceLayout component
-    expect(wrapper.findAllComponents({ name: 'ApiReferenceLayout' })).toHaveLength(1)
+    // Check whether it renders the Content component
+    expect(wrapper.findAllComponents({ name: 'Content' })).toHaveLength(1)
 
     // Verify the component doesn't crash or throw errors when processing circular references
     expect(wrapper.exists()).toBe(true)
 
     // Check that the component is still functional despite circular dependencies
-    const ApiReferenceLayout = wrapper.findComponent({ name: 'ApiReferenceLayout' })
-    expect(ApiReferenceLayout.exists()).toBe(true)
+    const Content = wrapper.findComponent({ name: 'Content' })
+    expect(Content.exists()).toBe(true)
 
     wrapper.unmount()
   })
@@ -310,5 +317,172 @@ describe('Rendering', () => {
     const html = await renderToString(app)
 
     expect(html).toContain('Test API')
+  })
+})
+
+describe('Swagger 2.0 upgrade', () => {
+  it('upgrades Swagger 2.0 document to OpenAPI 3.1 when dereferenced', async () => {
+    const swaggerDocument = {
+      swagger: '2.0',
+      info: {
+        title: 'Swagger 2.0 API',
+        version: '1.0.0',
+      },
+      paths: {
+        '/users': {
+          get: {
+            summary: 'Get users',
+            responses: {
+              '200': {
+                description: 'Success',
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/definitions/User',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      definitions: {
+        User: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'integer',
+            },
+            name: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    }
+
+    const wrapper = mount(ApiReference, {
+      props: {
+        configuration: {
+          content: swaggerDocument,
+        },
+      },
+    })
+
+    // Wait for the API reference to process and dereference the document
+    await vi.waitFor(
+      async () => {
+        await flushPromises()
+        await wrapper.vm.$nextTick()
+        expect(wrapper.vm.dereferenced).toBeDefined()
+      },
+      { timeout: 5000 },
+    )
+
+    const dereferenced = wrapper.vm.dereferenced
+    expect(dereferenced?.openapi).toBe('3.1.1')
+    wrapper.unmount()
+  })
+})
+
+describe('proxy configuration', () => {
+  it('uses the proxy to load the document when proxyUrl is configured', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          openapi: '3.1.0',
+          info: {
+            title: 'Test API',
+            version: '1.0.0',
+          },
+          paths: {},
+        }),
+      json: async () => ({
+        openapi: '3.1.0',
+        info: {
+          title: 'Test API',
+          version: '1.0.0',
+        },
+        paths: {},
+      }),
+    })
+
+    vi.stubGlobal('fetch', mockFetch)
+
+    const wrapper = mount(ApiReference, {
+      props: {
+        configuration: {
+          sources: [
+            {
+              url: 'https://api.example.com/v1/openapi.yaml',
+              slug: 'my-api',
+              default: true,
+            },
+          ],
+          proxyUrl: 'https://custom-proxy.example.com',
+        },
+      },
+    })
+
+    await flushPromises()
+    await wrapper.vm.$nextTick()
+    await flushPromises()
+
+    // Verify that fetch was called with the proxied URL
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://custom-proxy.example.com/?scalar_url=https%3A%2F%2Fapi.example.com%2Fv1%2Fopenapi.yaml',
+      expect.any(Object),
+    )
+
+    wrapper.unmount()
+  })
+
+  it('does not use the proxy when custom fetch is provided', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          openapi: '3.1.0',
+          info: {
+            title: 'Test API',
+            version: '1.0.0',
+          },
+          paths: {},
+        }),
+      json: async () => ({
+        openapi: '3.1.0',
+        info: {
+          title: 'Test API',
+          version: '1.0.0',
+        },
+        paths: {},
+      }),
+    })
+
+    vi.stubGlobal('fetch', mockFetch)
+
+    const wrapper = mount(ApiReference, {
+      props: {
+        configuration: {
+          sources: [
+            {
+              url: 'https://api.example.com/v1/openapi.yaml',
+              slug: 'my-api',
+              default: true,
+            },
+          ],
+        },
+      },
+    })
+
+    await flushPromises()
+    await wrapper.vm.$nextTick()
+    await flushPromises()
+
+    // Verify that fetch was called without the proxied URL
+    expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/v1/openapi.yaml', expect.any(Object))
+
+    wrapper.unmount()
   })
 })

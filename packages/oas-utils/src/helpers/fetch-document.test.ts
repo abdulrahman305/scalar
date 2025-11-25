@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { fetchDocument } from './fetch-document'
 
@@ -25,9 +25,14 @@ $ pnpm dev:proxy-server
   }
 })
 
+const globalFetchSpy = vi.spyOn(global, 'fetch')
+afterEach(() => {
+  globalFetchSpy.mockReset()
+})
+
 describe('fetchDocument', () => {
   it('fetches specifications (without a proxy)', async () => {
-    const spec = await fetchDocument('https://registry.scalar.com/@scalar/apis/galaxy/latest?format=yaml')
+    const spec = await fetchDocument('https://registry.scalar.com/@scalar/apis/galaxy?format=yaml')
 
     expect(typeof spec).toEqual('string')
     expect(spec.length).toBeGreaterThan(100)
@@ -35,7 +40,7 @@ describe('fetchDocument', () => {
 
   it('fetches specifications (through proxy.scalar.com)', async () => {
     const spec = await fetchDocument(
-      'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=yaml',
+      'https://registry.scalar.com/@scalar/apis/galaxy?format=yaml',
       'https://proxy.scalar.com',
     )
 
@@ -45,7 +50,7 @@ describe('fetchDocument', () => {
 
   it(`fetches specifications (through 127.0.0.1:${PROXY_PORT})`, async () => {
     const spec = await fetchDocument(
-      'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=yaml',
+      'https://registry.scalar.com/@scalar/apis/galaxy?format=yaml',
       `http://127.0.0.1:${PROXY_PORT}`,
     )
 
@@ -54,23 +59,15 @@ describe('fetchDocument', () => {
   })
 
   it('fetches specifications from localhost without proxy', async () => {
-    const originalFetch = globalThis.fetch
-    // mock fetch
-    // @ts-expect-error TODO not properly typed
-    globalThis.fetch = vi.fn(() =>
-      Promise.resolve({
-        ok: true,
-        status: 200,
-        text: () => Promise.resolve(''),
-      }),
-    )
+    globalFetchSpy.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(''),
+    } as Response)
 
     const spec = await fetchDocument(`http://127.0.0.1:${PROXY_PORT}/test`)
 
     expect(typeof spec).toEqual('string')
-
-    // restore fetch
-    globalThis.fetch = originalFetch
   })
 
   it('throws error for invalid URLs', async () => {
@@ -82,17 +79,12 @@ describe('fetchDocument', () => {
   })
 
   it('uses custom fetch implementation', async () => {
-    const fn = vi.fn()
-
-    const fetcher = async (...args: any) => {
-      fn(...args)
-      return new Response('custom-fetch', { status: 200 })
-    }
+    const fetcher = vi.fn().mockResolvedValue(new Response('custom-fetch', { status: 200 }))
 
     const spec = await fetchDocument('https://example.com/spec.yaml', undefined, fetcher)
 
-    expect(fn).toHaveBeenCalled()
-    expect(fn).toHaveBeenCalledWith('https://example.com/spec.yaml', undefined)
+    expect(fetcher).toHaveBeenCalled()
+    expect(fetcher).toHaveBeenCalledWith('https://example.com/spec.yaml', undefined)
     expect(spec).toEqual('custom-fetch')
   })
 })

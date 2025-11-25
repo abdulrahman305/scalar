@@ -4,11 +4,11 @@
  * project and update the exports field of the package.json as needed
  *
  */
+
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
-import { fileURLToPath } from 'node:url'
-import { glob } from 'glob'
+import fg from 'fast-glob'
 
 const cssExports = {
   /** Adds provisions for a css folder in the built output */
@@ -28,7 +28,15 @@ const cssExports = {
 /** Search for ALL index.ts files in the repo and export them as nested exports */
 export async function findEntryPoints({ allowCss }: { allowCss?: boolean } = {}) {
   const entries: string[] = []
-  glob.sync('./src/**/index.ts').forEach((e) => entries.push(e))
+  fg.globSync('./src/**/index.ts').forEach((e) => entries.push(e))
+
+  // If running under test / lint tools (e.g. `vitest` or `knip`),
+  // skip modifying this package’s exports.
+  // These tools execute from the root package.json
+  // and shouldn’t trigger export generation.
+  if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
+    return entries
+  }
 
   await addPackageFileExports({ allowCss, entries })
   return entries
@@ -98,7 +106,7 @@ export async function addPackageFileExports({ allowCss, entries }: { allowCss?: 
     const namespacePath = namespace.length ? `./${namespace.join('/')}` : '.'
 
     // Add support for wildcard exports
-    packageExports[formatEntry(filepath, namespacePath)] = {
+    packageExports[formatEntry(filename, namespacePath)] = {
       import: `./dist/${filepath}.js`,
       types: `./dist/${filepath}.d.ts`,
       default: `./dist/${filepath}.js`,
@@ -106,12 +114,19 @@ export async function addPackageFileExports({ allowCss, entries }: { allowCss?: 
   })
 
   // don't touch the package.json in ./dist
-  if (import.meta.dirname.endsWith('dist')) {
+  if (process.cwd().endsWith('dist')) {
     return
+  }
+
+  try {
+    await fs.stat('./package.json')
+  } catch {
+    throw new Error(`package.json not found in ${process.cwd()}`)
   }
 
   // Update the package file with the new exports
   const packageFile = JSON.parse(await fs.readFile('./package.json', 'utf-8'))
+
   packageFile.exports = allowCss ? { ...packageExports, ...cssExports } : { ...packageExports }
 
   // Sort the keys in the exports object to ensure consistent order across OS
@@ -132,12 +147,4 @@ export async function addPackageFileExports({ allowCss, entries }: { allowCss?: 
   console.log()
 
   await fs.writeFile('./package.json', `${JSON.stringify(packageFile, null, 2)}\n`)
-}
-
-/** Standard path aliases for Vite */
-export function alias(url: string) {
-  return {
-    '@test': fileURLToPath(new URL('./test', url)),
-    '@': fileURLToPath(new URL('./src', url)),
-  }
 }

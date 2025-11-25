@@ -13,7 +13,7 @@
   "keywords": [
     "vue drag and drop draggable html"
   ],
-  "version": "0.2.0",
+  "version": "0.3.0",
   "engines": {
     "node": ">=20"
   },
@@ -31,6 +31,7 @@
   },
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -52,7 +53,6 @@
     "dist",
     "CHANGELOG.md"
   ],
-  "module": "dist/index.js",
   "dependencies": {
     "vue": "catalog:*"
   },
@@ -60,7 +60,7 @@
     "@scalar/build-tooling": "workspace:*",
     "@vitejs/plugin-vue": "catalog:*",
     "vite": "catalog:*",
-    "vite-svg-loader": "^5.1.0",
+    "vite-svg-loader": "catalog:*",
     "vue": "catalog:*"
   }
 }

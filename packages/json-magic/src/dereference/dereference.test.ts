@@ -1,11 +1,11 @@
+import { type FastifyInstance, fastify } from 'fastify'
+import { beforeEach, describe, expect, it } from 'vitest'
+
 import { dereference } from '@/dereference/dereference'
-import { fastify, type FastifyInstance } from 'fastify'
-import { setTimeout } from 'node:timers/promises'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 describe('dereference', () => {
   describe('sync', () => {
-    it('should dereference JSON pointers', async () => {
+    it('should dereference JSON pointers', () => {
       const data = {
         users: {
           name: 'John Doe',
@@ -66,11 +66,10 @@ describe('dereference', () => {
 
     beforeEach(() => {
       server = fastify({ logger: false })
-    })
 
-    afterEach(async () => {
-      await server.close()
-      await setTimeout(100)
+      return async () => {
+        await server.close()
+      }
     })
 
     it('should dereference JSON pointers asynchronously', async () => {
@@ -82,9 +81,7 @@ describe('dereference', () => {
           street: 'Sunset Boulevard',
         },
       }
-      server.get('/users', async () => {
-        return userProfile
-      })
+      server.get('/users', () => userProfile)
 
       await server.listen({ port: port })
 
@@ -101,7 +98,7 @@ describe('dereference', () => {
         success: true,
         data: {
           profile: {
-            '$ref': '#/x-ext/5bd1cdd',
+            '$ref': '#/x-ext/f053c6d',
             '$ref-value': {
               name: 'Jane Doe',
               age: 25,
@@ -112,17 +109,17 @@ describe('dereference', () => {
             },
           },
           address: {
-            '$ref': '#/x-ext/5bd1cdd/address',
+            '$ref': '#/x-ext/f053c6d/address',
             '$ref-value': {
               city: 'Los Angeles',
               street: 'Sunset Boulevard',
             },
           },
           'x-ext': {
-            '5bd1cdd': userProfile,
+            'f053c6d': userProfile,
           },
           'x-ext-urls': {
-            '5bd1cdd': `${url}/users`,
+            'f053c6d': `${url}/users`,
           },
         },
       })

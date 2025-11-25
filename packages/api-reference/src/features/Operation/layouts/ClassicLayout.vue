@@ -21,6 +21,7 @@ import {
 } from '@scalar/oas-utils/helpers'
 import { useClipboard } from '@scalar/use-hooks/useClipboard'
 import type { WorkspaceStore } from '@scalar/workspace-store/client'
+import type { WorkspaceEventBus } from '@scalar/workspace-store/events'
 import { getResolvedRef } from '@scalar/workspace-store/helpers/get-resolved-ref'
 import type {
   OperationObject,
@@ -53,6 +54,8 @@ const { operation, path } = defineProps<{
   server: ServerObject | undefined
   securitySchemes: SecuritySchemeObject[]
   xScalarDefaultClient: WorkspaceStore['workspace']['x-scalar-default-client']
+  isCollapsed: boolean
+  eventBus: WorkspaceEventBus | null
   /** Global options that can be derived from the top level config or assigned at a block level */
   options: {
     /** Sets some additional display properties when an operation is a webhook */
@@ -72,8 +75,13 @@ const { copyToClipboard } = useClipboard()
 <template>
   <SectionAccordion
     :id="id"
+    :aria-label="operationTitle"
     class="reference-endpoint"
-    transparent>
+    :modelValue="!isCollapsed"
+    transparent
+    @update:modelValue="
+      (value) => eventBus?.emit('toggle:nav-item', { id, open: value })
+    ">
     <template #title>
       <div class="operation-title">
         <div class="operation-details">
@@ -82,8 +90,8 @@ const { copyToClipboard } = useClipboard()
             :method="method"
             short />
           <Anchor
-            :id="id"
-            class="endpoint-anchor">
+            class="endpoint-anchor"
+            @copyAnchorUrl="() => eventBus?.emit('copy-url:nav-item', { id })">
             <h3 class="endpoint-label">
               <div class="endpoint-label-path">
                 <OperationPath
@@ -149,6 +157,8 @@ const { copyToClipboard } = useClipboard()
       #description>
       <ScalarMarkdown
         :anchorPrefix="id"
+        aria-label="Operation Description"
+        role="group"
         transformType="heading"
         :value="operation.description"
         withAnchors
@@ -158,6 +168,7 @@ const { copyToClipboard } = useClipboard()
       <div class="operation-details-card">
         <div class="operation-details-card-item">
           <OperationParameters
+            :eventBus="eventBus"
             :options="options"
             :parameters="
               // These have been resolved in the Operation.vue component
@@ -167,6 +178,7 @@ const { copyToClipboard } = useClipboard()
         </div>
         <div class="operation-details-card-item">
           <OperationResponses
+            :eventBus="eventBus"
             :options="{
               orderRequiredPropertiesFirst:
                 options.orderRequiredPropertiesFirst,
@@ -181,6 +193,7 @@ const { copyToClipboard } = useClipboard()
           class="operation-details-card-item">
           <Callbacks
             :callbacks="operation.callbacks"
+            :eventBus="eventBus"
             :method="method"
             :options="options"
             :path="path" />

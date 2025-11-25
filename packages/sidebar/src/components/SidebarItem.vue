@@ -4,44 +4,81 @@ import {
   ScalarSidebarGroupToggle,
   ScalarSidebarItem,
   ScalarSidebarSection,
+  ScalarWrappingText,
 } from '@scalar/components'
 import {
   Draggable,
   type DraggingItem,
   type HoveredItem,
 } from '@scalar/draggable'
-import { ScalarIconFolder } from '@scalar/icons'
-import type { TraversedEntry } from '@scalar/workspace-store/schemas/navigation'
-import { computed } from 'vue'
+import { LibraryIcon } from '@scalar/icons/library'
+
+import type { Item } from '@/types'
 
 import SidebarHttpBadge from './SidebarHttpBadge.vue'
 
-export type Item =
-  | TraversedEntry
-  | { id: string; title: string; children: TraversedEntry[]; type: 'document' }
-
-const { item, layout, selectedItems, expandedItems } = defineProps<{
+const { item, layout, isSelected, isExpanded } = defineProps<{
+  /**
+   * The sidebar item to render.
+   */
   item: Item
+  /**
+   * The layout mode for the sidebar ('client' or 'reference').
+   */
   layout: 'client' | 'reference'
-  selectedItems: Record<string, boolean>
-  expandedItems: Record<string, boolean>
-  options?: {
-    operationTitleSource: 'path' | 'summary' | undefined
-  }
+  /**
+   * Function to determine if an item is currently selected by id.
+   */
+  isSelected: (id: string) => boolean
+  /**
+   * Function to determine if an item is currently expanded (showing its children) by id.
+   */
+  isExpanded: (id: string) => boolean
+  /**
+   * Sidebar configuration options.
+   * - operationTitleSource: sets whether operations show their path or summary as the display title.
+   */
+  options:
+    | {
+        operationTitleSource: 'path' | 'summary' | undefined
+      }
+    | undefined
+
+  /**
+   * Prevents items from being hovered and dropped into. Can be either a function or a boolean
+   *
+   * @default true
+   */
+  isDroppable?:
+    | boolean
+    | ((draggingItem: DraggingItem, hoveredItem: HoveredItem) => boolean)
 }>()
 
 const emits = defineEmits<{
-  (e: 'click', id: string): void
+  /**
+   * Emitted when the item is selected
+   * @param id - The id of the selected item
+   */
+  (e: 'selectItem', id: string): void
+  /**
+   * Emitted when a drag operation ends for this item
+   * @param draggingItem - The item being dragged
+   * @param hoveredItem - The item currently being hovered over
+   */
   (e: 'onDragEnd', draggingItem: DraggingItem, hoveredItem: HoveredItem): void
 }>()
 
 defineSlots<{
-  aside?(props: { item: Item }): unknown
+  /**
+   * Adds an optional decorator for each item, such as an edit menu.
+   * The slot receives an object with the current item.
+   */
+  decorator?(props: { item: Item }): unknown
 }>()
 
 const hasChildren = (
   currentItem: Item,
-): currentItem is Item & { children: TraversedEntry[] } => {
+): currentItem is Item & { children: Item[] } => {
   return (
     'children' in currentItem &&
     Array.isArray(currentItem.children) &&
@@ -55,32 +92,14 @@ const isGroup = (
   return 'isGroup' in currentItem && currentItem.isGroup
 }
 
-/** Extract the path or title from a TraversedEntry */
-const getPathOrTitle = (currentItem: Item): string => {
-  if ('path' in currentItem) {
-    // Insert zero-width space after every slash, to give line-break opportunity.
-    return currentItem.path.replace(/\//g, '/\u200B')
-  }
-  return currentItem.title
-}
-
-const groupModelValue = computed({
-  get: () => expandedItems[item.id] ?? false,
-  set: () => emits('click', item.id),
-})
-
 const filterItems = (items: Item[]) => {
   if (layout === 'reference') {
     return items
   }
 
-  // For client layout, filter to only show webhooks and operations
+  // For client layout, filter to only show and operations, examples, and tags
   return items.filter(
-    (c) =>
-      c.type === 'webhook' ||
-      c.type === 'operation' ||
-      c.type === 'example' ||
-      c.type === 'tag',
+    (c) => c.type === 'operation' || c.type === 'example' || c.type === 'tag',
   )
 }
 
@@ -97,8 +116,9 @@ const handleDragEnd = (
 <template>
   <Draggable
     :id="item.id"
-    class="grid flex-1"
+    class="flex flex-1 flex-col"
     :isDraggable="layout === 'client'"
+    :isDroppable="isDroppable"
     :parentIds="[]"
     @onDragEnd="handleDragEnd">
     <ScalarSidebarSection v-if="hasChildren(item) && isGroup(item)">
@@ -107,17 +127,18 @@ const handleDragEnd = (
         <SidebarItem
           v-for="child in filterItems(item.children)"
           :key="child.id"
-          :expandedItems="expandedItems"
+          :isDroppable="isDroppable"
+          :isExpanded="isExpanded"
+          :isSelected="isSelected"
           :item="child"
           :layout="layout"
           :options="options"
-          :selectedItems="selectedItems"
-          @click="(id) => emits('click', id)"
-          @onDragEnd="handleDragEnd">
-          <template #aside="slotProps">
+          @onDragEnd="handleDragEnd"
+          @selectItem="(id) => emits('selectItem', id)">
+          <template #decorator="slotProps">
             <slot
               v-bind="slotProps"
-              name="aside" />
+              name="decorator" />
           </template>
         </SidebarItem>
       </template>
@@ -129,45 +150,52 @@ const handleDragEnd = (
           !(item.type === 'operation' || item.type === 'webhook')) ||
           layout === 'client')
       "
-      v-model="groupModelValue"
-      :active="selectedItems[item.id] ?? false">
-      <div class="group/entry flex flex-1 items-center justify-center">
-        <div class="flex-1 text-left">{{ item.title }}</div>
-        <slot
-          :item="item"
-          name="aside" />
-      </div>
-      <SidebarHttpBadge
-        v-if="'method' in item"
-        :active="selectedItems[item.id] ?? false"
-        class="min-w-9.75 justify-end text-right"
-        :method="item.method"
-        :webhook="item.type === 'webhook'" />
+      :active="isSelected(item.id)"
+      controlled
+      :open="isExpanded(item.id)"
+      @click="() => emits('selectItem', item.id)">
       <template
         v-if="item.type === 'document'"
         #icon="{ open }">
-        <ScalarIconFolder
-          class="text-c-3 block group-hover/group-button:hidden" />
+        <LibraryIcon
+          class="text-c-3 block group-hover/group-button:hidden"
+          :src="item.icon ?? 'interface-content-folder'" />
         <ScalarSidebarGroupToggle
           class="text-c-3 hidden group-hover/group-button:block"
           :open="open" />
+      </template>
+      {{ item.title }}
+      <template
+        v-if="'method' in item || $slots.decorator"
+        #aside>
+        <slot
+          v-if="$slots.decorator"
+          :item="item"
+          name="decorator" />
+        <SidebarHttpBadge
+          v-if="'method' in item"
+          :active="isSelected(item.id)"
+          class="ml-2 h-4 self-start"
+          :method="item.method"
+          :webhook="item.type === 'webhook'" />
       </template>
       <template #items>
         <SidebarItem
           v-for="child in filterItems(item.children)"
           :key="child.id"
-          :expandedItems="expandedItems"
+          :isDroppable="isDroppable"
+          :isExpanded="isExpanded"
+          :isSelected="isSelected"
           :item="child"
           :layout="layout"
           :options="options"
           :parentIds="[]"
-          :selectedItems="selectedItems"
-          @click="(id) => emits('click', id)"
-          @onDragEnd="handleDragEnd">
-          <template #aside="slotProps">
+          @onDragEnd="handleDragEnd"
+          @selectItem="(id) => emits('selectItem', id)">
+          <template #decorator="slotProps">
             <slot
               v-bind="slotProps"
-              name="aside" />
+              name="decorator" />
           </template>
         </SidebarItem>
       </template>
@@ -176,27 +204,32 @@ const handleDragEnd = (
       is="button"
       v-else
       class="text-left"
-      :selected="selectedItems[item.id] ?? false"
-      @click="() => emits('click', item.id)">
-      <div class="group/entry flex flex-1 items-center justify-center">
-        <div class="flex-1">
-          <template v-if="options?.operationTitleSource === 'path'">
-            {{ getPathOrTitle(item) }}
-          </template>
-          <template v-else>
-            {{ item.title }}
-          </template>
-        </div>
-        <slot
-          :item="item"
-          name="aside" />
-      </div>
+      :selected="isSelected(item.id)"
+      @click="() => emits('selectItem', item.id)">
+      <template v-if="item.type === 'model'">
+        <ScalarWrappingText
+          preset="property"
+          :text="item.title" />
+      </template>
+      <template v-else>
+        <ScalarWrappingText
+          :text="
+            options?.operationTitleSource === 'path' && 'path' in item
+              ? item.path
+              : item.title
+          " />
+      </template>
       <template
-        v-if="'method' in item"
+        v-if="'method' in item || $slots.decorator"
         #aside>
+        <slot
+          v-if="$slots.decorator"
+          :item="item"
+          name="decorator" />
         <SidebarHttpBadge
-          :active="selectedItems[item.id] ?? false"
-          class="min-w-9.75 justify-end text-right"
+          v-if="'method' in item"
+          :active="isSelected(item.id)"
+          class="ml-2 h-4 self-start"
           :method="item.method"
           :webhook="item.type === 'webhook'" />
       </template>

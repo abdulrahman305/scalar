@@ -45,7 +45,7 @@ if (app.Environment.IsDevelopment())
 }
 ```
 
-For `NSwag`:
+For `NSwag.AspNetCore`:
 
 ```csharp
 builder.Services.AddEndpointsApiExplorer();
@@ -81,11 +81,6 @@ You're all set! 🎉 Navigate to `/scalar` to view your API Reference.
 :::scalar-callout{ type=info }
 For multiple OpenAPI documents, see [Multiple OpenAPI Documents](#configuration-options__multiple-openapi-documents).
 :::
-
-## Migration Guide
-
-If you are upgrading from `2.1.x` to `2.2.x`, please refer to the [migration guide](https://github.com/scalar/scalar/discussions/5468).
-If you are upgrading from `1.x.x` to `2.x.x`, please refer to the [migration guide](https://github.com/scalar/scalar/issues/4362).
 
 ## MapScalarApiReference Overloads
 
@@ -176,7 +171,7 @@ app.MapScalarApiReference(options =>
     options.WithOpenApiRoutePattern("https://api.example.com/openapi/{documentName}.json");
     
     // Static external URL (no placeholder)
-    options.WithOpenApiRoutePattern("https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json");
+    options.WithOpenApiRoutePattern("https://registry.scalar.com/@scalar/apis/galaxy?format=json");
 });
 ```
 
@@ -203,7 +198,7 @@ app.MapScalarApiReference(options => options.AddDocument("v1",
 
 // External OpenAPI document
 app.MapScalarApiReference(options => options.AddDocument("galaxy",
-    "Galaxy API", "https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json"));
+    "Galaxy API", "https://registry.scalar.com/@scalar/apis/galaxy?format=json"));
 ```
 
 #### Add Multiple Documents
@@ -226,7 +221,7 @@ var documents = new[]
 {
     new ScalarDocument("v1", "Production API", "api/v1/openapi.json"),
     new ScalarDocument("v2-beta", "Beta API", "api/v2-beta/openapi.json", true),
-    new ScalarDocument("galaxy", "Galaxy API", "https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json")
+    new ScalarDocument("galaxy", "Galaxy API", "https://registry.scalar.com/@scalar/apis/galaxy?format=json")
 };
 app.MapScalarApiReference(options => options.AddDocuments(documents));
 ```
@@ -234,6 +229,12 @@ app.MapScalarApiReference(options => options.AddDocuments(documents));
 The `routePattern` parameter in `AddDocument` allows you to customize the URL path where the OpenAPI document is served. If not specified, it uses the global `OpenApiRoutePattern` from the options. The pattern can include the `{documentName}` placeholder which will be replaced with the document name.
 
 The `isDefault` parameter allows you to specify which document should be selected by default when the API Reference loads. If no document is marked as default, the first document in the list will be used.
+
+You can also specify a document name directly in the URL path (e.g., `/scalar/v1`). However, this will override the document names specified in the `AddDocument` or `AddDocuments` methods.
+
+:::scalar-callout{ type=info }
+**Note on case sensitivity**: Scalar forwards document names to the OpenAPI generator exactly as they appear in the URL path or as they are defined, preserving the case. The behavior depends on whether your OpenAPI generator treats document names as case-sensitive. To avoid issues, use consistent casing for document names (e.g., lowercase `"v1"`).
+:::
 
 ### Authentication
 
@@ -243,7 +244,7 @@ Scalar allows you to pre-configure authentication details for your API, making i
 :::scalar-callout{ type=warning }
 **Before you start**: Your OpenAPI document must already include authentication security schemes for Scalar to work with them. Scalar can only pre-fill authentication details for schemes that are already defined in your OpenAPI specification.
 
-The security schemes are added by your OpenAPI generator (`NSwag`, `Swashbuckle.AspNetCore.SwaggerGen`, or `Microsoft.AspNetCore.OpenApi`). If you don't see authentication options in Scalar, check your OpenAPI generator's documentation to learn how to properly define security schemes.
+The security schemes are added by your OpenAPI generator (`NSwag.AspNetCore`, `Swashbuckle.AspNetCore.SwaggerGen`, or `Microsoft.AspNetCore.OpenApi`). If you don't see authentication options in Scalar, check your OpenAPI generator's documentation to learn how to properly define security schemes.
 :::
 
 :::scalar-callout{ type=danger }

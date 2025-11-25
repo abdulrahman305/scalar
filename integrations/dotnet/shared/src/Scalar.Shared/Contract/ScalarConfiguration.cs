@@ -79,6 +79,8 @@ internal sealed class ScalarConfiguration
 
     public required bool? PersistAuth { get; init; }
 
+    public required bool? Telemetry { get; init; }
+
     public required DocumentDownloadType? DocumentDownloadType { get; init; }
 
     public required bool? OrderRequiredPropertiesFirst { get; init; }
@@ -86,6 +88,8 @@ internal sealed class ScalarConfiguration
     public required PropertyOrder? OrderSchemaPropertiesBy { get; init; }
 
     public required bool? ShowOperationId { get; init; }
+
+    public required DeveloperToolsVisibility? ShowDeveloperTools { get; init; }
 }
 
 [JsonSerializable(typeof(ScalarConfiguration))]

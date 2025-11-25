@@ -1,6 +1,6 @@
 {
   "name": "@scalar/docusaurus",
-  "description": "Docusaurus integration for api references",
+  "description": "Docusaurus plugin to embed beautiful, interactive API documentation from OpenAPI/Swagger documents.",
   "license": "MIT",
   "author": "Scalar (https://github.com/scalar)",
   "homepage": "https://github.com/scalar/scalar",
@@ -19,13 +19,13 @@
     "testing",
     "react"
   ],
-  "version": "0.7.20",
+  "version": "0.7.22",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "build": "shx rm -Rf ./dist && tsc --declaration && postcss src/theme.css -o dist/theme.css",
-    "dev:doesnt-work": "cd ./playground && pnpm dev",
+    "dev:doesnt-work": "cd ./playground && pnpm run dev",
     "format": "scalar-format",
     "format:check": "scalar-format-check",
     "lint:check": "scalar-lint-check",
@@ -38,12 +38,32 @@
     "dist",
     "CHANGELOG.md"
   ],
+  "readme": {
+    "title": "Scalar API Reference Plugin for Docusaurus",
+    "badges": [
+      {
+        "type": "npm-version"
+      },
+      {
+        "type": "npm-downloads"
+      },
+      {
+        "type": "npm-license"
+      }
+    ],
+    "documentation": "https://guides.scalar.com/scalar/scalar-api-references/integrations/docusaurus",
+    "image": {
+      "url": "https://github.com/scalar/scalar/blob/main/integrations/docusaurus/docusaurus.png?raw=true",
+      "altText": "Screenshot of the Docusaurus integration"
+    }
+  },
   "dependencies": {
     "@scalar/types": "workspace:*"
   },
   "devDependencies": {
     "@docusaurus/types": "^3.7.0",
     "@docusaurus/utils": "^3.7.0",
+    "@scalar/build-tooling": "workspace:*",
     "@types/react": "catalog:*",
     "@types/react-dom": "catalog:*",
     "path": "^0.12.7",

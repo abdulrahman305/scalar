@@ -5,13 +5,16 @@ import { AVAILABLE_CLIENTS, type AvailableClients } from '@scalar/types/snippetz
 import { compose } from '@/schemas/compose'
 import { extensions } from '@/schemas/extensions'
 import {
-  type XScalarClientConfigCookies,
-  xScalarClientConfigCookiesSchema,
-} from '@/schemas/v3.1/strict/client-config-extensions/x-scalar-client-config-cookies'
+  type XScalarEnvironments,
+  xScalarEnvironmentsSchema,
+} from '@/schemas/extensions/document/x-scalar-environments'
+import { type XScalarCookies, xScalarCookiesSchema } from '@/schemas/extensions/general/x-scalar-cookies'
+import { type XScalarOrder, XScalarOrderSchema } from '@/schemas/extensions/general/x-scalar-order'
 import {
-  type XScalarClientConfigEnvironments,
-  xScalarClientConfigEnvironmentsSchema,
-} from '@/schemas/v3.1/strict/client-config-extensions/x-scalar-client-config-environments'
+  type XScalarActiveEnvironment,
+  XScalarActiveEnvironmentSchema,
+} from '@/schemas/extensions/workspace/x-scalar-active-environment'
+import { type XScalarActiveProxy, XScalarActiveProxySchema } from '@/schemas/extensions/workspace/x-scalar-active-proxy'
 import type { SecuritySchemeObject } from '@/schemas/v3.1/strict/security-scheme'
 import type { ServerObject } from '@/schemas/v3.1/strict/server'
 
@@ -41,7 +44,7 @@ export type WorkspaceDocument = WorkspaceDocumentMeta & OpenApiDocument
 
 export const WorkspaceMetaSchema = Type.Partial(
   Type.Object({
-    [extensions.workspace.darkMode]: Type.Boolean(),
+    [extensions.workspace.colorMode]: Type.Union([Type.Literal('system'), Type.Literal('light'), Type.Literal('dark')]),
     [extensions.workspace.defaultClient]: Type.Union(AVAILABLE_CLIENTS.map((client) => Type.Literal(client))),
     [extensions.workspace.activeDocument]: Type.String(),
     [extensions.workspace.theme]: Type.Union(themeIds.map((t) => Type.Literal(t))),
@@ -49,29 +52,38 @@ export const WorkspaceMetaSchema = Type.Partial(
   }),
 )
 
+export type ColorMode = 'system' | 'light' | 'dark'
+
 export type WorkspaceMeta = {
-  [extensions.workspace.darkMode]?: boolean
+  [extensions.workspace.colorMode]?: ColorMode
   [extensions.workspace.defaultClient]?: AvailableClients[number]
   [extensions.workspace.activeDocument]?: string
   [extensions.workspace.theme]?: ThemeId
   [extensions.workspace.sidebarWidth]?: number
 }
 
-export const WorkspaceExtensionsSchema = Type.Partial(
-  Type.Object({
-    'x-scalar-client-config-environments': xScalarClientConfigEnvironmentsSchema,
-    'x-scalar-client-config-cookies': xScalarClientConfigCookiesSchema,
-    'x-scalar-client-config-servers': Type.Array(ServerObjectSchema),
-    'x-scalar-client-config-security-schemes': Type.Record(Type.String(), SecuritySchemeObjectSchema),
-  }),
+export const WorkspaceExtensionsSchema = compose(
+  xScalarEnvironmentsSchema,
+  XScalarActiveEnvironmentSchema,
+  Type.Partial(
+    Type.Object({
+      'x-scalar-client-config-servers': Type.Array(ServerObjectSchema),
+      'x-scalar-client-config-security-schemes': Type.Record(Type.String(), SecuritySchemeObjectSchema),
+    }),
+  ),
+  XScalarActiveProxySchema,
+  XScalarOrderSchema,
+  xScalarCookiesSchema,
 )
 
 export type WorkspaceExtensions = {
-  'x-scalar-client-config-environments'?: XScalarClientConfigEnvironments
-  'x-scalar-client-config-cookies'?: XScalarClientConfigCookies
   'x-scalar-client-config-servers'?: ServerObject[]
   'x-scalar-client-config-security-schemes'?: Record<string, SecuritySchemeObject>
-}
+} & XScalarEnvironments &
+  XScalarActiveEnvironment &
+  XScalarActiveProxy &
+  XScalarOrder &
+  XScalarCookies
 
 export const WorkspaceSchema = compose(
   WorkspaceMetaSchema,

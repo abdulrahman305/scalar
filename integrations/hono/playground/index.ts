@@ -190,7 +190,7 @@ app.get(
       },
       {
         title: 'Scalar Galaxy',
-        url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+        url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=json',
       },
     ],
     pageTitle: 'Hono API Reference Demo',
@@ -205,9 +205,7 @@ const content = app.getOpenAPI31Document({
 
 const markdown = await createMarkdownFromOpenApi(JSON.stringify(content))
 
-app.get('/llms.txt', async (c) => {
-  return c.text(markdown)
-})
+app.get('/llms.txt', (c) => c.text(markdown))
 
 // Listen
 serve(

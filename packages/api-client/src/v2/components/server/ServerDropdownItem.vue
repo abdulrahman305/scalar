@@ -6,7 +6,7 @@ import { computed, useId } from 'vue'
 import ServerVariablesForm from '@/components/Server/ServerVariablesForm.vue'
 
 const { server, serverOption } = defineProps<{
-  server: ServerObject | undefined
+  server: ServerObject | null
   serverOption: {
     id: string
     label: string
@@ -16,8 +16,8 @@ const { server, serverOption } = defineProps<{
 const emit = defineEmits<{
   /** Update a server variable for the selected server */
   (e: 'update:variable', key: string, value: string): void
-  /** Update selected server by id => server url */
-  (e: 'update:selectedServer', payload: { id: string }): void
+  /** Update selected server */
+  (e: 'update:selectedServer'): void
 }>()
 
 const formId = useId()
@@ -27,12 +27,7 @@ const hasVariables = () => {
 }
 
 const isSelectedServer = computed(() => serverOption.id === server?.url)
-
 const isExpanded = computed(() => isSelectedServer.value && hasVariables())
-
-const updateServerVariable = (key: string, value: string) => {
-  emit('update:variable', key, value)
-}
 </script>
 <template>
   <div
@@ -44,7 +39,7 @@ const updateServerVariable = (key: string, value: string) => {
       class="flex min-h-8 cursor-pointer items-center gap-1.5 rounded px-1.5"
       :class="isSelectedServer ? 'text-c-1 bg-b-2' : 'hover:bg-b-2'"
       type="button"
-      @click="emit('update:selectedServer', { id: serverOption.id })">
+      @click="emit('update:selectedServer')">
       <ScalarListboxCheckbox :selected="isSelectedServer" />
       <span class="overflow-hidden text-ellipsis whitespace-nowrap">
         {{ serverOption.label }}
@@ -58,7 +53,9 @@ const updateServerVariable = (key: string, value: string) => {
       @click.stop>
       <ServerVariablesForm
         :variables="server?.variables"
-        @update:variable="updateServerVariable" />
+        @update:variable="
+          (key, value) => emit('update:variable', key, value)
+        " />
       <!-- Description -->
       <div v-if="server?.description">
         <div class="description text-c-3 px-3 py-1.5">

@@ -25,16 +25,20 @@ plugins: [
       route: '/scalar',
       showNavLink: true, // optional, default is true
       configuration: {
-        url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=yaml',
+        url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=yaml',
       },
     } as ScalarOptions,
   ],
 ],
 ```
 
-### Multiple API descriptions
+### Multiple API references
 
-Is it possible to show multiple API descriptions? Yes, it is! :)
+Is it possible to show multiple API references? Yes, it is! :) 
+
+You can either display each API reference in its own page, or display multiple API references on a single page. 
+
+#### Create a page for each API reference
 
 ```ts
 import type { ScalarOptions } from '@scalar/docusaurus'
@@ -50,7 +54,7 @@ plugins: [
       route: '/scalar',
       showNavLink: true, // optional, default is true
       configuration: {
-        url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+        url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=json',
       },
     } as ScalarOptions,
   ],
@@ -65,6 +69,36 @@ plugins: [
       showNavLink: true, // optional, default is true
       configuration: {
         url: 'https://petstore3.swagger.io/api/v3/openapi.json',
+      },
+    } as ScalarOptions,
+  ],
+],
+```
+
+#### Create a page that contains multiple API references
+
+```ts
+import type { ScalarOptions } from '@scalar/docusaurus'
+plugins: [
+  [
+    '@scalar/docusaurus',
+    {
+      id: 'api-reference',
+      label: 'API Reference',
+      route: '/api-reference',
+      showNavLink: true, // optional, default is true
+      configuration: {
+        sources: [
+          {
+            // This title will appear in the top left corner of your new API reference page.
+            title: 'Scalar Galaxy API',
+            url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=json',
+          },
+          {
+            title: 'Petstore',
+            url: 'https://petstore3.swagger.io/api/v3/openapi.json',
+          },
+        ],
       },
     } as ScalarOptions,
   ],
@@ -161,7 +195,7 @@ const config = {
         route: '/scalar',
         configuration: {
           // Put the URL to your OpenAPI document here:
-          url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+          url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=json',
         },
       },
     ],
@@ -192,7 +226,7 @@ const config: Config = {
         route: '/scalar',
         configuration: {
           // Put the URL to your OpenAPI document here:
-          url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+          url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=json',
         },
       } as ScalarOptions,
     ],

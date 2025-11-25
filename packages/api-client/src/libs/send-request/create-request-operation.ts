@@ -1,3 +1,6 @@
+import { isDefined } from '@scalar/helpers/array/is-defined'
+import { httpStatusCodes } from '@scalar/helpers/http/http-status-codes'
+import { mergeUrls } from '@scalar/helpers/url/merge-urls'
 import type { Cookie } from '@scalar/oas-utils/entities/cookie'
 import type {
   Operation,
@@ -6,7 +9,7 @@ import type {
   SecurityScheme,
   Server,
 } from '@scalar/oas-utils/entities/spec'
-import { httpStatusCodes, isDefined, mergeUrls, redirectToProxy, shouldUseProxy } from '@scalar/oas-utils/helpers'
+import { redirectToProxy, shouldUseProxy } from '@scalar/oas-utils/helpers'
 
 import { isElectron } from '@/libs/electron'
 import { ERRORS, type ErrorResponse, normalizeError } from '@/libs/errors'
@@ -25,15 +28,13 @@ import { buildRequestSecurity } from './build-request-security'
 export type RequestStatus = 'start' | 'stop' | 'abort'
 
 /** Response from sendRequest hoisted so we can use it as the return type for createRequestOperation */
-type SendRequestResponse = Promise<
-  ErrorResponse<{
-    response: ResponseInstance
-    request: RequestExample
-    timestamp: number
-  }>
->
+type SendRequestResponse = ErrorResponse<{
+  response: ResponseInstance
+  request: RequestExample
+  timestamp: number
+}>
 
-export type SendRequestResult = Awaited<SendRequestResponse>[1]
+export type SendRequestResult = SendRequestResponse[1]
 
 /** Execute the request */
 export const createRequestOperation = ({
@@ -60,7 +61,7 @@ export const createRequestOperation = ({
   pluginManager?: PluginManager
 }): ErrorResponse<{
   controller: AbortController
-  sendRequest: () => SendRequestResponse
+  sendRequest: () => Promise<SendRequestResponse>
   request: Request
 }> => {
   try {
@@ -180,17 +181,17 @@ export const createRequestOperation = ({
       headers,
     })
 
-    const sendRequest = async (): Promise<
-      ErrorResponse<{
-        response: ResponseInstance
-        request: RequestExample
-        timestamp: number
-      }>
-    > => {
+    const sendRequest = async (): Promise<SendRequestResponse> => {
       status?.emit('start')
 
       if (pluginManager) {
-        await pluginManager.executeHook('onBeforeRequest', { request: proxiedRequest })
+        try {
+          await pluginManager.executeHook('onBeforeRequest', { request: proxiedRequest })
+        } catch (e) {
+          const _e = new Error(ERRORS.ON_BEFORE_REQUEST_FAILED, { cause: e })
+          status?.emit('abort')
+          return [normalizeError(_e), null]
+        }
       }
 
       // Start timer to get response duration

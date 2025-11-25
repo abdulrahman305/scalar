@@ -10,6 +10,10 @@ const entries = [
   './src/schemas/v3.1/strict/openapi-document.ts',
   './src/events/index.ts',
   './src/navigation/index.ts',
+  './src/persistence/index.ts',
+  './src/mutators/index.ts',
+  './src/plugins/bundler/index.ts',
+  './src/plugins/client/index.ts',
 ]
 
 await build({

@@ -7,9 +7,10 @@ import OperationParameters from './OperationParameters.vue'
 
 describe('OperationParameters', () => {
   describe('path parameters', () => {
-    it('renders path parameters', async () => {
+    it('renders path parameters', () => {
       const wrapper = mount(OperationParameters, {
         props: {
+          eventBus: null,
           options: {
             orderRequiredPropertiesFirst: undefined,
             orderSchemaPropertiesBy: undefined,
@@ -35,9 +36,10 @@ describe('OperationParameters', () => {
   })
 
   describe('query parameters', () => {
-    it('renders query parameters', async () => {
+    it('renders query parameters', () => {
       const wrapper = mount(OperationParameters, {
         props: {
+          eventBus: null,
           options: {
             orderRequiredPropertiesFirst: undefined,
             orderSchemaPropertiesBy: undefined,
@@ -62,9 +64,10 @@ describe('OperationParameters', () => {
   })
 
   describe('header parameters', () => {
-    it('renders header parameters', async () => {
+    it('renders header parameters', () => {
       const wrapper = mount(OperationParameters, {
         props: {
+          eventBus: null,
           options: {
             orderRequiredPropertiesFirst: undefined,
             orderSchemaPropertiesBy: undefined,
@@ -90,9 +93,10 @@ describe('OperationParameters', () => {
   })
 
   describe('cookie parameters', () => {
-    it('renders a required cookie parameter', async () => {
+    it('renders a required cookie parameter', () => {
       const wrapper = mount(OperationParameters, {
         props: {
+          eventBus: null,
           options: {
             orderRequiredPropertiesFirst: undefined,
             orderSchemaPropertiesBy: undefined,
@@ -118,9 +122,10 @@ describe('OperationParameters', () => {
       expect(wrapper.text()).toContain('required')
     })
 
-    it('renders an optional cookie parameter', async () => {
+    it('renders an optional cookie parameter', () => {
       const wrapper = mount(OperationParameters, {
         props: {
+          eventBus: null,
           options: {
             orderRequiredPropertiesFirst: undefined,
             orderSchemaPropertiesBy: undefined,
@@ -147,13 +152,14 @@ describe('OperationParameters', () => {
   })
 
   describe('request body', () => {
-    it('renders request body', async () => {
+    it('renders request body', () => {
       const wrapper = mount(OperationParameters, {
         props: {
           options: {
             orderRequiredPropertiesFirst: undefined,
             orderSchemaPropertiesBy: undefined,
           },
+          eventBus: null,
           requestBody: {
             content: {
               'application/json': {
@@ -176,9 +182,10 @@ describe('OperationParameters', () => {
     })
 
     // TODO: Not implemented yet
-    it.skip('renders request body without readOnly properties', async () => {
+    it.skip('renders request body without readOnly properties', () => {
       const wrapper = mount(OperationParameters, {
         props: {
+          eventBus: null,
           options: {
             orderRequiredPropertiesFirst: undefined,
             orderSchemaPropertiesBy: undefined,
@@ -216,9 +223,10 @@ describe('OperationParameters', () => {
   })
 
   describe('form data', () => {
-    it('renders form data parameters', async () => {
+    it('renders form data parameters', () => {
       const wrapper = mount(OperationParameters, {
         props: {
+          eventBus: null,
           options: {
             orderRequiredPropertiesFirst: undefined,
             orderSchemaPropertiesBy: undefined,

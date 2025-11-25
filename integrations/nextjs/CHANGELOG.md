@@ -1,5 +1,32 @@
 # @scalar/nextjs-api-reference
 
+## 0.9.2
+
+### Patch Changes
+
+- [#7375](https://github.com/scalar/scalar/pull/7375) [`55bb334`](https://github.com/scalar/scalar/commit/55bb3346d1f9ac964770acc90aa810266a972d96) Thanks [@stefanprobst](https://github.com/stefanprobst)! - relax peerDependency range for nextjs to support v16
+
+- Updated dependencies []:
+  - @scalar/core@0.3.23
+
+## 0.9.1
+
+### Patch Changes
+
+- Updated dependencies [[`2377b76`](https://github.com/scalar/scalar/commit/2377b76d050f8de70037b17a32d0dd1181d3311d)]:
+  - @scalar/core@0.3.22
+
+## 0.9.0
+
+### Minor Changes
+
+- [#7105](https://github.com/scalar/scalar/pull/7105) [`c713362`](https://github.com/scalar/scalar/commit/c7133623da7ac5f2cfe501ad55fffb89978f21f1) Thanks [@marcalexiei](https://github.com/marcalexiei)! - feat(next-js): make `ApiReference` return a synchronous route handler
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @scalar/core@0.3.21
+
 ## 0.8.23
 
 ### Patch Changes

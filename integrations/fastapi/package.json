@@ -1,6 +1,6 @@
 {
   "name": "scalar-fastapi",
-  "description": "Scalar FastAPI integration",
+  "description": "FastAPI plugin to serve beautiful, interactive API documentation from OpenAPI/Swagger documents.",
   "license": "MIT",
   "author": "Scalar (https://github.com/scalar)",
   "homepage": "https://github.com/scalar/scalar",
@@ -10,7 +10,7 @@
     "url": "git+https://github.com/scalar/scalar.git",
     "directory": "integrations/fastapi"
   },
-  "version": "1.4.3",
+  "version": "1.4.4",
   "private": true,
   "engines": {
     "node": ">=20"
@@ -18,6 +18,24 @@
   "scripts": {
     "dev": "command -v uvicorn >/dev/null 2>&1 && cd playground && uvicorn main:app --reload || echo '⚠️ uvicorn is not available, skipping the dev server.'",
     "test": "command -v python >/dev/null 2>&1 && python run_tests.py || echo '⚠️ python is not available, skipping the tests.'"
+  },
+  "readme": {
+    "title": "Scalar API Reference Plugin for FastAPI",
+    "badges": [
+      {
+        "type": "pypi-version",
+        "package": "scalar-fastapi"
+      },
+      {
+        "type": "pypi-downloads",
+        "package": "scalar-fastapi"
+      },
+      {
+        "type": "pypi-license",
+        "package": "scalar-fastapi"
+      }
+    ],
+    "documentation": "https://guides.scalar.com/scalar/scalar-api-references/integrations/fastapi"
   },
   "dependencies": {},
   "devDependencies": {}

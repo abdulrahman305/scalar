@@ -16,7 +16,7 @@
     "swagger",
     "cli"
   ],
-  "version": "0.5.40",
+  "version": "0.7.2",
   "engines": {
     "node": ">=20"
   },
@@ -32,6 +32,7 @@
   },
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
@@ -44,7 +45,6 @@
     "./dist",
     "CHANGELOG.md"
   ],
-  "module": "dist/index.js",
   "dependencies": {
     "@scalar/helpers": "workspace:*",
     "@scalar/oas-utils": "workspace:*",
@@ -53,9 +53,7 @@
     "hono": "catalog:*"
   },
   "devDependencies": {
-    "@hono/node-server": "catalog:*",
     "@scalar/build-tooling": "workspace:*",
-    "@scalar/hono-api-reference": "workspace:*",
     "@types/node": "catalog:*",
     "vite": "catalog:*"
   }

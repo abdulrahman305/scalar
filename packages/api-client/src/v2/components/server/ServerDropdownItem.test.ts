@@ -111,7 +111,7 @@ describe('ServerDropdownItem', () => {
     await button.trigger('click')
 
     expect(wrapper.emitted('update:selectedServer')).toBeTruthy()
-    expect(wrapper.emitted('update:selectedServer')?.[0]).toEqual([{ id: 'server-1' }])
+    expect(wrapper.emitted('update:selectedServer')?.[0]).toEqual([])
   })
 
   it('shows variables form when server is selected and has variables', () => {
@@ -235,7 +235,7 @@ describe('ServerDropdownItem', () => {
   it('handles undefined server gracefully', () => {
     const wrapper = mount(ServerDropdownItem, {
       props: {
-        server: undefined,
+        server: null,
         serverOption: defaultServerOption,
       },
     })

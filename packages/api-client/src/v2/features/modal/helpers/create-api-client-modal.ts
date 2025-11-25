@@ -2,7 +2,7 @@ import { useModal } from '@scalar/components'
 import type { WorkspaceStore } from '@scalar/workspace-store/client'
 import { createApp, reactive } from 'vue'
 
-import { Modal, type ModalProps } from '@/v2/features/modal/components'
+import Modal, { type ModalProps } from '@/v2/features/modal/Modal.vue'
 
 export type CreateApiClientModalOptions = {
   /** Element to mount the client modal to */
@@ -48,7 +48,6 @@ export const createApiClientModal = ({ el, workspaceStore, mountOnInitialize = t
   // Pass in our initial props at the top level
   const app = createApp(Modal, {
     workspaceStore,
-    activeEntities,
     modalState,
   } satisfies ModalProps)
 

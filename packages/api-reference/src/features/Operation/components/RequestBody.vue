@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ScalarMarkdown } from '@scalar/components'
+import type { WorkspaceEventBus } from '@scalar/workspace-store/events'
 import { getResolvedRef } from '@scalar/workspace-store/helpers/get-resolved-ref'
 import type { RequestBodyObject } from '@scalar/workspace-store/schemas/v3.1/strict/openapi-document'
 import { computed, ref } from 'vue'
@@ -16,6 +17,7 @@ import ContentTypeSelect from './ContentTypeSelect.vue'
 const { requestBody, options } = defineProps<{
   breadcrumb?: string[]
   requestBody?: RequestBodyObject
+  eventBus: WorkspaceEventBus | null
   options: {
     orderRequiredPropertiesFirst: boolean | undefined
     orderSchemaPropertiesBy: 'alpha' | 'preserve' | undefined
@@ -34,7 +36,7 @@ const availableContentTypes = computed(() =>
 const selectedContentType = ref<string>('application/json')
 
 if (requestBody?.content) {
-  if (availableContentTypes.value.length > 0) {
+  if (availableContentTypes.value[0]) {
     selectedContentType.value = availableContentTypes.value[0]
   }
 }
@@ -95,16 +97,18 @@ const partitionedSchema = computed(() => {
 <template>
   <div
     v-if="requestBody"
-    class="request-body">
+    aria-label="Request Body"
+    class="request-body"
+    role="group">
     <div class="request-body-header">
-      <span class="request-body-title">
+      <div class="request-body-title">
         <slot name="title" />
         <div
           v-if="requestBody.required"
           class="request-body-required">
           required
         </div>
-      </span>
+      </div>
       <ContentTypeSelect
         v-model="selectedContentType"
         :content="requestBody.content" />
@@ -122,6 +126,7 @@ const partitionedSchema = computed(() => {
       <Schema
         :breadcrumb
         compact
+        :eventBus="eventBus"
         name="Request Body"
         noncollapsible
         :options="{
@@ -135,6 +140,7 @@ const partitionedSchema = computed(() => {
         additionalProperties
         :breadcrumb
         compact
+        :eventBus="eventBus"
         name="Request Body"
         :options="{
           hideReadOnly: true,
@@ -151,6 +157,7 @@ const partitionedSchema = computed(() => {
       <Schema
         :breadcrumb
         compact
+        :eventBus="eventBus"
         :hideReadOnly="true"
         name="Request Body"
         noncollapsible
@@ -159,7 +166,7 @@ const partitionedSchema = computed(() => {
           orderRequiredPropertiesFirst: options.orderRequiredPropertiesFirst,
           orderSchemaPropertiesBy: options.orderSchemaPropertiesBy,
         }"
-        :schema />
+        :schema="schema" />
     </div>
   </div>
 </template>

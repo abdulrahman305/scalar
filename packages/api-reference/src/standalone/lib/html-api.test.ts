@@ -1,11 +1,32 @@
-import { apiReferenceConfigurationSchema } from '@scalar/types/api-reference'
+import { sleep } from '@scalar/helpers/testing/sleep'
+import { apiReferenceConfigurationSchema, apiReferenceConfigurationWithSourceSchema } from '@scalar/types/api-reference'
 import { flushPromises } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
 import { createApiReference, createContainer, findDataAttributes, getConfigurationFromDataAttributes } from './html-api'
 
 beforeEach(() => {
+  vi.mock('@scalar/use-hooks/useBreakpoints', () => ({
+    useBreakpoints: () => ({
+      mediaQueries: {
+        lg: { value: true },
+        md: { value: true },
+        sm: { value: true },
+        xs: { value: true },
+        zoomed: { value: true },
+        xl: { value: true },
+      },
+      breakpoints: {
+        lg: true,
+        md: true,
+        sm: true,
+        xs: true,
+        zoomed: true,
+        xl: true,
+      },
+    }),
+  }))
   global.document = createHtmlDocument(`
     <html>
       <body>
@@ -13,6 +34,10 @@ beforeEach(() => {
       </body>
     </html>
   `)
+})
+
+afterEach(() => {
+  // vi.resetAllMocks()
 })
 
 const consoleWarnSpy = vi.spyOn(console, 'warn')
@@ -29,7 +54,7 @@ describe('createContainer', () => {
 })
 
 describe('createApiReference', () => {
-  it('creates and mounts the API reference component', async () => {
+  it('creates and mounts the API reference component', () => {
     const element = document.querySelector('#mount-point')
     expect(element).toBeInstanceOf(HTMLElement)
 
@@ -41,7 +66,7 @@ describe('createApiReference', () => {
     expect(element?.innerHTML).toContain('Powered by Scalar')
   })
 
-  it('handles string selectors for mounting', async () => {
+  it('handles string selectors for mounting', () => {
     const config = { _integration: 'html' }
     const apiReference = createApiReference('#mount-point', apiReferenceConfigurationSchema.parse(config))
 
@@ -52,9 +77,12 @@ describe('createApiReference', () => {
 
   it('handles scalar:reload-references event', () => {
     const element = document.querySelector('#mount-point')
-    const config = { _integration: 'html' }
+    const config = {
+      _integration: 'html',
+      content: { 'openapi': '3.1.0', 'info': { 'title': 'Test API', 'version': '1.0.0' } },
+    }
 
-    createApiReference(element!, apiReferenceConfigurationSchema.parse(config))
+    createApiReference(element!, apiReferenceConfigurationWithSourceSchema.parse(config))
     document.dispatchEvent(new Event('scalar:reload-references'))
 
     expect(consoleWarnSpy).toHaveBeenCalledOnce()
@@ -115,18 +143,22 @@ describe('createApiReference', () => {
     app.updateConfiguration(newConfig)
     expect(app).toBeDefined()
 
+    // Wait for the update to propagate
     await flushPromises()
+    await sleep(1000)
+
     // Assert the configuration was updated
     expect(app.getConfiguration()).toMatchObject(newConfig)
     expect(document.getElementById('mount-point')?.innerHTML).toContain('Updated API')
   })
 
   it('updates the operations when the configuration changes', async () => {
-    const config = { _integration: 'html', expandOperations: true }
+    const config = { _integration: 'html', expandOperations: true, slug: 'updated-api' }
     const app = createApiReference('#mount-point', apiReferenceConfigurationSchema.parse(config))
 
     // Update configuration
     app.updateConfiguration({
+      slug: 'updated-api',
       content: JSON.stringify({
         'openapi': '3.1.0',
         'info': { 'title': 'Updated API', 'version': '1.0.0' },
@@ -143,12 +175,14 @@ describe('createApiReference', () => {
 
     // Assert the configuration was updated
     await flushPromises()
+    await sleep(1000)
 
-    expect(document.getElementById('tag/test/get/test')).not.toBeNull()
-    expect(document.getElementById('tag/test/get/test')?.innerHTML).toContain('New Operation')
+    expect(document.getElementById('updated-api/tag/test/get/test')).not.toBeNull()
+    expect(document.getElementById('updated-api/tag/test/get/test')?.innerHTML).toContain('New Operation')
 
     // Update configuration
     app.updateConfiguration({
+      slug: 'updated-api',
       content: JSON.stringify({
         'openapi': '3.1.0',
         'info': { 'title': 'Updated API', 'version': '1.0.0' },
@@ -165,9 +199,9 @@ describe('createApiReference', () => {
 
     await flushPromises()
 
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    expect(document.getElementById('tag/test/post/test')).not.toBeNull()
-    expect(document.getElementById('tag/test/post/test')?.innerHTML).toContain('Even newer operation')
+    await sleep(1000)
+    expect(document.getElementById('updated-api/tag/test/post/test')).not.toBeNull()
+    expect(document.getElementById('updated-api/tag/test/post/test')?.innerHTML).toContain('Even newer operation')
 
     // Assert the configuration was updated
     await flushPromises()
@@ -197,7 +231,7 @@ describe('findDataAttributes (legacy)', () => {
 })
 
 describe('getConfigurationFromDataAttributes', () => {
-  it('createApiReference', async () => {
+  it('createApiReference', () => {
     global.document = createHtmlDocument(`
         <html>
           <body>
@@ -308,7 +342,7 @@ describe('getConfigurationFromDataAttributes', () => {
   it.skip('handles missing spec elements with error', () => {
     expect(getConfigurationFromDataAttributes(document)).toStrictEqual(baseConfig)
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      "Couldn't find a [data-spec], [data-spec-url] or <script id='api-reference' /> element. Try adding it like this: %c<div data-spec-url='https://registry.scalar.com/@scalar/apis/galaxy/latest?format=yaml' />",
+      "Couldn't find a [data-spec], [data-spec-url] or <script id='api-reference' /> element. Try adding it like this: %c<div data-spec-url='https://registry.scalar.com/@scalar/apis/galaxy?format=yaml' />",
       'font-family: monospace;',
     )
   })

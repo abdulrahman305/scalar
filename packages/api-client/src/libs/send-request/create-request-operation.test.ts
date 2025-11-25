@@ -1,60 +1,11 @@
 import type { SelectedSecuritySchemeUids } from '@scalar/oas-utils/entities/shared'
-import {
-  type RequestPayload,
-  type ServerPayload,
-  createExampleFromRequest,
-  requestExampleSchema,
-  requestSchema,
-  securitySchemeSchema,
-  serverSchema,
-} from '@scalar/oas-utils/entities/spec'
+import { securitySchemeSchema } from '@scalar/oas-utils/entities/spec'
+import { PROXY_PORT, PROXY_URL, VOID_PORT, VOID_URL, createRequestPayload } from '@test/helpers'
 import { encode } from 'js-base64'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-import type { z } from 'zod'
 
 import * as electron from '../electron'
 import { createRequestOperation } from './create-request-operation'
-
-const PROXY_PORT = 5051
-const VOID_PORT = 5052
-const PROXY_URL = `http://127.0.0.1:${PROXY_PORT}`
-// biome-ignore lint/suspicious/noExportsInTest: yolo
-export const VOID_URL = `http://127.0.0.1:${VOID_PORT}`
-
-type RequestExamplePayload = z.input<typeof requestExampleSchema>
-
-type MetaRequestPayload = {
-  serverPayload?: ServerPayload
-  requestPayload?: RequestPayload
-  requestExamplePayload?: RequestExamplePayload
-  proxyUrl?: string
-}
-
-/** Creates the payload for createRequestOperation */
-export const createRequestPayload = (metaRequestPayload: MetaRequestPayload = {}) => {
-  const request = requestSchema.parse(metaRequestPayload.requestPayload ?? {})
-  const server = metaRequestPayload.serverPayload ? serverSchema.parse(metaRequestPayload.serverPayload) : undefined
-  let example = createExampleFromRequest(request, 'example')
-
-  // Overwrite any example properties
-  if (metaRequestPayload.requestExamplePayload) {
-    example = requestExampleSchema.parse({
-      ...example,
-      ...metaRequestPayload.requestExamplePayload,
-    })
-  }
-
-  return {
-    auth: {},
-    request,
-    environment: {},
-    globalCookies: [],
-    example,
-    server,
-    proxyUrl: metaRequestPayload.proxyUrl,
-    securitySchemes: {},
-  }
-}
 
 beforeAll(async () => {
   // Check whether the proxy-server is running
@@ -296,7 +247,7 @@ describe('create-request-operation', () => {
     })
   })
 
-  it('creates query parameters from the url', async () => {
+  it('creates query parameters from the url', () => {
     const [error, requestOperation] = createRequestOperation(
       createRequestPayload({
         serverPayload: { url: VOID_URL },
@@ -1408,5 +1359,31 @@ describe('create-request-operation', () => {
       operation: expect.any(Object),
     })
     expect(responseFromOperation!.headers.get(HEADER_MOCK_NAME)).toBe(HEADER_MOCK_VALUE)
+  })
+
+  it('handles `onBeforeRequest` errors', async () => {
+    const mockPluginManager = {
+      executeHook: vi.fn().mockRejectedValue(Error('AAAA')),
+      getViewComponents: vi.fn().mockReturnValue([]),
+    }
+
+    const [error, requestOperation] = createRequestOperation({
+      ...createRequestPayload({
+        serverPayload: { url: 'https://api.example.com' },
+        requestPayload: {
+          path: '/test',
+        },
+      }),
+      pluginManager: mockPluginManager,
+    })
+
+    if (error) {
+      throw error
+    }
+
+    await expect(requestOperation.sendRequest()).resolves.toStrictEqual([
+      expect.objectContaining({ message: 'onBeforeRequest request hook failed' }),
+      null,
+    ])
   })
 })

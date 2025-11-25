@@ -15,7 +15,7 @@
     "http testing",
     "hono"
   ],
-  "version": "2.2.6",
+  "version": "2.2.10",
   "engines": {
     "node": ">=20"
   },
@@ -32,6 +32,7 @@
   },
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
@@ -44,7 +45,6 @@
     "./dist",
     "CHANGELOG.md"
   ],
-  "module": "dist/index.js",
   "dependencies": {
     "@hono/node-server": "catalog:*",
     "@scalar/helpers": "workspace:*",

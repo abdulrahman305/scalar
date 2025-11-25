@@ -4,7 +4,7 @@ import path from 'node:path'
 import as from 'ansis'
 import chokidar from 'chokidar'
 import * as esbuild from 'esbuild'
-import { glob } from 'glob'
+import { glob } from 'fast-glob'
 
 import { addPackageFileExports, findEntryPoints } from '../helpers'
 import { runCommand } from './helpers'
@@ -173,7 +173,7 @@ export async function build({
 }
 
 /** Shims require for ESM builds while bundling */
-export const ESM_REQUIRE_SHIM = `
+const ESM_REQUIRE_SHIM = `
 await (async () => {
   const { dirname } = await import("path");
   const { fileURLToPath } = await import("url");
@@ -200,6 +200,6 @@ await (async () => {
 /**
  * Shim banner to support node:require for bundled builds
  */
-export const esmRequireShimBanner = {
+const esmRequireShimBanner = {
   js: ESM_REQUIRE_SHIM,
 }

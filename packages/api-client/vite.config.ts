@@ -1,7 +1,9 @@
-import { ViteWatchWorkspace, alias, createViteBuildOptions, findEntryPoints } from '@scalar/build-tooling'
+import { fileURLToPath } from 'node:url'
+
+import { findEntryPoints } from '@scalar/build-tooling'
+import { ViteWatchWorkspace, alias, createViteBuildOptions } from '@scalar/build-tooling/vite'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import svgLoader from 'vite-svg-loader'
 
@@ -37,6 +39,6 @@ export default defineConfig({
   }),
   test: {
     environment: 'jsdom',
-    setupFiles: './src/vitest.setup.ts',
+    setupFiles: './test/vitest.setup.ts',
   },
 })

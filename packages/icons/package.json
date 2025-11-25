@@ -10,7 +10,7 @@
     "url": "git+https://github.com/scalar/scalar.git",
     "directory": "packages/icons"
   },
-  "version": "0.4.7",
+  "version": "0.5.0",
   "engines": {
     "node": ">=20"
   },
@@ -28,6 +28,7 @@
   },
   "type": "module",
   "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -47,7 +48,6 @@
   "files": [
     "dist"
   ],
-  "module": "./dist/index.js",
   "dependencies": {
     "@phosphor-icons/core": "^2.1.1",
     "@types/node": "catalog:*",
@@ -57,11 +57,11 @@
   "devDependencies": {
     "@scalar/build-tooling": "workspace:*",
     "@vitejs/plugin-vue": "catalog:*",
-    "@vue/test-utils": "^2.4.1",
-    "jsdom": "^22.1.0",
+    "@vue/test-utils": "catalog:*",
+    "jsdom": "catalog:*",
     "svglint": "^2.7.1",
     "vite": "catalog:*",
-    "vite-svg-loader": "^5.1.0",
+    "vite-svg-loader": "catalog:*",
     "vitest": "catalog:*"
   }
 }

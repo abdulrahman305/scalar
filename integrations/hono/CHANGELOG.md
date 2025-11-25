@@ -1,5 +1,30 @@
 # @scalar/hono-api-reference
 
+## 0.9.25
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @scalar/core@0.3.23
+
+## 0.9.24
+
+### Patch Changes
+
+- [#7241](https://github.com/scalar/scalar/pull/7241) [`2377b76`](https://github.com/scalar/scalar/commit/2377b76d050f8de70037b17a32d0dd1181d3311d) Thanks [@hanspagel](https://github.com/hanspagel)! - chore: use "current" not "latest" scalar registry url
+
+- Updated dependencies [[`2377b76`](https://github.com/scalar/scalar/commit/2377b76d050f8de70037b17a32d0dd1181d3311d)]:
+  - @scalar/core@0.3.22
+
+## 0.9.23
+
+### Patch Changes
+
+- [#7170](https://github.com/scalar/scalar/pull/7170) [`5d2a740`](https://github.com/scalar/scalar/commit/5d2a74098cc51acb4bdc88758f35bf5d2ac3839f) Thanks [@renovate](https://github.com/apps/renovate)! - Bump dependency to patch GHSA-q7jf-gf43-6x6p
+
+- Updated dependencies []:
+  - @scalar/core@0.3.21
+
 ## 0.9.22
 
 ### Patch Changes

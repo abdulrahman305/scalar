@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs/promises'
 import { cwd } from 'node:process'
-import { setTimeout } from 'node:timers/promises'
 
 import { type FastifyInstance, fastify } from 'fastify'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { coerceValue } from '@/schemas/typebox-coerce'
 import { SchemaObjectSchema } from '@/schemas/v3.1/strict/openapi-document'
@@ -64,7 +63,7 @@ describe('create-server-store', () => {
         ],
         meta: {
           'x-scalar-active-document': 'api-1',
-          'x-scalar-dark-mode': true,
+          'x-scalar-color-mode': 'dark',
         },
       })
 
@@ -90,22 +89,29 @@ describe('create-server-store', () => {
             },
           },
         },
-        'x-scalar-navigation': [
-          {
-            'id': 'tag/default/get/planets',
-            method: 'get',
-            type: 'operation',
-            isDeprecated: false,
-            'ref': '#/paths/~1planets/get',
-            path: '/planets',
-            title: 'List planets',
-          },
-        ],
+        'x-scalar-navigation': {
+          type: 'document',
+          id: name,
+          name: name,
+          title: 'Scalar Galaxy',
+          children: [
+            {
+              'id': `${name}/get/planets`,
+              method: 'get',
+              type: 'operation',
+              isDeprecated: false,
+              'ref': '#/paths/~1planets/get',
+              path: '/planets',
+              title: 'List planets',
+            },
+          ],
+        },
+        'x-scalar-original-document-hash': '',
       })
 
       expect(store.getWorkspace()).toEqual({
         'x-scalar-active-document': 'api-1',
-        'x-scalar-dark-mode': true,
+        'x-scalar-color-mode': 'dark',
         documents: {
           'api-1': workspaceDocument('api-1'),
           'api-2': workspaceDocument('api-2'),
@@ -181,17 +187,24 @@ describe('create-server-store', () => {
           },
         },
         'x-scalar-active-auth': 'test',
-        'x-scalar-navigation': [
-          {
-            'id': 'tag/default/get/planets',
-            isDeprecated: false,
-            method: 'get',
-            type: 'operation',
-            'ref': '#/paths/~1planets/get',
-            path: '/planets',
-            title: 'List planets',
-          },
-        ],
+        'x-scalar-navigation': {
+          type: 'document',
+          id: 'doc-1',
+          name: 'doc-1',
+          title: 'Scalar Galaxy',
+          children: [
+            {
+              'id': 'doc-1/get/planets',
+              isDeprecated: false,
+              method: 'get',
+              type: 'operation',
+              'ref': '#/paths/~1planets/get',
+              path: '/planets',
+              title: 'List planets',
+            },
+          ],
+        },
+        'x-scalar-original-document-hash': '',
       })
 
       expect(workspace.documents['doc-3']).toEqual({
@@ -214,17 +227,24 @@ describe('create-server-store', () => {
           },
         },
         'x-scalar-active-auth': 'test',
-        'x-scalar-navigation': [
-          {
-            'id': 'tag/default/get/planets',
-            isDeprecated: false,
-            method: 'get',
-            type: 'operation',
-            'ref': '#/paths/~1planets/get',
-            path: '/planets',
-            title: 'List planets',
-          },
-        ],
+        'x-scalar-navigation': {
+          type: 'document',
+          id: 'doc-3',
+          name: 'doc-3',
+          title: 'Scalar Galaxy',
+          children: [
+            {
+              'id': 'doc-3/get/planets',
+              isDeprecated: false,
+              method: 'get',
+              type: 'operation',
+              'ref': '#/paths/~1planets/get',
+              path: '/planets',
+              title: 'List planets',
+            },
+          ],
+        },
+        'x-scalar-original-document-hash': '',
       })
     })
   })
@@ -248,7 +268,7 @@ describe('create-server-store', () => {
         ],
         meta: {
           'x-scalar-active-document': 'test',
-          'x-scalar-dark-mode': true,
+          'x-scalar-color-mode': 'dark',
           'x-scalar-default-client': 'node/fetch',
           'x-scalar-theme': 'default',
         },
@@ -289,17 +309,24 @@ describe('create-server-store', () => {
                 planetId: { '$ref': './chunks/doc-1/components/parameters/planetId.json#', $global: true },
               },
             },
-            'x-scalar-navigation': [
-              {
-                'id': 'tag/default/get/planets',
-                isDeprecated: false,
-                method: 'get',
-                path: '/planets',
-                title: 'List planets',
-                type: 'operation',
-                'ref': '#/paths/~1planets/get',
-              },
-            ],
+            'x-scalar-navigation': {
+              type: 'document',
+              id: 'doc-1',
+              name: 'doc-1',
+              title: 'Scalar Galaxy',
+              children: [
+                {
+                  'id': 'doc-1/get/planets',
+                  isDeprecated: false,
+                  method: 'get',
+                  path: '/planets',
+                  title: 'List planets',
+                  type: 'operation',
+                  'ref': '#/paths/~1planets/get',
+                },
+              ],
+            },
+            'x-scalar-original-document-hash': '',
           },
           'doc-2': {
             'x-scalar-active-auth': 'test',
@@ -319,21 +346,28 @@ describe('create-server-store', () => {
                 planetId: { '$ref': './chunks/doc-2/components/parameters/planetId.json#', $global: true },
               },
             },
-            'x-scalar-navigation': [
-              {
-                'id': 'tag/default/get/planets',
-                isDeprecated: false,
-                method: 'get',
-                type: 'operation',
-                'ref': '#/paths/~1planets/get',
-                path: '/planets',
-                title: 'List planets',
-              },
-            ],
+            'x-scalar-navigation': {
+              type: 'document',
+              id: 'doc-2',
+              name: 'doc-2',
+              title: 'Scalar Galaxy',
+              children: [
+                {
+                  'id': 'doc-2/get/planets',
+                  isDeprecated: false,
+                  method: 'get',
+                  type: 'operation',
+                  'ref': '#/paths/~1planets/get',
+                  path: '/planets',
+                  title: 'List planets',
+                },
+              ],
+            },
+            'x-scalar-original-document-hash': '',
           },
         },
         'x-scalar-active-document': 'test',
-        'x-scalar-dark-mode': true,
+        'x-scalar-color-mode': 'dark',
         'x-scalar-default-client': 'node/fetch',
         'x-scalar-theme': 'default',
       })
@@ -368,11 +402,10 @@ describe('create-server-store', () => {
 
       beforeEach(() => {
         server = fastify({ logger: false })
-      })
 
-      afterEach(async () => {
-        await server.close()
-        await setTimeout(100)
+        return async () => {
+          await server.close()
+        }
       })
 
       it('should load a document on the workspace from an external url', async () => {
@@ -526,6 +559,7 @@ describe('externalize-component-references', () => {
             }),
           },
         },
+        'x-scalar-original-document-hash': '',
       },
       {
         mode: 'ssr',
@@ -562,6 +596,7 @@ describe('externalize-component-references', () => {
             }),
           },
         },
+        'x-scalar-original-document-hash': '',
       },
       {
         mode: 'static',
@@ -592,6 +627,7 @@ describe('externalize-path-references', () => {
             },
           },
         },
+        'x-scalar-original-document-hash': '',
       },
       {
         mode: 'ssr',
@@ -613,7 +649,7 @@ describe('externalize-path-references', () => {
             get: {
               description: 'string',
             },
-            // @ts-ignore
+            // @ts-expect-error
             otherProperty: {
               description: 'I should still be in the output',
             },
@@ -650,6 +686,7 @@ describe('externalize-path-references', () => {
             },
           },
         },
+        'x-scalar-original-document-hash': '',
       },
       {
         mode: 'static',

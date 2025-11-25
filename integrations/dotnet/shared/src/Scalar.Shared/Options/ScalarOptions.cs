@@ -202,6 +202,15 @@ public partial class ScalarOptions
     public bool? PersistentAuthentication { get; set; }
 
     /// <summary>
+    /// Controls whether telemetry is enabled (default: enabled).
+    /// </summary>
+    /// <remarks>
+    /// Telemetry tracks only whether a request was sent through the API client.
+    /// We don't track who sent the request, what request was sent, or where it was sent to.
+    /// </remarks>
+    public bool? Telemetry { get; set; }
+
+    /// <summary>
     /// Controls the type of document download available for the API documentation (default: <see cref="DocumentDownloadType.Both" />).
     /// </summary>
     public DocumentDownloadType? DocumentDownloadType { get; set; }
@@ -220,4 +229,9 @@ public partial class ScalarOptions
     /// Controls whether the operation ID is shown in the UI (default: <c>false</c>).
     /// </summary>
     public bool? ShowOperationId { get; set; }
+
+    /// <summary>
+    /// Controls the visibility of the developer tools toolbar.
+    /// </summary>
+    public DeveloperToolsVisibility? ShowDeveloperTools { get; set; }
 }

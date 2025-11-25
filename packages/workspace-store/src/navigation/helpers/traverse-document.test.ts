@@ -15,11 +15,6 @@ describe('traverseDocument', () => {
       },
       operationsSorter: 'alpha',
       tagSort: 'alpha',
-      getHeadingId: (heading) => heading.value,
-      getOperationId: (operation) => operation.summary ?? '',
-      getWebhookId: (webhook) => webhook?.name ?? 'webhooks',
-      getModelId: (model) => model?.name ?? '',
-      getTagId: (tag) => tag.name ?? '',
     },
   }
 
@@ -30,10 +25,13 @@ describe('traverseDocument', () => {
         title: 'Test API',
         version: '1.0.0',
       },
+
+      'x-scalar-original-document-hash': '',
     }
 
-    const result = traverseDocument(emptyDoc, mockOptions)
-    expect(result.entries).toEqual([])
+    const result = traverseDocument('doc-1', emptyDoc, mockOptions)
+    expect(result.id).toBe('doc-1')
+    expect(result.children).toEqual([])
   })
 
   it('should traverse document with description', () => {
@@ -44,17 +42,19 @@ describe('traverseDocument', () => {
         version: '1.0.0',
         description: '# Test Description\n## Section 1\nContent',
       },
+      'x-scalar-original-document-hash': '',
     }
 
-    const result = traverseDocument(doc, mockOptions)
-    expect(result.entries).toHaveLength(1)
-    expect(result.entries[0]).toEqual({
-      'id': 'Test Description',
+    const result = traverseDocument('doc-1', doc, mockOptions)
+    expect(result.id).toBe('doc-1')
+    expect(result.children).toHaveLength(1)
+    expect(result.children[0]).toEqual({
+      'id': 'doc-1/description/test-description',
       title: 'Test Description',
       type: 'text',
       children: [
         {
-          'id': 'Section 1',
+          'id': 'doc-1/description/section-1',
           title: 'Section 1',
           type: 'text',
         },
@@ -88,23 +88,27 @@ describe('traverseDocument', () => {
           description: 'Test Tag',
         },
       ],
+      'x-scalar-original-document-hash': '',
     }
 
-    const result = traverseDocument(doc, mockOptions)
-    expect(result.entries).toHaveLength(1) // One tag group
-    expect(result.entries).toEqual([
+    const result = traverseDocument('doc-1', doc, mockOptions)
+    expect(result.id).toBe('doc-1')
+    expect(result.children).toHaveLength(1) // One tag group
+    expect(result.children).toEqual([
       {
         'description': 'Test Tag',
-        'id': 'test',
+        'id': 'doc-1/tag/test',
         'isGroup': false,
         'name': 'test',
         'title': 'test',
         isWebhooks: false,
         'type': 'tag',
-        xKeys: {},
+        xKeys: {
+          'x-scalar-order': ['doc-1/tag/test/get/test'],
+        },
         'children': [
           {
-            'id': 'Test Operation',
+            'id': 'doc-1/tag/test/get/test',
             'method': 'get',
             'path': '/test',
             isDeprecated: false,
@@ -136,13 +140,15 @@ describe('traverseDocument', () => {
           },
         },
       },
+      'x-scalar-original-document-hash': '',
     }
 
-    const result = traverseDocument(doc, mockOptions)
-    expect(result.entries).toHaveLength(1) // Webhooks section
-    expect((result.entries[0] as TraversedTag).children).toHaveLength(1)
-    expect((result.entries[0] as TraversedTag).children?.[0]).toEqual({
-      'id': 'test-webhook',
+    const result = traverseDocument('doc-1', doc, mockOptions)
+    expect(result.id).toBe('doc-1')
+    expect(result.children).toHaveLength(1) // Webhooks section
+    expect((result.children[0] as TraversedTag).children).toHaveLength(1)
+    expect((result.children[0] as TraversedTag).children?.[0]).toEqual({
+      'id': 'doc-1/webhook/post/test-webhook',
       'isDeprecated': false,
       'method': 'post',
       'name': 'test-webhook',
@@ -171,13 +177,15 @@ describe('traverseDocument', () => {
           }),
         },
       },
+      'x-scalar-original-document-hash': '',
     }
 
-    const result = traverseDocument(doc, mockOptions)
-    expect(result.entries).toHaveLength(1) // Models section
-    expect((result.entries[0] as TraversedTag).children).toHaveLength(1)
-    expect((result.entries[0] as TraversedTag).children?.[0]).toEqual({
-      'id': 'TestModel',
+    const result = traverseDocument('doc-1', doc, mockOptions)
+    expect(result.id).toBe('doc-1')
+    expect(result.children).toHaveLength(1) // Models section
+    expect((result.children[0] as TraversedTag).children).toHaveLength(1)
+    expect((result.children[0] as TraversedTag).children?.[0]).toEqual({
+      'id': 'doc-1/model/testmodel',
       'name': 'TestModel',
       'ref': '#/components/schemas/TestModel',
       'title': 'TestModel',
@@ -204,6 +212,7 @@ describe('traverseDocument', () => {
           }),
         },
       },
+      'x-scalar-original-document-hash': '',
     }
 
     const optionsWithHiddenModels = {
@@ -215,8 +224,9 @@ describe('traverseDocument', () => {
       },
     }
 
-    const result = traverseDocument(doc, optionsWithHiddenModels)
-    expect(result.entries).toHaveLength(0)
+    const result = traverseDocument('doc-1', doc, optionsWithHiddenModels)
+    expect(result.id).toBe('doc-1')
+    expect(result.children).toHaveLength(0)
   })
 
   it('should handle multiple tags and operations', () => {
@@ -260,23 +270,27 @@ describe('traverseDocument', () => {
           description: 'Tag 2',
         },
       ],
+      'x-scalar-original-document-hash': '',
     }
 
-    const result = traverseDocument(doc, mockOptions)
-    expect(result.entries).toHaveLength(2) // Two tag groups
-    expect(result.entries).toEqual([
+    const result = traverseDocument('doc-1', doc, mockOptions)
+    expect(result.id).toBe('doc-1')
+    expect(result.children).toHaveLength(2) // Two tag groups
+    expect(result.children).toEqual([
       {
+        'id': 'doc-1/tag/tag1',
         'description': 'Tag 1',
-        'id': 'tag1',
         'isGroup': false,
         'name': 'tag1',
         isWebhooks: false,
         'title': 'tag1',
         'type': 'tag',
-        xKeys: {},
+        xKeys: {
+          'x-scalar-order': ['doc-1/tag/tag1/get/test1'],
+        },
         'children': [
           {
-            'id': 'Test Operation 1',
+            'id': 'doc-1/tag/tag1/get/test1',
             'method': 'get',
             'path': '/test1',
             isDeprecated: false,
@@ -288,16 +302,18 @@ describe('traverseDocument', () => {
       },
       {
         'description': 'Tag 2',
-        'id': 'tag2',
+        'id': 'doc-1/tag/tag2',
         'isGroup': false,
         'name': 'tag2',
         isWebhooks: false,
         'title': 'tag2',
         'type': 'tag',
-        xKeys: {},
+        xKeys: {
+          'x-scalar-order': ['doc-1/tag/tag2/post/test2'],
+        },
         'children': [
           {
-            'id': 'Test Operation 2',
+            'id': 'doc-1/tag/tag2/post/test2',
             'method': 'post',
             'path': '/test2',
             isDeprecated: false,
@@ -310,7 +326,7 @@ describe('traverseDocument', () => {
     ])
   })
 
-  it('should handle operations without tags', () => {
+  it('should add operations without tags at the same level as tag entries', () => {
     const doc: OpenApiDocument = {
       openapi: '3.1.0',
       info: {
@@ -329,21 +345,19 @@ describe('traverseDocument', () => {
           },
         },
       },
+      'x-scalar-original-document-hash': '',
     }
 
-    const result = traverseDocument(doc, mockOptions)
-    expect(result.entries).toHaveLength(1) // One tag group for untagged operations
-    expect(result.entries).toEqual([
-      {
-        'id': 'Untagged Operation',
-        'isDeprecated': false,
-        'method': 'get',
-        'path': '/test',
-        'ref': '#/paths/~1test/get',
-        'title': 'Untagged Operation',
-        'type': 'operation',
-      },
-    ])
+    const result = traverseDocument('doc-1', doc, mockOptions)
+    expect(result.id).toBe('doc-1')
+    // Operations without tags are added at the same level as tag entries
+    expect(result.children).toHaveLength(1)
+    expect(result.children[0]).toMatchObject({
+      type: 'operation',
+      title: 'Untagged Operation',
+      path: '/test',
+      method: 'get',
+    })
   })
 
   it('should respect tag sorting configuration', () => {
@@ -387,10 +401,12 @@ describe('traverseDocument', () => {
           description: 'A Tag',
         },
       ],
+      'x-scalar-original-document-hash': '',
     }
 
-    const result = traverseDocument(doc, mockOptions)
-    expect(result.entries[0]?.title).toBe('a-tag')
-    expect(result.entries[1]?.title).toBe('z-tag')
+    const result = traverseDocument('doc-1', doc, mockOptions)
+    expect(result.id).toBe('doc-1')
+    expect(result.children[0]?.title).toBe('a-tag')
+    expect(result.children[1]?.title).toBe('z-tag')
   })
 })

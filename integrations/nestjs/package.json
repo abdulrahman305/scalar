@@ -1,6 +1,6 @@
 {
   "name": "@scalar/nestjs-api-reference",
-  "description": "A middleware for using the Scalar API reference with NestJS",
+  "description": "NestJS module to serve beautiful, interactive API documentation from OpenAPI/Swagger documents.",
   "license": "MIT",
   "author": "Scalar (https://github.com/scalar)",
   "homepage": "https://github.com/scalar/scalar",
@@ -10,7 +10,7 @@
     "url": "git+https://github.com/scalar/scalar.git",
     "directory": "integrations/nestjs"
   },
-  "version": "1.0.5",
+  "version": "1.0.8",
   "engines": {
     "node": ">=20"
   },
@@ -31,6 +31,7 @@
   },
   "type": "module",
   "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.cts",
   "exports": {
     ".": {
@@ -47,7 +48,21 @@
   "files": [
     "dist"
   ],
-  "module": "dist/index.js",
+  "readme": {
+    "title": "Scalar API Reference Plugin for NestJS",
+    "badges": [
+      {
+        "type": "npm-version"
+      },
+      {
+        "type": "npm-downloads"
+      },
+      {
+        "type": "npm-license"
+      }
+    ],
+    "documentation": "https://guides.scalar.com/scalar/scalar-api-references/integrations/nestjs"
+  },
   "dependencies": {
     "@scalar/core": "workspace:*"
   },

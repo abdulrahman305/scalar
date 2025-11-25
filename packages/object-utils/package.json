@@ -13,7 +13,7 @@
   "keywords": [
     "typescript object transforms"
   ],
-  "version": "1.2.8",
+  "version": "1.2.12",
   "engines": {
     "node": ">=20"
   },
@@ -26,13 +26,7 @@
     "types:check": "scalar-types-check"
   },
   "type": "module",
-  "main": "dist/index.js",
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
     "./arrays": {
       "import": "./dist/arrays/index.js",
       "types": "./dist/arrays/index.d.ts",
@@ -73,13 +67,11 @@
     "dist",
     "CHANGELOG.md"
   ],
-  "module": "dist/index.js",
   "dependencies": {
     "@scalar/helpers": "workspace:*",
     "flatted": "catalog:*",
     "just-clone": "^6.2.0",
-    "ts-deepmerge": "^7.0.1",
-    "type-fest": "catalog:*"
+    "ts-deepmerge": "^7.0.1"
   },
   "devDependencies": {
     "@scalar/build-tooling": "workspace:*",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isDefined } from '@scalar/oas-utils/helpers'
+import { isDefined } from '@scalar/helpers/array/is-defined'
 import { safeJSON } from '@scalar/object-utils/parse'
 import { useToasts } from '@scalar/use-toasts'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -13,7 +13,10 @@ import { useSidebar } from '@/hooks/useSidebar'
 import { ERRORS } from '@/libs'
 import { createRequestOperation } from '@/libs/send-request'
 import type { SendRequestResult } from '@/libs/send-request/create-request-operation'
-import { validateParameters } from '@/libs/validate-parameters'
+import {
+  validateParameters,
+  type ValidationResult,
+} from '@/libs/validate-parameters'
 import { usePluginManager } from '@/plugins'
 import { useWorkspace } from '@/store'
 import { useActiveEntities } from '@/store/active-entities'
@@ -37,15 +40,24 @@ const {
   activeWorkspace,
   activeServer,
 } = useActiveEntities()
-const { cookies, requestHistory, showSidebar, securitySchemes, events } =
-  workspaceContext
+const {
+  cookies,
+  requestHistory,
+  showSidebar,
+  securitySchemes,
+  modalState,
+  events,
+} = workspaceContext
 
 const pluginManager = usePluginManager()
 
 const element = ref<HTMLDivElement>()
 
 const requestAbortController = ref<AbortController>()
-const invalidParams = ref<Set<string>>(new Set())
+/** Computed Validation State Update on Example Change */
+const validation = computed<ValidationResult>(() =>
+  validateParameters(activeExample.value ?? null),
+)
 const requestResult = ref<SendRequestResult | null>(null)
 
 /**
@@ -72,7 +84,12 @@ const executeRequest = async () => {
     return
   }
 
-  invalidParams.value = validateParameters(activeExample.value)
+  // Block request if there are empty required path parameters
+  if (validation.value.hasBlockingErrors) {
+    toast('Path parameters must have values.', 'error')
+    events.requestStatus.emit('abort')
+    return
+  }
 
   const environmentValue =
     typeof activeEnvironment.value === 'object'
@@ -140,6 +157,16 @@ function logRequest() {
   analytics?.capture('client-send-request')
 }
 
+/**
+ * Cancel request when closing the modal
+ * @see https://github.com/scalar/scalar/issues/7115
+ */
+watch(modalState, ({ open }) => {
+  if (!open) {
+    void cancelRequest()
+  }
+})
+
 onMounted(() => {
   events.executeRequest.on(executeRequest)
   events.executeRequest.on(logRequest)
@@ -156,22 +183,14 @@ useOpenApiWatcher()
 onBeforeUnmount(() => {
   events.executeRequest.off(executeRequest)
   events.executeRequest.off(logRequest)
+  events.cancelRequest.off(cancelRequest)
 })
-
-// Clear invalid params on parameter update
-watch(
-  () => activeExample.value?.parameters,
-  () => {
-    invalidParams.value.clear()
-  },
-  { deep: true },
-)
 
 const cloneRequestResult = (result: any) => {
   // Create a structured clone that can handle Blobs, ArrayBuffers, etc.
   try {
     return structuredClone(result)
-  } catch (error) {
+  } catch {
     // Fallback to a custom cloning approach if structuredClone fails
     // or isn't available in the environment
     const clone = { ...result }
@@ -221,7 +240,7 @@ const cloneRequestResult = (result: any) => {
       <!-- Content -->
       <div class="flex h-full flex-1 flex-col">
         <RouterView
-          :invalidParams="invalidParams"
+          :invalidParams="validation.invalidParams"
           :requestResult="requestResult"
           :selectedSecuritySchemeUids="selectedSecuritySchemeUids" />
       </div>

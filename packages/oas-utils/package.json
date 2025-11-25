@@ -16,7 +16,7 @@
     "specification",
     "yaml"
   ],
-  "version": "0.5.2",
+  "version": "0.6.4",
   "engines": {
     "node": ">=20"
   },
@@ -31,6 +31,7 @@
   },
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "exports": {
     "./entities/cookie": {
       "import": "./dist/entities/cookie/index.js",
@@ -67,11 +68,6 @@
       "types": "./dist/helpers/index.d.ts",
       "default": "./dist/helpers/index.js"
     },
-    "./helpers/operation-to-har": {
-      "import": "./dist/helpers/operation-to-har/index.js",
-      "types": "./dist/helpers/operation-to-har/index.d.ts",
-      "default": "./dist/helpers/operation-to-har/index.js"
-    },
     "./helpers/security": {
       "import": "./dist/helpers/security/index.js",
       "types": "./dist/helpers/security/index.d.ts",
@@ -97,10 +93,7 @@
     "dist",
     "CHANGELOG.md"
   ],
-  "module": "dist/index.js",
   "dependencies": {
-    "@hyperjump/browser": "^1.1.0",
-    "@hyperjump/json-schema": "^1.9.6",
     "@scalar/helpers": "workspace:*",
     "@scalar/json-magic": "workspace:*",
     "@scalar/object-utils": "workspace:*",
@@ -108,11 +101,7 @@
     "@scalar/themes": "workspace:*",
     "@scalar/types": "workspace:*",
     "@scalar/workspace-store": "workspace:*",
-    "@types/har-format": "^1.2.15",
     "flatted": "catalog:*",
-    "js-base64": "catalog:*",
-    "microdiff": "catalog:*",
-    "nanoid": "catalog:*",
     "type-fest": "catalog:*",
     "yaml": "catalog:*",
     "zod": "catalog:*"

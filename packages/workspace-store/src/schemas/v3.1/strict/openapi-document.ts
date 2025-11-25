@@ -2,10 +2,30 @@ import { type TSchema, Type } from '@scalar/typebox'
 
 import { compose } from '@/schemas/compose'
 import { extensions } from '@/schemas/extensions'
+import {
+  type XScalarEnvironments,
+  xScalarEnvironmentsSchema,
+} from '@/schemas/extensions/document/x-scalar-environments'
+import { type XScalarIcon, XScalarIconSchema } from '@/schemas/extensions/document/x-scalar-icon'
+import {
+  type XScalarSetOperationSecurity,
+  XScalarSetOperationSecuritySchema,
+} from '@/schemas/extensions/document/x-scalar-set-operation-security'
+import { type XScalarCookies, xScalarCookiesSchema } from '@/schemas/extensions/general/x-scalar-cookies'
+import { type XScalarOrder, XScalarOrderSchema } from '@/schemas/extensions/general/x-scalar-order'
+import {
+  type XScalarSelectedSecurity,
+  XScalarSelectedSecuritySchema,
+} from '@/schemas/extensions/security/x-scalar-selected-security'
+import {
+  type XScalarSelectedServer,
+  XScalarSelectedServerSchema,
+} from '@/schemas/extensions/server/x-scalar-selected-server'
 import { type XTagGroups, XTagGroupsSchema } from '@/schemas/extensions/tag/x-tag-groups'
 import {
   TraversedDescriptionSchemaDefinition,
-  type TraversedEntry,
+  type TraversedDocument,
+  TraversedDocumentSchemaDefinition,
   TraversedEntrySchemaDefinition,
   TraversedOperationSchemaDefinition,
   TraversedSchemaSchemaDefinition,
@@ -14,14 +34,6 @@ import {
 } from '@/schemas/navigation'
 
 import { CallbackObjectSchemaDefinition } from './callback'
-import {
-  type XScalarClientConfigCookies,
-  xScalarClientConfigCookiesSchema,
-} from './client-config-extensions/x-scalar-client-config-cookies'
-import {
-  type XScalarClientConfigEnvironments,
-  xScalarClientConfigEnvironmentsSchema,
-} from './client-config-extensions/x-scalar-client-config-environments'
 import { type ComponentsObject, ComponentsObjectSchemaDefinition } from './components'
 import { ContactObjectSchemaDefinition } from './contact'
 import { DiscriminatorObjectSchemaDefinition } from './discriminator'
@@ -48,7 +60,7 @@ import {
   SecurityRequirementObjectRef,
   ServerObjectRef,
   TagObjectRef,
-  TraversedEntryObjectRef,
+  TraversedDocumentObjectRef,
 } from './ref-definitions'
 import { RequestBodyObjectSchemaDefinition } from './request-body'
 import { ResponseObjectSchemaDefinition } from './response'
@@ -61,34 +73,47 @@ import { ServerVariableObjectSchemaDefinition } from './server-variable'
 import { type TagObject, TagObjectSchemaDefinition } from './tag'
 import { XMLObjectSchemaDefinition } from './xml'
 
-const OpenApiExtensionsSchema = Type.Partial(
-  compose(
+const OpenApiExtensionsSchema = compose(
+  Type.Partial(
     Type.Object({
       'x-scalar-client-config-active-environment': Type.String(),
-      /** A custom icon representing the collection */
-      'x-scalar-client-config-icon': Type.String(),
-      'x-scalar-client-config-environments': xScalarClientConfigEnvironmentsSchema,
-      'x-scalar-client-config-cookies': xScalarClientConfigCookiesSchema,
       'x-original-oas-version': Type.String(),
-      'x-scalar-selected-security': Type.Optional(Type.Array(SecurityRequirementObjectRef)),
-      [extensions.document.navigation]: Type.Array(TraversedEntryObjectRef),
+      'x-scalar-original-source-url': Type.String(),
+      'x-scalar-watch-mode': Type.Boolean(),
+      [extensions.document.navigation]: TraversedDocumentObjectRef,
     }),
-    XTagGroupsSchema,
   ),
+  XTagGroupsSchema,
+  xScalarEnvironmentsSchema,
+  XScalarSelectedSecuritySchema,
+  XScalarSelectedServerSchema,
+  XScalarSetOperationSecuritySchema,
+  XScalarIconSchema,
+  XScalarOrderSchema,
+  xScalarCookiesSchema,
+  Type.Object({
+    'x-scalar-original-document-hash': Type.String(),
+  }),
 )
 
-export type OpenAPIExtensions = Partial<
-  {
-    'x-scalar-client-config-active-environment': string
-    /** A custom icon representing the collection */
-    'x-scalar-client-config-icon': string
-    'x-scalar-client-config-environments': XScalarClientConfigEnvironments
-    'x-scalar-client-config-cookies': XScalarClientConfigCookies
-    'x-original-oas-version': string
-    'x-scalar-selected-security': SecurityRequirementObject[]
-    [extensions.document.navigation]: TraversedEntry[]
-  } & XTagGroups
->
+export type OpenAPIExtensions = Partial<{
+  'x-scalar-client-config-active-environment': string
+  'x-original-oas-version': string
+  /** Original document source url / when loading a document from an external source */
+  'x-scalar-original-source-url': string
+  'x-scalar-watch-mode': boolean
+  [extensions.document.navigation]: TraversedDocument
+}> & {
+  /** Original input document hash */
+  'x-scalar-original-document-hash': string
+} & XTagGroups &
+  XScalarEnvironments &
+  XScalarSelectedSecurity &
+  XScalarSelectedServer &
+  XScalarSetOperationSecurity &
+  XScalarIcon &
+  XScalarOrder &
+  XScalarCookies
 
 const OpenApiDocumentSchemaDefinition = compose(
   Type.Object({
@@ -182,6 +207,7 @@ const module = Type.Module({
   [REF_DEFINITIONS.TraversedWebhookObject]: TraversedWebhookSchemaDefinition,
   [REF_DEFINITIONS.TraversedTagObject]: TraversedTagSchemaDefinition,
   [REF_DEFINITIONS.TraversedEntryObject]: TraversedEntrySchemaDefinition,
+  [REF_DEFINITIONS.TraversedDocumentObject]: TraversedDocumentSchemaDefinition,
   // Enforces that all references are included in the module
 } satisfies Record<keyof typeof REF_DEFINITIONS, TSchema> & Record<'OpenApiDocument', TSchema>)
 

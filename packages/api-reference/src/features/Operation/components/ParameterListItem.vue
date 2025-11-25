@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import { ScalarMarkdown } from '@scalar/components'
+import {
+  ScalarMarkdown,
+  ScalarMarkdownSummary,
+  ScalarWrappingText,
+} from '@scalar/components'
 import { isDefined } from '@scalar/helpers/array/is-defined'
 import { ScalarIconCaretRight } from '@scalar/icons'
+import type { WorkspaceEventBus } from '@scalar/workspace-store/events'
 import { getResolvedRef } from '@scalar/workspace-store/helpers/get-resolved-ref'
 import type {
   ParameterObject,
@@ -20,6 +25,7 @@ const { name, parameter, options } = defineProps<{
   parameter: ParameterObject | ResponseObject
   name: string
   breadcrumb?: string[]
+  eventBus: WorkspaceEventBus | null
   options: {
     collapsableItems?: boolean
     withExamples?: boolean
@@ -40,7 +46,9 @@ const content = computed(() =>
   'content' in parameter && parameter.content ? parameter.content : null,
 )
 
-const selectedContentType = ref<string>(Object.keys(content.value || {})[0])
+const selectedContentType = ref<string>(
+  Object.keys(content.value || {})[0] ?? '',
+)
 
 /** Response headers */
 const headers = computed<ResponseObject['headers'] | null>(() =>
@@ -89,33 +97,55 @@ const shouldCollapse = computed<boolean>(() =>
 )
 </script>
 <template>
-  <li class="parameter-item group/parameter-item relative">
+  <li class="parameter-item group/parameter-item">
     <Disclosure v-slot="{ open }">
       <DisclosureButton
         v-if="shouldCollapse"
         class="parameter-item-trigger"
         :class="{ 'parameter-item-trigger-open': open }">
-        <span class="parameter-item-name">
+        <div class="parameter-item-name min-w-0">
           <ScalarIconCaretRight
             class="parameter-item-icon size-3 transition-transform duration-100"
             :class="{ 'rotate-90': open }"
             weight="bold" />
-          <span>{{ name }}</span>
-        </span>
-        <span class="parameter-item-type">
-          <ScalarMarkdown
-            v-if="parameter.description"
-            class="markdown"
-            :value="parameter.description" />
-        </span>
+          <div>
+            <ScalarWrappingText
+              :text="name"
+              preset="property" />
+          </div>
+        </div>
+        <ScalarMarkdownSummary
+          v-if="!open && parameter.description"
+          class="parameter-item-description-summary min-w-0 flex-1"
+          controlled
+          :value="parameter.description" />
+        <div
+          v-else
+          class="flex-1" />
+        <div
+          :class="{
+            'w-0 overflow-hidden group-focus-within/parameter-item:w-auto group-hover/parameter-item:w-auto':
+              !open,
+          }">
+          <ContentTypeSelect
+            v-if="shouldCollapse && content"
+            v-model="selectedContentType"
+            class=""
+            :content="content" />
+        </div>
       </DisclosureButton>
       <DisclosurePanel
         class="parameter-item-container parameter-item-container-markdown"
         :static="!shouldCollapse">
+        <ScalarMarkdown
+          v-if="shouldCollapse && parameter.description"
+          class="parameter-item-description"
+          :value="parameter.description" />
         <!-- Headers -->
         <Headers
           v-if="headers"
           :breadcrumb="breadcrumb"
+          :eventBus="eventBus"
           :headers="headers"
           :orderRequiredPropertiesFirst="options.orderRequiredPropertiesFirst"
           :orderSchemaPropertiesBy="options.orderSchemaPropertiesBy" />
@@ -126,6 +156,7 @@ const shouldCollapse = computed<boolean>(() =>
           :breadcrumb="breadcrumb"
           compact
           :description="shouldCollapse ? '' : parameter.description"
+          :eventBus="eventBus"
           :hideWriteOnly="true"
           :name="shouldCollapse ? '' : name"
           :noncollapsible="true"
@@ -143,16 +174,6 @@ const shouldCollapse = computed<boolean>(() =>
           " />
       </DisclosurePanel>
     </Disclosure>
-
-    <!-- Content type select -->
-    <div
-      class="absolute top-3 right-0 opacity-0 group-focus-within/parameter-item:opacity-100 group-hover/parameter-item:opacity-100">
-      <ContentTypeSelect
-        v-if="shouldCollapse && content"
-        v-model="selectedContentType"
-        class="parameter-item-content-type"
-        :content="content" />
-    </div>
   </li>
 </template>
 
@@ -176,28 +197,22 @@ const shouldCollapse = computed<boolean>(() =>
 }
 
 .parameter-item-name {
-  margin-right: 6px;
+  position: relative;
   font-weight: var(--scalar-semibold);
   font-size: var(--scalar-font-size-3);
   font-family: var(--scalar-font-code);
   color: var(--scalar-color-1);
-
-  position: relative;
+  overflow-wrap: break-word;
 }
 
-.parameter-item-type {
+.parameter-item-description,
+.parameter-item-description-summary {
   font-size: var(--scalar-mini);
   color: var(--scalar-color-2);
-  margin-right: 6px;
-  line-height: 1.4;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  width: 100%;
-  overflow: hidden;
 }
 
-.parameter-item-trigger-open .parameter-item-type {
-  white-space: normal;
+.parameter-item-description-summary.parameter-item-description-summary > * {
+  --markdown-line-height: 1;
 }
 
 /* Match font size of markdown for property-detail-value since first child within accordian is displayed as if it were in the markdown section */
@@ -222,7 +237,7 @@ const shouldCollapse = computed<boolean>(() =>
 }
 
 .parameter-item-description {
-  margin-top: 3px !important;
+  margin-top: 4px;
   font-size: var(--scalar-small);
   color: var(--scalar-color-2);
   line-height: 1.4;
@@ -243,10 +258,10 @@ const shouldCollapse = computed<boolean>(() =>
 .parameter-item-trigger {
   display: flex;
   align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
   padding: 12px 0;
-  cursor: pointer;
   outline: none;
-  text-align: left;
 }
 
 .parameter-item-trigger-open {
@@ -264,7 +279,7 @@ const shouldCollapse = computed<boolean>(() =>
 .parameter-item-icon {
   color: var(--scalar-color-3);
   left: -19px;
-  top: 50%;
+  top: 0.5lh;
   translate: 0 -50%;
   position: absolute;
 }

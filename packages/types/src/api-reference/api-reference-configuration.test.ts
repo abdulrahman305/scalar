@@ -131,6 +131,7 @@ describe('api-reference-configuration', () => {
     it('validates integration enum values', () => {
       const validIntegrations = [
         'adonisjs',
+        'astro',
         'docusaurus',
         'dotnet',
         'elysiajs',
@@ -244,6 +245,18 @@ describe('api-reference-configuration', () => {
       expect(migratedConfig.spec).toBeUndefined()
       expect(migratedConfig.content).toBe('{"openapi": "3.1.0"}')
     })
+
+    it('migrates showToolbar to showDeveloperTools', () => {
+      const config = {
+        showToolbar: 'always',
+      }
+
+      const migratedConfig = apiReferenceConfigurationWithSourceSchema.parse(config)
+
+      expect(migratedConfig.showDeveloperTools).toBe('always')
+      // @ts-expect-error showToolbar is not in the type
+      expect(migratedConfig.showToolbar).toBeUndefined()
+    })
   })
 
   describe('hooks', () => {
@@ -255,7 +268,7 @@ describe('api-reference-configuration', () => {
       expect(migratedConfig.onDocumentSelect).toBeInstanceOf(Function)
     })
 
-    it('allows an async function as onDocumentSelect', async () => {
+    it('allows an async function as onDocumentSelect', () => {
       const config = {
         onDocumentSelect: vi.fn().mockResolvedValue(undefined),
       } satisfies Partial<ApiReferenceConfiguration>
@@ -272,7 +285,7 @@ describe('api-reference-configuration', () => {
       expect(migratedConfig.onBeforeRequest).toBeInstanceOf(Function)
     })
 
-    it('allows an async function as onBeforeRequest', async () => {
+    it('allows an async function as onBeforeRequest', () => {
       const config = {
         onBeforeRequest: vi.fn().mockResolvedValue(undefined),
       } satisfies Partial<ApiReferenceConfiguration>
@@ -289,7 +302,7 @@ describe('api-reference-configuration', () => {
       expect(migratedConfig.onShowMore).toBeInstanceOf(Function)
     })
 
-    it('allows an async function as onShowMore', async () => {
+    it('allows an async function as onShowMore', () => {
       const config = {
         onShowMore: vi.fn().mockResolvedValue(undefined),
       } satisfies Partial<ApiReferenceConfiguration>
@@ -306,7 +319,7 @@ describe('api-reference-configuration', () => {
       expect(migratedConfig.onSidebarClick).toBeInstanceOf(Function)
     })
 
-    it('allows an async function as onSidebarClick', async () => {
+    it('allows an async function as onSidebarClick', () => {
       const config = {
         onSidebarClick: vi.fn().mockResolvedValue(undefined),
       } satisfies Partial<ApiReferenceConfiguration>

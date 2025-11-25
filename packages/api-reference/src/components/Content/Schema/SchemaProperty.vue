@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import { ScalarMarkdown } from '@scalar/components'
+import { ScalarMarkdown, ScalarWrappingText } from '@scalar/components'
 import { isDefined } from '@scalar/helpers/array/is-defined'
+import type { WorkspaceEventBus } from '@scalar/workspace-store/events'
 import { getResolvedRef } from '@scalar/workspace-store/helpers/get-resolved-ref'
 import type {
   DiscriminatorObject,
@@ -43,6 +44,7 @@ const props = withDefaults(
     hideHeading?: boolean
     variant?: 'additionalProperties' | 'patternProperties'
     breadcrumb?: string[]
+    eventBus: WorkspaceEventBus | null
     options: SchemaOptions
   }>(),
   {
@@ -53,6 +55,11 @@ const props = withDefaults(
   },
 )
 
+const childBreadcrumb = computed<string[] | undefined>(() =>
+  props.breadcrumb && props.name
+    ? [...props.breadcrumb, props.name]
+    : undefined,
+)
 const descriptions: Record<string, Record<string, string>> = {
   integer: {
     _default: 'Integer numbers.',
@@ -80,9 +87,11 @@ const generatePropertyDescription = (property?: Record<string, any>) => {
     return null
   }
 
-  return descriptions[property.type][
-    property.format || property.contentEncoding || '_default'
-  ]
+  return (
+    descriptions[property.type]?.[
+      property.format || property.contentEncoding || '_default'
+    ] || null
+  )
 }
 
 const getEnumFromValue = (value?: Record<string, any>): any[] | [] =>
@@ -272,21 +281,26 @@ const compositionsToRender = computed(() => {
         v-if="name"
         #name>
         <WithBreadcrumb
-          :breadcrumb="
-            shouldHaveLink && breadcrumb ? [...breadcrumb, name] : undefined
-          ">
+          :breadcrumb="shouldHaveLink ? childBreadcrumb : undefined"
+          :eventBus="eventBus">
           <template v-if="variant === 'patternProperties'">
             <span class="property-name-pattern-properties">
-              {{ name }}
+              <ScalarWrappingText
+                :text="name"
+                preset="property" />
             </span>
           </template>
           <template v-else-if="variant === 'additionalProperties'">
             <span class="property-name-additional-properties">
-              {{ name }}
+              <ScalarWrappingText
+                :text="name"
+                preset="property" />
             </span>
           </template>
           <template v-else>
-            {{ name }}
+            <ScalarWrappingText
+              :text="name"
+              preset="property" />
           </template>
         </WithBreadcrumb>
       </template>
@@ -329,8 +343,9 @@ const compositionsToRender = computed(() => {
       v-if="shouldRenderObjectProperties"
       class="children">
       <Schema
-        :breadcrumb="breadcrumb && name ? [...breadcrumb, name] : undefined"
+        :breadcrumb="childBreadcrumb"
         :compact="compact"
+        :eventBus="eventBus"
         :level="level + 1"
         :name="name"
         :noncollapsible="noncollapsible"
@@ -350,6 +365,7 @@ const compositionsToRender = computed(() => {
         class="children">
         <Schema
           :compact="compact"
+          :eventBus="eventBus"
           :level="level + 1"
           :name="name"
           :noncollapsible="noncollapsible"
@@ -366,6 +382,7 @@ const compositionsToRender = computed(() => {
       :compact="compact"
       :composition="compositionData.composition"
       :discriminator="schema?.discriminator"
+      :eventBus="eventBus"
       :hideHeading="hideHeading"
       :level="level"
       :name="name"

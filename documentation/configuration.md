@@ -81,7 +81,7 @@ Scalar.createApiReference('#app', {
     {
       title: 'Scalar Galaxy', // optional, would fallback to 'API #1'
       slug: 'scalar-galaxy', // optional, would be auto-generated from the title or the index
-      url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+      url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=json',
     },
     // API #2
     {
@@ -102,7 +102,7 @@ Scalar.createApiReference('#app', {
   sources: [
     // API #1
     {
-      url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+      url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=json',
     },
     // API #2
     {
@@ -126,7 +126,7 @@ Scalar.createApiReference('#app', [
   {
     title: 'Scalar Galaxy', // optional, would fallback to 'API #1'
     slug: 'scalar-galaxy', // optional, would be auto-generated from the title or the index
-    url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+    url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=json',
     customCss: `body { background-color: #BADA55}`
   },
   // Configuration #2
@@ -147,7 +147,7 @@ By default, the first one in the list will be the default configuration. You can
 ```js
 Scalar.createApiReference('#app', [
   {
-    url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+    url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=json',
   },
   {
     url: 'https://example.com/openapi.json',
@@ -172,7 +172,7 @@ Scalar.createApiReference('#app', [
     sources: [
       // API #1
       {
-        url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+        url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=json',
       },
       // API #2
       {
@@ -534,7 +534,7 @@ Whether to show the dark mode toggle.
 }
 ```
 
-### showOperationId
+#### showOperationId
 
 **Type:** `boolean`
 
@@ -594,7 +594,7 @@ Whether to show the "Test Request" button.
 
 #### hiddenClients
 
-**Type:** `array | true`
+**Type:** `array | true | object`
 
 We're generating code examples for a long list of popular HTTP clients. You can control which are shown by passing an array of clients, to hide the given clients.
 
@@ -616,24 +616,86 @@ Pass an array of individual clients to hide just those clients:
 
 Here's a list of all clients that you can potentially hide:
 
+<!-- AUTO-GENERATED:CLIENTS START -->
+<!-- This section is automatically generated. Do not edit manually. -->
+<!-- Source: packages/snippetz/src/clients/index.ts -->
+<!-- Generator: packages/snippetz/scripts/generate-markdown-docs.ts -->
+
 ```js
 {
-  hiddenClients: [
-    'libcurl', 'clj_http', 'httpclient', 'restsharp', 'native', 'http1.1',
-    'asynchttp', 'nethttp', 'okhttp', 'unirest', 'xhr', 'axios', 'fetch',
-    'jquery', 'okhttp', 'native', 'request', 'unirest', 'axios', 'fetch',
-    'nsurlsession', 'cohttp', 'curl', 'guzzle', 'http1', 'http2',
-    'webrequest', 'restmethod', 'python3', 'requests', 'httr', 'native',
-    'curl', 'httpie', 'wget', 'nsurlsession', 'undici'
-  ],
+  hiddenClients: {
+    // C
+    c: ['libcurl'],
+    // Clojure
+    clojure: ['clj_http'],
+    // C#
+    csharp: ['httpclient', 'restsharp'],
+    // Dart
+    dart: ['http'],
+    // F#
+    fsharp: ['httpclient'],
+    // Go
+    go: ['native'],
+    // HTTP
+    http: ['http1.1'],
+    // Java
+    java: ['asynchttp', 'nethttp', 'okhttp', 'unirest'],
+    // JavaScript
+    js: ['axios', 'fetch', 'jquery', 'ofetch', 'xhr'],
+    // Kotlin
+    kotlin: ['okhttp'],
+    // Node.js
+    node: ['axios', 'fetch', 'ofetch', 'undici'],
+    // Objective-C
+    objc: ['nsurlsession'],
+    // OCaml
+    ocaml: ['cohttp'],
+    // PHP
+    php: ['curl', 'guzzle'],
+    // PowerShell
+    powershell: ['restmethod', 'webrequest'],
+    // Python
+    python: ['httpx_async', 'httpx_sync', 'python3', 'requests'],
+    // R
+    r: ['httr'],
+    // Ruby
+    ruby: ['native'],
+    // Rust
+    rust: ['reqwest'],
+    // Shell
+    shell: ['curl', 'httpie', 'wget'],
+    // Swift
+    swift: ['nsurlsession'],
+  }
 }
 ```
+
+<!-- AUTO-GENERATED:CLIENTS END -->
 
 But you can also pass `true` to **hide all** HTTP clients. If you have any custom code examples (`x-scalar-examples`) in your API definition, these still render:
 
 ```js
 {
   hiddenClients: true
+}
+```
+
+---
+
+You can also provide an `object` where each **key** corresponds to a language,
+and each **value** specifies the visibility behavior for the clients of that language.
+
+* `true` — hides all clients for the specified language
+* `false` — shows all clients for the specified language
+* `['client1', 'client2']` — hides only the listed clients for the specified language
+
+```ts
+{
+  hiddenClients: {
+    c: false,
+    js: true,
+    shell: ['httpie'], // show all except `httpie`
+  },
 }
 ```
 
@@ -762,6 +824,26 @@ Whether to persist authentication credentials in local storage. This allows the 
 > [!WARNING]
 > Persisting authentication information in the browser's local storage may present security risks in certain environments. Use this feature with caution based on your security requirements.
 
+#### telemetry
+
+**Type:** `boolean`
+
+Whether to enable telemetry.
+
+Wait, did I say telemetry? We do track one thing, and only thing, and that’s *whether* a request was sent through the API client. This gives us a tiny, tiny insight into whether people use the API client and confirms whether we’re on the right track building a good experience for everyone. You can search the codebase for `analytics?.capture` to see what we capture, it’s all open-source. :)
+
+To be clear: *We don’t track who sends a request, we don’t track what request was sent and we don't track where a request was sent to.*
+
+Anyway, totally makes sense to disable it in some environments, so feel free to add `telemetry: false`, we will still be thankful you are using Scalar.
+
+**Default:** `true`
+
+```js
+{
+  telemetry: false
+}
+```
+
 #### plugins
 
 **Type:** `ApiReferencePlugin[]`
@@ -797,6 +879,8 @@ You can use our hosted proxy:
 ```
 
 If you like to run your own, check out our [example proxy written in Go](https://github.com/scalar/scalar/tree/main/projects/proxy-scalar-com).
+
+Please note: You may not use just any reverse proxy, but need to use a proxy that adheres to the Scalar Proxy API. See the example to learn more.
 
 #### searchHotKey
 
@@ -852,11 +936,11 @@ Whether the sidebar should be shown.
 }
 ```
 
-#### showToolbar
+#### showDeveloperTools
 
 **Type:** `'always' | 'localhost' | 'never'`
 
-Sets the visibility the developer tools, by default only shows on localhost or similar hosts.
+Whether and when to show the developer tools. By default only shows on `localhost` (and other domains used for development).
 
 **Default:** `'localhost'`
 
@@ -864,7 +948,7 @@ To disable the toolbar set:
 
 ```js
 {
-  showToolbar: 'never'
+  showDeveloperTools: 'never'
 }
 ```
 

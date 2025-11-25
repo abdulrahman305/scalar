@@ -122,15 +122,6 @@ pnpm lint:fix
 pnpm types:check
 ```
 
-### Package-Specific Commands
-```bash
-# API Client development
-pnpm dev:client:web
-
-# API Reference development
-pnpm dev:reference
-```
-
 ## Code Standards
 
 ### Vue Component Guidelines
@@ -173,7 +164,6 @@ packages/
 - **Framework**: Vitest
 - **Location**: `*.test.ts` files alongside source
 - **Command**: `pnpm test`
-- **Coverage**: `pnpm test:coverage`
 
 ### E2E Tests
 - **Framework**: Playwright

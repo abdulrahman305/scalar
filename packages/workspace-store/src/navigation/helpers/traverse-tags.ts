@@ -1,3 +1,6 @@
+import { sortByOrder } from '@scalar/object-utils/arrays'
+
+import { unpackProxyObject } from '@/helpers/unpack-proxy'
 import { getXKeysFromObject } from '@/navigation/helpers/get-x-keys'
 import type { TagsMap, TraverseSpecOptions } from '@/navigation/types'
 import type { TraversedEntry, TraversedTag } from '@/schemas/navigation'
@@ -5,7 +8,7 @@ import type { OpenApiDocument, TagObject } from '@/schemas/v3.1/strict/openapi-d
 
 import { getTag } from './get-tag'
 
-type Options = Pick<TraverseSpecOptions, 'getTagId' | 'tagsSorter' | 'operationsSorter'>
+type Options = Pick<TraverseSpecOptions, 'tagsSorter' | 'operationsSorter' | 'generateId'>
 
 /** Creates a traversed tag entry from an OpenAPI tag object.
  *
@@ -16,14 +19,29 @@ type Options = Pick<TraverseSpecOptions, 'getTagId' | 'tagsSorter' | 'operations
  * @param isGroup - Whether this tag represents a group of tags
  * @returns A traversed tag entry with ID, title, name and children
  */
-const createTagEntry = (
-  tag: TagObject,
-  getTagId: TraverseSpecOptions['getTagId'],
-  children: TraversedEntry[],
+const createTagEntry = ({
+  tag,
+  generateId,
+  children,
   isGroup = false,
-): TraversedTag => {
-  const id = getTagId(tag)
+  parentId,
+}: {
+  tag: TagObject
+  generateId: TraverseSpecOptions['generateId']
+  children: TraversedEntry[]
+  isGroup: boolean
+  parentId: string
+}): TraversedTag => {
+  const id = generateId({
+    type: 'tag',
+    tag,
+    parentId,
+  })
   const title = tag['x-displayName'] ?? tag.name ?? 'Untitled Tag'
+
+  // Update the order of the children based on the items
+  // This will ensure that the sort order is always in sync with the items
+  tag['x-scalar-order'] = children.map((child) => child.id)
 
   const entry = {
     id,
@@ -34,7 +52,7 @@ const createTagEntry = (
     isGroup,
     isWebhooks: false,
     type: 'tag',
-    xKeys: getXKeysFromObject(tag),
+    xKeys: getXKeysFromObject(unpackProxyObject(tag)),
   } satisfies TraversedTag
 
   return entry
@@ -44,7 +62,6 @@ const createTagEntry = (
  *
  * This function handles:
  * - Sorting tags alphabetically or using a custom sort function
- * - Ensuring the default tag appears last
  * - Sorting operations within tags by title, method, or custom function
  * - Filtering out internal and ignored tags
  * - Creating tag entries with their associated operations
@@ -57,76 +74,111 @@ const createTagEntry = (
  * @returns Array of processed and sorted tag entries
  */
 /** Sorts tags and returns entries */
-const getSortedTagEntries = (
-  _keys: string[],
+const getSortedTagEntries = ({
+  _keys,
+  tagsMap,
+  options: { tagsSorter, operationsSorter, generateId },
+  documentId,
+  sortOrder,
+}: {
+  _keys: string[]
   /** Map of tags and their entries */
-  tagsMap: TagsMap,
-  { getTagId, tagsSorter, operationsSorter }: Options,
-) => {
-  // Ensure that default is last if it exists
-  const hasDefault = _keys.includes('default')
-  const keys = hasDefault ? _keys.filter((key) => key !== 'default') : _keys
-
-  // Alpha sort
-  if (tagsSorter === 'alpha') {
-    keys.sort((a, b) => {
-      const nameA = getTag(tagsMap, a).tag['x-displayName'] || a || 'Untitled Tag'
-      const nameB = getTag(tagsMap, b).tag['x-displayName'] || b || 'Untitled Tag'
-      return nameA.localeCompare(nameB)
-    })
-  }
-  // Custom sort
-  else if (typeof tagsSorter === 'function') {
-    keys.sort((a, b) => tagsSorter(getTag(tagsMap, a).tag, getTag(tagsMap, b).tag))
-  }
-
-  if (hasDefault) {
-    keys.push('default')
-  }
-
+  tagsMap: TagsMap
+  options: Options
+  documentId: string
+  sortOrder: string[] | undefined
+}) => {
   /**
    * Process each tag and its entries:
    * - Skip internal and ignored tags
    * - Sort operations within tags
    * - Create tag entries with sorted operations
    */
-  return keys.flatMap((key) => {
-    const { tag, entries } = getTag(tagsMap, key)
+  const entries = _keys.flatMap((key) => {
+    const { tag, entries } = getTag({ tagsMap, name: key, documentId, generateId })
 
     // Skip if the tag is internal or scalar-ignore
     if (tag['x-internal'] || tag['x-scalar-ignore']) {
       return []
     }
 
-    // Alpha sort
-    if (operationsSorter === 'alpha') {
-      entries.sort((a, b) => (a.type === 'operation' && b.type === 'operation' ? a.title.localeCompare(b.title) : 0))
-    }
-    // Method sort
-    else if (operationsSorter === 'method') {
-      entries.sort((a, b) => (a.type === 'operation' && b.type === 'operation' ? a.method.localeCompare(b.method) : 0))
-    }
-    // Custom sort
-    else if (typeof operationsSorter === 'function') {
-      entries.sort((a, b) => {
-        // Guard against tags
-        if (!(a.type === 'operation' || a.type === 'webhook') || !(b.type === 'operation' || b.type === 'webhook')) {
-          return 0
-        }
+    const sortOrder = tag['x-scalar-order']
 
-        // Handle webhooks as well as operations
-        const pathA = a.type === 'operation' ? a.path : a.name
-        const pathB = b.type === 'operation' ? b.path : b.name
-
-        return operationsSorter(
-          { method: a.method, path: pathA, ref: a.ref, httpVerb: a.method },
-          { method: b.method, path: pathB, ref: b.ref, httpVerb: b.method },
+    if (sortOrder === undefined) {
+      // Alpha sort
+      if (operationsSorter === 'alpha') {
+        entries.sort((a, b) => (a.type === 'operation' && b.type === 'operation' ? a.title.localeCompare(b.title) : 0))
+      }
+      // Method sort
+      else if (operationsSorter === 'method') {
+        entries.sort((a, b) =>
+          a.type === 'operation' && b.type === 'operation' ? a.method.localeCompare(b.method) : 0,
         )
-      })
+      }
+      // Custom sort
+      else if (typeof operationsSorter === 'function') {
+        entries.sort((a, b) => {
+          // Guard against tags
+          if (!(a.type === 'operation' || a.type === 'webhook') || !(b.type === 'operation' || b.type === 'webhook')) {
+            return 0
+          }
+
+          // Handle webhooks as well as operations
+          const pathA = a.type === 'operation' ? a.path : a.name
+          const pathB = b.type === 'operation' ? b.path : b.name
+
+          return operationsSorter(
+            { method: a.method, path: pathA, ref: a.ref, httpVerb: a.method },
+            { method: b.method, path: pathB, ref: b.ref, httpVerb: b.method },
+          )
+        })
+      }
     }
 
-    return entries.length ? createTagEntry(tag, getTagId, entries) : []
+    return entries.length
+      ? createTagEntry({
+          tag,
+          generateId,
+          children: sortOrder ? sortByOrder(entries, sortOrder, 'id') : entries,
+          parentId: documentId,
+          isGroup: false,
+        })
+      : []
   })
+
+  // If a custom 'x-scalar-order' is specified in the tag, sort the entries by this order using sortByOrder
+  if (sortOrder) {
+    return sortByOrder(entries, sortOrder, 'id')
+  }
+
+  // Alpha sort
+  if (tagsSorter === 'alpha') {
+    entries.sort((a, b) => {
+      const nameA =
+        getTag({
+          tagsMap,
+          name: a.title,
+          documentId,
+          generateId,
+        }).tag['x-displayName'] ||
+        a.title ||
+        'Untitled Tag'
+      const nameB =
+        getTag({ tagsMap, name: b.title, documentId, generateId }).tag['x-displayName'] || b.title || 'Untitled Tag'
+      return nameA.localeCompare(nameB)
+    })
+  }
+  // Custom sort
+  else if (typeof tagsSorter === 'function') {
+    entries.sort((a, b) =>
+      tagsSorter(
+        getTag({ tagsMap, name: a.name, documentId, generateId }).tag,
+        getTag({ tagsMap, name: b.name, documentId, generateId }).tag,
+      ),
+    )
+  }
+
+  return entries
 }
 
 /**
@@ -136,36 +188,57 @@ const getSortedTagEntries = (
  * - Handle tag groups if specified via x-tagGroups
  * - Sort tags and their operations according to provided sorters
  * - Create navigation entries for each tag or tag group
- * - Flatten default tag entries if it's the only tag present
  */
-export const traverseTags = (
-  content: OpenApiDocument,
+export const traverseTags = ({
+  document,
+  tagsMap,
+  documentId,
+  options: { generateId, tagsSorter, operationsSorter },
+}: {
+  document: OpenApiDocument
   /** Map of tags and their entries */
-  tagsMap: TagsMap,
-  { getTagId, tagsSorter, operationsSorter }: Options,
-): TraversedEntry[] => {
+  tagsMap: TagsMap
+  documentId: string
+  options: Options
+}): TraversedEntry[] => {
   // x-tagGroups
-  if (content['x-tagGroups']) {
-    const tagGroups = content['x-tagGroups']
+  if (document['x-tagGroups']) {
+    const tagGroups = document['x-tagGroups']
 
     return tagGroups.flatMap((tagGroup) => {
-      const entries = getSortedTagEntries(tagGroup.tags ?? [], tagsMap, {
-        getTagId,
-        tagsSorter,
-        operationsSorter,
+      const entries = getSortedTagEntries({
+        _keys: tagGroup.tags,
+        tagsMap,
+        options: { tagsSorter, operationsSorter, generateId },
+        documentId: documentId,
+        sortOrder: tagGroup['x-scalar-order'],
       })
-      return entries.length ? createTagEntry(tagGroup, getTagId, entries, true) : []
+
+      // Try to update the sort order of the tag group to keep it in sync with the items
+      tagGroup['x-scalar-order'] = entries.map((entry) => entry.id)
+
+      return entries.length
+        ? createTagEntry({
+            tag: tagGroup,
+            generateId,
+            children: entries,
+            parentId: documentId,
+            isGroup: true,
+          })
+        : []
     })
   }
 
   // Ungrouped regular tags
   const keys = Array.from(tagsMap.keys())
-  const tags = getSortedTagEntries(keys, tagsMap, { getTagId, tagsSorter, operationsSorter })
 
-  // Flatten if we only have default tag
-  if (tags.length === 1 && tags[0]?.title === 'default') {
-    return tags[0]?.children ?? []
-  }
+  const tags = getSortedTagEntries({
+    _keys: keys,
+    tagsMap,
+    options: { generateId, tagsSorter, operationsSorter },
+    documentId: documentId,
+    sortOrder: document['x-scalar-order'],
+  })
 
   return tags
 }

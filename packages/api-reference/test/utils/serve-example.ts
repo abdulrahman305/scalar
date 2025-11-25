@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { serve } from '@hono/node-server'
+import { serveStatic } from '@hono/node-server/serve-static'
 import { getHtmlDocument } from '@scalar/core/libs/html-rendering'
 import type { HtmlRenderingConfiguration } from '@scalar/types/api-reference'
 import { Hono } from 'hono'
@@ -15,8 +16,12 @@ const DEFAULT_PORT = process.env.PORT || 0
 
 const DEFAULT_CONFIGURATION: Partial<HtmlRenderingConfiguration> = {
   cdn: '/scalar.js',
-  url: 'https://registry.scalar.com/@scalar/apis/galaxy/latest?format=json',
+  url: 'https://registry.scalar.com/@scalar/apis/galaxy?format=json',
   proxyUrl: 'https://proxy.scalar.com',
+  // TODO: Remove this once the CDN supports the showDeveloperTools attribute
+  // @ts-expect-error - we need this until next release (after 1.39.3)
+  showToolbar: 'never',
+  showDeveloperTools: 'never', // Hide the toolbar by default for snapshots
 }
 
 /**
@@ -29,7 +34,7 @@ const DEFAULT_CONFIGURATION: Partial<HtmlRenderingConfiguration> = {
  * await page.goto(url)
  * ```
  */
-export async function serveExample(givenConfiguration?: Partial<HtmlRenderingConfiguration>): Promise<string> {
+export function serveExample(givenConfiguration?: Partial<HtmlRenderingConfiguration>): Promise<string> {
   // Check if JS bundle exists
   const pathToJavaScriptBundle = getPathToJavaScriptBundle()
 
@@ -49,6 +54,9 @@ export async function serveExample(givenConfiguration?: Partial<HtmlRenderingCon
     // Serve the JS bundle
     app.get('/scalar.js', (c) => c.text(readFileSync(pathToJavaScriptBundle, 'utf8')))
 
+    // Serve the examples directory
+    app.get('/examples/*', serveStatic({ root: './' }))
+
     // Serve static files from the current directory
     app.get('*', (c) => {
       // Configuration from query parameter or default configuration
@@ -65,7 +73,6 @@ export async function serveExample(givenConfiguration?: Partial<HtmlRenderingCon
               ...givenConfiguration,
             }
           : DEFAULT_CONFIGURATION
-
       return c.html(getHtmlDocument(configuration))
     })
 
@@ -82,6 +89,37 @@ export async function serveExample(givenConfiguration?: Partial<HtmlRenderingCon
       },
       ({ port }) => {
         resolve(`http://localhost:${port}`)
+      },
+    )
+  })
+}
+
+export function serveHTMLExample(
+  htmlPath: string,
+  port = 3745,
+): Promise<{
+  url: string
+  shutdown: () => void
+}> {
+  const app = new Hono()
+
+  app.get('/scalar.js', (c) => c.text(readFileSync(getPathToJavaScriptBundle(), 'utf8')))
+
+  app.get('*', (c) => {
+    return c.html(readFileSync(htmlPath, 'utf8'))
+  })
+
+  return new Promise((resolve) => {
+    const server = serve(
+      {
+        fetch: app.fetch,
+        port,
+      },
+      ({ port }) => {
+        resolve({
+          url: `http://localhost:${port}`,
+          shutdown: () => server.close(),
+        })
       },
     )
   })

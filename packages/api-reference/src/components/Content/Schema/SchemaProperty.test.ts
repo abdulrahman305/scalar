@@ -13,6 +13,7 @@ describe('SchemaProperty', () => {
       it('displays expandable sub-schema for object with additional properties', async () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               type: 'object',
               additionalProperties: {
@@ -33,6 +34,7 @@ describe('SchemaProperty', () => {
       it('displays expandable sub-schema for object with defined properties', async () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               type: 'object',
               properties: {
@@ -52,9 +54,10 @@ describe('SchemaProperty', () => {
         expect(schemas).toHaveLength(1)
       })
 
-      it('hides expand button for object without properties or additional properties', async () => {
+      it('hides expand button for object without properties or additional properties', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               type: 'object',
             }),
@@ -74,6 +77,7 @@ describe('SchemaProperty', () => {
       it('displays expandable sub-schema for array with object items', async () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               type: 'array',
               items: {
@@ -96,9 +100,10 @@ describe('SchemaProperty', () => {
         expect(schemas).toHaveLength(1)
       })
 
-      it('hides expand button for array with primitive items', async () => {
+      it('hides expand button for array with primitive items', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               type: 'array',
               items: {
@@ -118,9 +123,10 @@ describe('SchemaProperty', () => {
     })
 
     describe('primitive types', () => {
-      it('hides expand button for string type', async () => {
+      it('hides expand button for string type', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               type: 'string',
             }),
@@ -135,9 +141,10 @@ describe('SchemaProperty', () => {
         expect(schemas).toHaveLength(0)
       })
 
-      it('hides expand button for integer type', async () => {
+      it('hides expand button for integer type', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               type: 'integer',
             }),
@@ -152,9 +159,10 @@ describe('SchemaProperty', () => {
         expect(schemas).toHaveLength(0)
       })
 
-      it('hides expand button for number type', async () => {
+      it('hides expand button for number type', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               type: 'number',
             }),
@@ -169,9 +177,10 @@ describe('SchemaProperty', () => {
         expect(schemas).toHaveLength(0)
       })
 
-      it('hides expand button for boolean type', async () => {
+      it('hides expand button for boolean type', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               type: 'boolean',
             }),
@@ -193,6 +202,7 @@ describe('SchemaProperty', () => {
       it('displays all enum values when count is 9 or fewer', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               enum: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'],
             }),
@@ -210,6 +220,7 @@ describe('SchemaProperty', () => {
       it('displays first 5 enum values with toggle button when count exceeds 9', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               enum: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'],
             }),
@@ -228,6 +239,7 @@ describe('SchemaProperty', () => {
       it('expands to show all enum values when toggle button is clicked', async () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               enum: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'],
             }),
@@ -246,6 +258,7 @@ describe('SchemaProperty', () => {
       it('displays single enum value correctly', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               enum: ['a'],
             }),
@@ -262,6 +275,7 @@ describe('SchemaProperty', () => {
       it('displays enum values from array items property', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               items: {
                 enum: ['a', 'b', 'c'],
@@ -278,6 +292,7 @@ describe('SchemaProperty', () => {
       it('displays enum values with their descriptions', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               'type': 'string',
               'enum': ['Ice giant', 'Dwarf', 'Gas', 'Iron'],
@@ -310,6 +325,7 @@ describe('SchemaProperty', () => {
       it('displays enum values within composition schemas', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               anyOf: [{ type: 'string', enum: ['a', 'b', 'c'] }, { type: 'null' }],
             }),
@@ -324,9 +340,10 @@ describe('SchemaProperty', () => {
   })
 
   describe('variant prop', () => {
-    it('displays pattern properties with variant prop', async () => {
+    it('displays pattern properties with variant prop', () => {
       const wrapper = mount(SchemaProperty, {
         props: {
+          eventBus: null,
           variant: 'patternProperties',
           name: '^foo-',
           schema: coerceValue(SchemaObjectSchema, {
@@ -342,12 +359,12 @@ describe('SchemaProperty', () => {
       expect(patternName.text()).toBe('^foo-')
     })
 
-    it('displays additional properties with variant prop', async () => {
+    it('displays additional properties with variant prop', () => {
       const wrapper = mount(SchemaProperty, {
         props: {
           variant: 'additionalProperties',
           name: 'propertyName*',
-          // @ts-ignore
+          // @ts-expect-error
           schema: {
             type: 'anything',
           },
@@ -361,10 +378,11 @@ describe('SchemaProperty', () => {
       expect(additionalName.text()).toBe('propertyName*')
     })
 
-    it('displays regular property names without variant styling', async () => {
+    it('displays regular property names without variant styling', () => {
       const wrapper = mount(SchemaProperty, {
         props: {
           name: 'regularProperty',
+          eventBus: null,
           schema: coerceValue(SchemaObjectSchema, {
             type: 'string',
           }),
@@ -389,6 +407,7 @@ describe('SchemaProperty', () => {
       it('renders composition schemas for array items with oneOf', async () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               type: 'array',
               items: {
@@ -416,6 +435,7 @@ describe('SchemaProperty', () => {
       it('renders array items with oneOf composition after expansion', async () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               type: 'array',
               items: {
@@ -449,9 +469,10 @@ describe('SchemaProperty', () => {
     })
 
     describe('object compositions', () => {
-      it('renders object compositions with allOf with an object button', async () => {
+      it('renders object compositions with allOf with an object button', () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               allOf: [
                 {
@@ -481,6 +502,7 @@ describe('SchemaProperty', () => {
       it.todo('renders nested composition selectors with correct titles', async () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: coerceValue(SchemaObjectSchema, {
               allOf: [
                 {
@@ -535,6 +557,7 @@ describe('SchemaProperty', () => {
       it('renders object properties with descriptions after expansion', async () => {
         const wrapper = mount(SchemaProperty, {
           props: {
+            eventBus: null,
             schema: {
               type: ['object', 'null'],
               properties: {
@@ -592,6 +615,7 @@ describe('SchemaProperty', () => {
 
       const wrapper = mount(SchemaProperty, {
         props: {
+          eventBus: null,
           schema: childPropertySchema,
           name: 'Satellites',
           level: 1,

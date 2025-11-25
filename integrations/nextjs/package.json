@@ -1,6 +1,6 @@
 {
   "name": "@scalar/nextjs-api-reference",
-  "description": "a Next.js component to render API references from an OpenAPI file",
+  "description": "Next.js API route handler to serve beautiful, interactive API documentation from OpenAPI/Swagger documents.",
   "license": "MIT",
   "author": "Scalar (https://github.com/scalar)",
   "homepage": "https://github.com/scalar/scalar",
@@ -18,7 +18,7 @@
     "openapi",
     "swagger"
   ],
-  "version": "0.8.23",
+  "version": "0.9.2",
   "engines": {
     "node": ">=20"
   },
@@ -34,6 +34,7 @@
   },
   "type": "module",
   "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     "import": "./dist/index.js",
@@ -43,7 +44,21 @@
     "dist",
     "CHANGELOG.md"
   ],
-  "module": "./dist/index.js",
+  "readme": {
+    "title": "Scalar API Reference Handler for Next.js",
+    "badges": [
+      {
+        "type": "npm-version"
+      },
+      {
+        "type": "npm-downloads"
+      },
+      {
+        "type": "npm-license"
+      }
+    ],
+    "documentation": "https://guides.scalar.com/scalar/scalar-api-references/integrations/nextjs"
+  },
   "dependencies": {
     "@scalar/core": "workspace:*"
   },
@@ -61,7 +76,7 @@
     "vitest": "catalog:*"
   },
   "peerDependencies": {
-    "next": "^15.0.0",
+    "next": "^15.0.0 || ^16.0.0",
     "react": "^19.0.0"
   }
 }

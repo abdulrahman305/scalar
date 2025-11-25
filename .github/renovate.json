@@ -37,11 +37,10 @@
       "matchFileNames": [
         "packages/**",
         "package.json",
-        "pnpm-workspace.yml",
+        "pnpm-workspace.yaml",
         "integrations/**",
         "examples/**",
         "projects/**",
-        "playwright/**",
         "tooling/**"
       ],
       "semanticCommits": "enabled",
@@ -219,11 +218,42 @@
       "matchFileNames": ["packages/workspace-store/**"],
       "additionalBranchPrefix": "workspace-store"
     },
+    {
+      "description": "Packages - Analytics Client",
+      "matchFileNames": ["packages/analytics-client/**"],
+      "additionalBranchPrefix": "analytics-client"
+    },
+    {
+      "description": "Packages - OpenAPI Upgrader",
+      "matchFileNames": ["packages/openapi-upgrader/**"],
+      "additionalBranchPrefix": "openapi-upgrader"
+    },
+    {
+      "description": "Packages - Pre Post Request Scripts",
+      "matchFileNames": ["packages/pre-post-request-scripts/**"],
+      "additionalBranchPrefix": "pre-post-request-scripts"
+    },
+    {
+      "description": "Packages - Sidebar",
+      "matchFileNames": ["packages/sidebar/**"],
+      "additionalBranchPrefix": "sidebar"
+    },
+    {
+      "description": "Packages - Use Tooltip",
+      "matchFileNames": ["packages/use-tooltip/**"],
+      "additionalBranchPrefix": "use-tooltip"
+    },
 
     {
-      "description": "Global dependencies",
-      "matchFileNames": ["package.json", "pnpm-workspace.yaml"],
-      "additionalBranchPrefix": "global"
+      "description": "Workspace Dependencies",
+      "matchFileNames": ["pnpm-workspace.yaml"],
+      "additionalBranchPrefix": "workspace"
+    },
+
+    {
+      "description": "Root Dependencies",
+      "matchFileNames": ["package.json"],
+      "additionalBranchPrefix": "root"
     },
 
     {
@@ -259,7 +289,7 @@
     },
     {
       "description": "Integrations - Fastify",
-      "matchFileNames": ["integrations/fastify/**", "examples/fastify/**"],
+      "matchFileNames": ["integrations/fastify/**"],
       "additionalBranchPrefix": "fastify"
     },
     {
@@ -297,6 +327,11 @@
       "matchFileNames": ["integrations/sveltekit/**", "examples/sveltekit/**"],
       "additionalBranchPrefix": "sveltekit"
     },
+    {
+      "description": "Integrations - Astro",
+      "matchFileNames": ["integrations/astro/**"],
+      "additionalBranchPrefix": "astro"
+    },
 
     {
       "description": "Projects - Client Scalar.com",
@@ -315,22 +350,11 @@
     },
 
     {
-      "description": "Playwright",
-      "matchFileNames": ["playwright/**"],
-      "additionalBranchPrefix": "playwright"
-    },
-
-    {
       "description": "Scripts",
-      "matchFileNames": ["scripts/**"],
-      "additionalBranchPrefix": "scripts-root"
+      "matchFileNames": ["tooling/scripts/**"],
+      "additionalBranchPrefix": "tooling-scripts"
     },
 
-    {
-      "description": "Examples - CDN API Reference",
-      "matchFileNames": ["examples/cdn-api-reference/**"],
-      "additionalBranchPrefix": "api-reference-example"
-    },
     {
       "description": "Examples - React",
       "matchFileNames": ["examples/react/**", "examples/react-webpack/**"],
@@ -375,6 +399,12 @@
     },
 
     {
+      "description": "Allow unstable updates for Aspire.Hosting.Docker and Aspire.Hosting.Keycloak since no stable packages exist yet",
+      "matchPackageNames": ["Aspire.Hosting.Docker", "Aspire.Hosting.Keycloak"],
+      "ignoreUnstable": false
+    },
+
+    {
       "description": "Disable any docker updates for .NET Aspire",
       "matchFileNames": ["**/aspire/**"],
       "matchDatasources": ["docker"],
@@ -391,6 +421,13 @@
       "description": "Disable major updates for Microsoft.AspNetCore packages",
       "matchPackageNames": ["Microsoft.AspNetCore**"],
       "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+
+    {
+      "description": "Keep Spring Boot dependencies as low as possible for best compatibility",
+      "matchFileNames": ["integrations/java/**"],
+      "matchPackageNames": ["org.springframework.boot:*"],
       "enabled": false
     }
   ]

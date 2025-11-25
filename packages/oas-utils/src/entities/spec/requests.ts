@@ -1,19 +1,20 @@
-import { selectedSecuritySchemeUidSchema } from '@/entities/shared/utility'
-import { type ENTITY_BRANDS, nanoidSchema } from '@scalar/types/utils'
-import { type ZodSchema, z } from 'zod'
-
 import {
   type PostResponseSchema,
   XCodeSamplesSchema,
   XPostResponseSchema,
 } from '@scalar/openapi-types/schemas/extensions'
-import { XScalarStability } from '@scalar/types'
 import { oasSecurityRequirementSchema } from '@scalar/types/entities'
+import { XScalarStability } from '@scalar/types/legacy'
+import { type ENTITY_BRANDS, nanoidSchema } from '@scalar/types/utils'
+import { type ZodSchema, z } from 'zod'
+
+import { selectedSecuritySchemeUidSchema } from '@/entities/shared/utility'
+
 import { oasParameterSchema } from './parameters'
 import { type RequestExample, xScalarExampleSchema } from './request-examples'
 import { oasExternalDocumentationSchema } from './spec-objects'
 
-export const requestMethods = ['delete', 'get', 'head', 'options', 'patch', 'post', 'put', 'trace'] as const
+const requestMethods = ['delete', 'get', 'head', 'options', 'patch', 'post', 'put', 'trace'] as const
 
 export type RequestMethod = (typeof requestMethods)[number]
 
@@ -58,7 +59,7 @@ type RequestBody = object
 const requestBodySchema = z.any() satisfies ZodSchema<RequestBody>
 
 /** Open API Compliant Request Validator */
-export const oasRequestSchema = z.object({
+const oasRequestSchema = z.object({
   /**
    * A list of tags for API documentation control. Tags can be used for logical
    * grouping of operations by resources or any other qualifier.

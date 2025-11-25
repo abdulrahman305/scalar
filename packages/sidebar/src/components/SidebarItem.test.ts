@@ -5,18 +5,21 @@ import {
   ScalarSidebarSection,
 } from '@scalar/components'
 import { Draggable } from '@scalar/draggable'
-import { ScalarIconFolder } from '@scalar/icons'
+import { LibraryIcon } from '@scalar/icons/library'
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+import type { Item } from '@/types'
 
 import SidebarHttpBadge from './SidebarHttpBadge.vue'
-import SidebarItem, { type Item } from './SidebarItem.vue'
+import SidebarItem from './SidebarItem.vue'
 
 describe('SidebarItem', () => {
   const baseProps = {
-    selectedItems: {},
-    expandedItems: {},
+    isSelected: vi.fn(),
+    isExpanded: vi.fn(),
     layout: 'reference' as const,
+    options: undefined,
   }
 
   describe('rendering without children', () => {
@@ -62,7 +65,7 @@ describe('SidebarItem', () => {
       expect(sidebarItem.props('is')).toBe('button')
     })
 
-    it('emits click event when item is clicked', async () => {
+    it('emits click event when item is clicked', () => {
       const item: Item = {
         id: '1',
         title: 'Test Item',
@@ -82,8 +85,8 @@ describe('SidebarItem', () => {
       const sidebarItem = wrapper.findComponent(ScalarSidebarItem)
       sidebarItem.vm.$emit('click')
 
-      expect(wrapper.emitted('click')).toBeTruthy()
-      expect(wrapper.emitted('click')?.[0]).toEqual(['1'])
+      expect(wrapper.emitted('selectItem')).toBeTruthy()
+      expect(wrapper.emitted('selectItem')?.[0]).toEqual(['1'])
     })
 
     it('shows selected state when item is in selectedItems', () => {
@@ -100,7 +103,7 @@ describe('SidebarItem', () => {
         props: {
           ...baseProps,
           item,
-          selectedItems: { '1': true },
+          isSelected: (id) => id === '1',
         },
       })
 
@@ -122,7 +125,7 @@ describe('SidebarItem', () => {
         props: {
           ...baseProps,
           item,
-          selectedItems: {},
+          isSelected: () => false,
         },
       })
 
@@ -229,7 +232,7 @@ describe('SidebarItem', () => {
         props: {
           ...baseProps,
           item,
-          selectedItems: { '1': true },
+          isSelected: (id) => id === '1',
         },
       })
 
@@ -241,6 +244,7 @@ describe('SidebarItem', () => {
       const item: Item = {
         id: '1',
         title: 'Some Document',
+        name: 'someDocument',
         type: 'document',
         children: [],
       }
@@ -283,6 +287,7 @@ describe('SidebarItem', () => {
         id: '1',
         title: 'User API',
         type: 'document',
+        name: 'userAPI',
         children: [{ id: '2', title: 'Get User', type: 'operation', ref: 'ref-2', method: 'get', path: '/users' }],
       }
 
@@ -321,40 +326,12 @@ describe('SidebarItem', () => {
       expect(childItems.length).toBeGreaterThanOrEqual(2)
     })
 
-    it('passes props down to child items', () => {
-      const item: Item = {
-        id: '1',
-        title: 'Parent',
-        type: 'tag',
-        name: 'parent',
-        isGroup: true,
-        children: [{ id: '2', title: 'Child', type: 'operation', ref: 'ref-2', method: 'get', path: '/child' }],
-      }
-
-      const selectedItems = { '2': true }
-      const expandedItems = { '1': true }
-
-      const wrapper = mount(SidebarItem, {
-        props: {
-          ...baseProps,
-          item,
-          selectedItems,
-          expandedItems,
-        },
-      })
-
-      const childComponents = wrapper.findAllComponents(SidebarItem)
-      const childComponent = childComponents.find((w) => w.props('item').id === '2')
-
-      expect(childComponent?.props('selectedItems')).toEqual(selectedItems)
-      expect(childComponent?.props('expandedItems')).toEqual(expandedItems)
-    })
-
     it('renders folder icon for document type items', () => {
       const item: Item = {
         id: '1',
         title: 'Documents',
         type: 'document',
+        name: 'documents',
         children: [
           {
             id: '1',
@@ -374,7 +351,7 @@ describe('SidebarItem', () => {
         },
       })
 
-      expect(wrapper.findComponent(ScalarIconFolder).exists()).toBe(true)
+      expect(wrapper.findComponent(LibraryIcon).exists()).toBe(true)
     })
   })
 
@@ -407,10 +384,11 @@ describe('SidebarItem', () => {
       expect(childItems.length).toBeGreaterThanOrEqual(4)
     })
 
-    it('filters items in client layout to only show webhooks, operations, examples, and tags', () => {
+    it('filters items in client layout to only show operations, examples, and tags / no webhooks or models', () => {
       const item: Item = {
         id: '1',
         title: 'Parent',
+        name: 'parent',
         type: 'document',
         children: [
           { id: '2', title: 'Operation', type: 'operation', ref: 'ref-2', method: 'get', path: '/operation' },
@@ -426,15 +404,14 @@ describe('SidebarItem', () => {
           ...baseProps,
           layout: 'client',
           item,
-          expandedItems: { '1': true },
+          isExpanded: (id) => id === '1',
         },
       })
 
       const childItems = wrapper.findAllComponents(SidebarItem)
-      // Should have parent + operation + webhook + example + tag, but NOT model
+      // Should have parent + operation + example + tag, but NOT model
       const childIds = childItems.map((w) => w.props('item')?.id).filter(Boolean)
       expect(childIds).toContain('2') // operation
-      expect(childIds).toContain('3') // webhook
       expect(childIds).toContain('4') // example
       expect(childIds).toContain('6') // tag
       expect(childIds).not.toContain('5') // model should be filtered out
@@ -483,10 +460,10 @@ describe('SidebarItem', () => {
       })
 
       // Should contain the path with zero-width spaces after slashes
-      expect(wrapper.text()).toContain('/​users/​{id}')
+      expect(wrapper.text()).toContain('/users/{id}')
     })
 
-    it('inserts zero-width space after slashes in path for line-break opportunities', () => {
+    it('inserts word break opportunity before slashes in path', () => {
       const item: Item = {
         id: '1',
         title: 'Get User',
@@ -507,8 +484,8 @@ describe('SidebarItem', () => {
       })
 
       const html = wrapper.html()
-      // Check for zero-width space character (U+200B)
-      expect(html).toContain('/\u200B')
+      // Check for word break opportunity
+      expect(html).toContain('<wbr>/')
     })
 
     it('uses title for items without path even when operationTitleSource is path', () => {
@@ -516,6 +493,7 @@ describe('SidebarItem', () => {
         id: '1',
         title: 'User Document',
         type: 'document',
+        name: 'userDocument',
         children: [],
       }
 
@@ -683,6 +661,7 @@ describe('SidebarItem', () => {
         id: '1',
         title: 'Expandable',
         type: 'document',
+        name: 'userAPI',
         children: [
           {
             id: '1',
@@ -699,13 +678,13 @@ describe('SidebarItem', () => {
         props: {
           ...baseProps,
           item,
-          expandedItems: { '1': true },
+          isExpanded: (id) => id === '1',
         },
       })
 
       const group = wrapper.findComponent(ScalarSidebarGroup)
       expect(group.exists()).toBe(true)
-      expect(group.props('modelValue')).toBe(true)
+      expect(group.props('open')).toBe(true)
     })
 
     it('defaults to false when item is not in expandedItems', () => {
@@ -713,6 +692,7 @@ describe('SidebarItem', () => {
         id: '1',
         title: 'Expandable',
         type: 'document',
+        name: 'userAPI',
         children: [
           {
             id: '1',
@@ -729,20 +709,21 @@ describe('SidebarItem', () => {
         props: {
           ...baseProps,
           item,
-          expandedItems: {},
+          isExpanded: () => false,
         },
       })
 
       const group = wrapper.findComponent(ScalarSidebarGroup)
       expect(group.exists()).toBe(true)
-      expect(group.props('modelValue')).toBe(false)
+      expect(group.props('open')).toBe(false)
     })
 
-    it('emits click event when group is toggled', async () => {
+    it('emits click event when group is toggled', () => {
       const item: Item = {
         id: 'group-1',
         title: 'Expandable',
         type: 'document',
+        name: 'userAPI',
         children: [
           {
             id: '1',
@@ -764,15 +745,15 @@ describe('SidebarItem', () => {
 
       const group = wrapper.findComponent(ScalarSidebarGroup)
       expect(group.exists()).toBe(true)
-      group.vm.$emit('update:modelValue', true)
+      group.vm.$emit('click')
 
-      expect(wrapper.emitted('click')).toBeTruthy()
-      expect(wrapper.emitted('click')?.[0]).toEqual(['group-1'])
+      expect(wrapper.emitted('selectItem')).toBeTruthy()
+      expect(wrapper.emitted('selectItem')?.[0]).toEqual(['group-1'])
     })
   })
 
   describe('slots', () => {
-    it('renders aside slot content', () => {
+    it('renders decorator slot content', () => {
       const item: Item = {
         id: '1',
         title: 'Test Item',
@@ -788,15 +769,15 @@ describe('SidebarItem', () => {
           item,
         },
         slots: {
-          aside: '<div class="custom-aside">Custom Content</div>',
+          decorator: '<div class="custom-decorator">Custom Content</div>',
         },
       })
 
-      expect(wrapper.find('.custom-aside').exists()).toBe(true)
+      expect(wrapper.find('.custom-decorator').exists()).toBe(true)
       expect(wrapper.text()).toContain('Custom Content')
     })
 
-    it('passes item prop to aside slot', () => {
+    it('passes item prop to decorator slot', () => {
       const item: Item = {
         id: 'test-id',
         title: 'Test Item',
@@ -812,14 +793,14 @@ describe('SidebarItem', () => {
           item,
         },
         slots: {
-          aside: '<div class="slot-test">{{ item.id }}</div>',
+          decorator: '<div class="slot-test">{{ item.id }}</div>',
         },
       })
 
       expect(wrapper.html()).toContain('test-id')
     })
 
-    it('passes aside slot to child items', () => {
+    it('passes decorator slot to child items', () => {
       const item: Item = {
         id: '1',
         title: 'Parent',
@@ -835,13 +816,13 @@ describe('SidebarItem', () => {
           item,
         },
         slots: {
-          aside: '<div class="custom-aside">Aside</div>',
+          decorator: '<div class="custom-decorator">Decorator</div>',
         },
       })
 
-      // Aside slot should be present in both parent and child
-      const asideElements = wrapper.findAll('.custom-aside')
-      expect(asideElements.length).toBeGreaterThan(0)
+      // Decorator slot should be present in both parent and child
+      const decoratorElements = wrapper.findAll('.custom-decorator')
+      expect(decoratorElements.length).toBeGreaterThan(0)
     })
   })
 
@@ -851,6 +832,7 @@ describe('SidebarItem', () => {
         id: '1',
         title: 'Empty Parent',
         type: 'document',
+        name: 'emptyParent',
         children: [],
       }
 
@@ -926,8 +908,9 @@ describe('SidebarItem', () => {
         props: {
           item,
           layout: 'reference',
-          selectedItems: {},
-          expandedItems: {},
+          isSelected: () => false,
+          isExpanded: () => false,
+          options: undefined,
         },
       })
 
@@ -967,7 +950,7 @@ describe('SidebarItem', () => {
         props: {
           ...baseProps,
           item,
-          expandedItems: { '1': true, '2': true, '3': true },
+          isExpanded: (id) => id === '1' || id === '2' || id === '3',
         },
       })
 

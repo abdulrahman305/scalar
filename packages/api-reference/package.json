@@ -20,18 +20,16 @@
     "vue",
     "vue3"
   ],
-  "version": "1.38.1",
+  "version": "1.40.0",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "build": "pnpm build:default && pnpm build:standalone && pnpm types:build && tsc-alias -p tsconfig.build.json",
+    "build": "pnpm build:default && pnpm build:standalone && pnpm types:build",
     "build:default": "vite build",
     "build:standalone": "vite build -c vite.standalone.config.ts",
     "dev": "vite",
     "dev:standalone": "vite -c vite.standalone.config.ts",
-    "lint:check": "scalar-lint-check",
-    "lint:fix": "scalar-lint-fix",
     "playground:components": "vite ./playground/components -c ./playground/components/vite.config.ts",
     "playground:esm": "vite ./playground/esm -c ./playground/esm/vite.config.ts",
     "playground:ssr": "cd ./playground/ssr && pnpm dev",
@@ -41,20 +39,34 @@
     "test:benchmark": "vitest bench",
     "test:benchmark:compare": "vitest bench --compare test-results/test-benchmark.json",
     "test:benchmark:save": "vitest bench --outputJson test-results/test-benchmark.json",
-    "test:e2e": "playwright test",
-    "test:e2e:playwright": "docker run --network=host -e PORT=5001 -p 5001:5001 scalarapi/playwright:1.56.0",
-    "test:e2e:report": "playwright show-report",
-    "test:e2e:snapshots": "PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:5001/ playwright test -c playwright.snapshots.config.ts",
-    "test:e2e:snapshots:ci": "playwright test -c playwright.snapshots.config.ts",
-    "test:e2e:ui": "playwright test --ui",
+    "test:e2e": "PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:5001/ playwright test",
+    "test:e2e:cdn": "PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:5001/ TEST_MODE=CDN playwright test",
+    "test:e2e:cdn:ci": "TEST_MODE=CDN playwright test",
+    "test:e2e:ci": "playwright test",
+    "test:e2e:update-snapshots": "pnpm test:e2e --update-snapshots",
     "types:build": "scalar-types-build-vue",
     "types:check": "scalar-types-check-vue"
   },
   "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./components": {
+      "import": "./dist/components/index.js",
+      "types": "./dist/components/index.d.ts",
+      "default": "./dist/components/index.js"
+    },
+    "./helpers": {
+      "import": "./dist/helpers/index.js",
+      "types": "./dist/helpers/index.d.ts",
+      "default": "./dist/helpers/index.js"
+    },
     "./style.css": "./dist/style.css",
     "./browser/standalone.js": "./dist/browser/standalone.js"
   },
@@ -67,7 +79,6 @@
   "esm.sh": {
     "bundle": true
   },
-  "module": "./dist/index.js",
   "dependencies": {
     "@floating-ui/vue": "catalog:*",
     "@headlessui/vue": "catalog:*",
@@ -82,6 +93,7 @@
     "@scalar/openapi-parser": "workspace:*",
     "@scalar/openapi-types": "workspace:*",
     "@scalar/openapi-upgrader": "workspace:*",
+    "@scalar/sidebar": "workspace:*",
     "@scalar/snippetz": "workspace:*",
     "@scalar/themes": "workspace:*",
     "@scalar/types": "workspace:*",
@@ -90,7 +102,6 @@
     "@scalar/workspace-store": "workspace:*",
     "@unhead/vue": "^1.11.20",
     "@vueuse/core": "catalog:*",
-    "flatted": "catalog:*",
     "fuse.js": "catalog:*",
     "github-slugger": "^2.0.0",
     "js-base64": "catalog:*",
@@ -112,7 +123,7 @@
     "@types/react-dom": "catalog:*",
     "@vitejs/plugin-vue": "catalog:*",
     "@vue/server-renderer": "^3.5.17",
-    "@vue/test-utils": "^2.4.1",
+    "@vue/test-utils": "catalog:*",
     "hono": "catalog:*",
     "react": "catalog:*",
     "react-dom": "catalog:*",
