@@ -19,7 +19,7 @@
     "export",
     "scalar"
   ],
-  "version": "0.3.49",
+  "version": "0.3.50",
   "engines": {
     "node": ">=20"
   },
@@ -30,8 +30,7 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest",
     "types:build": "scalar-types-build",
-    "types:check": "scalar-types-check",
-    "watch": "scalar-build-rollup -w"
+    "types:check": "scalar-types-check"
   },
   "type": "module",
   "main": "dist/index.js",
