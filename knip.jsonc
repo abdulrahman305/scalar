@@ -10,7 +10,6 @@
     "packages/components/**",
     "packages/draggable/**",
     "packages/galaxy/**",
-    "packages/icons/**",
     "packages/nextjs-openapi/**",
     "packages/openapi-upgrader/**",
     "packages/postman-to-openapi/**",
@@ -31,7 +30,8 @@
     "integrations/nextjs/**",
     "integrations/nuxt/**",
     "integrations/rust/**",
-    "integrations/sveltekit/**"
+    "integrations/sveltekit/**",
+    "tooling/changelog-generator/**"
   ],
   "ignoreFiles": [
     // test types files are marked as unused
@@ -46,6 +46,7 @@
   "ignoreDependencies": [
     // Used by `ci.yml` `npm-publish` job
     "@changesets/cli",
+    "@scalar-internal/changelog-generator",
 
     // Required on root to have proper format with prettier
     "tailwindcss",
@@ -77,6 +78,9 @@
     },
     "packages/helpers": {
       "entry": ["src/*/*.ts", "!src/*/*.test.ts"]
+    },
+    "packages/icons": {
+      "ignoreFiles": ["src/library/.svglintrc.js"]
     },
     "packages/json-magic": {
       "entry": [
